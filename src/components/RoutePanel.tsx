@@ -9,6 +9,7 @@ interface Props {
   onDefaultProfileChange: (p: RouteProfile) => void;
   onSetLegProfile: (waypointId: string, p: RouteProfile) => void;
   onRemoveWaypoint: (id: string) => void;
+  onReorderWaypoint: (id: string, direction: -1 | 1) => void;
   onClear: () => void;
 }
 
@@ -54,6 +55,7 @@ export default function RoutePanel({
   onDefaultProfileChange,
   onSetLegProfile,
   onRemoveWaypoint,
+  onReorderWaypoint,
   onClear,
 }: Props) {
   return (
@@ -71,11 +73,11 @@ export default function RoutePanel({
       <div className="panel-row summary">
         {waypoints.length === 0 && (
           <span className="hint">
-            Tippe auf die Karte, um Start, Zwischenstopps und Ziel zu setzen.
+            Ort suchen oder auf die Karte tippen, um Start, Stopps und Ziel zu setzen.
           </span>
         )}
         {waypoints.length === 1 && (
-          <span className="hint">Tippe erneut, um das Ziel zu setzen.</span>
+          <span className="hint">Nächsten Punkt setzen, um die Route zu berechnen.</span>
         )}
         {loading && <span className="hint">Route wird berechnet …</span>}
         {error && <span className="error">⚠ {error}</span>}
@@ -94,7 +96,6 @@ export default function RoutePanel({
             const leg = i > 0 ? route?.legs[i - 1] : undefined;
             return (
               <li key={wp.id} className="wp-item">
-                {/* Segment row: profile for the leg arriving at this waypoint */}
                 {i > 0 && (
                   <div className="segment">
                     <span className="segment-arrow">↳ Etappe {i}→{i + 1}</span>
@@ -103,9 +104,7 @@ export default function RoutePanel({
                       onChange={(p) => onSetLegProfile(wp.id, p)}
                     />
                     {leg && (
-                      <span className="segment-stats">
-                        {leg.distanceKm.toFixed(0)} km
-                      </span>
+                      <span className="segment-stats">{leg.distanceKm.toFixed(0)} km</span>
                     )}
                   </div>
                 )}
@@ -114,30 +113,51 @@ export default function RoutePanel({
                   <span
                     className="wp-dot"
                     data-role={
-                      i === 0
-                        ? "start"
-                        : i === waypoints.length - 1
-                          ? "end"
-                          : "via"
+                      i === 0 ? "start" : i === waypoints.length - 1 ? "end" : "via"
                     }
                   >
                     {i + 1}
                   </span>
-                  <span className="wp-coords">
-                    {wp.lat.toFixed(4)}, {wp.lng.toFixed(4)}
+                  <span className="wp-name">
+                    {wp.name ?? `${wp.lat.toFixed(4)}, ${wp.lng.toFixed(4)}`}
                   </span>
-                  <button
-                    className="wp-remove"
-                    onClick={() => onRemoveWaypoint(wp.id)}
-                    aria-label="Wegpunkt entfernen"
-                  >
-                    ✕
-                  </button>
+                  <span className="wp-actions">
+                    <button
+                      className="wp-btn"
+                      disabled={i === 0}
+                      onClick={() => onReorderWaypoint(wp.id, -1)}
+                      aria-label="Nach oben"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      className="wp-btn"
+                      disabled={i === waypoints.length - 1}
+                      onClick={() => onReorderWaypoint(wp.id, 1)}
+                      aria-label="Nach unten"
+                    >
+                      ↓
+                    </button>
+                    <button
+                      className="wp-btn remove"
+                      onClick={() => onRemoveWaypoint(wp.id)}
+                      aria-label="Entfernen"
+                    >
+                      ✕
+                    </button>
+                  </span>
                 </div>
               </li>
             );
           })}
         </ul>
+      )}
+
+      {waypoints.length >= 2 && (
+        <p className="edit-hint">
+          Tipp: Streckenlinie ziehen, um einen Zwischenpunkt einzufügen · Marker
+          ziehen zum Verschieben.
+        </p>
       )}
     </div>
   );

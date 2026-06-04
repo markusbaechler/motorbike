@@ -2,21 +2,20 @@ import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { DEFAULT_CENTER, DEFAULT_ZOOM, MAP_STYLE_URL } from "../config";
+import type { FocusPoint } from "../App";
 import type { RouteResult, Waypoint } from "../types";
 
 interface Props {
   waypoints: Waypoint[];
   route: RouteResult | null;
+  focus: FocusPoint | null;
   onAddWaypoint: (lng: number, lat: number) => void;
   onMoveWaypoint: (id: string, lng: number, lat: number) => void;
+  onInsertWaypoint: (legIndex: number, lng: number, lat: number) => void;
 }
 
-const EMPTY_ROUTE: GeoJSON.FeatureCollection = {
-  type: "FeatureCollection",
-  features: [],
-};
+const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
-// Colour a marker by its role: green = start, red = finish, blue = via.
 function markerColor(index: number, total: number): string {
   if (index === 0) return "#22c55e";
   if (index === total - 1) return "#ef4444";
@@ -26,19 +25,24 @@ function markerColor(index: number, total: number): string {
 export default function MapView({
   waypoints,
   route,
+  focus,
   onAddWaypoint,
   onMoveWaypoint,
+  onInsertWaypoint,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const loadedRef = useRef(false);
   const markersRef = useRef<maplibregl.Marker[]>([]);
+  // Suppress the map "click" (append) that follows a line-drag insert.
+  const suppressClickRef = useRef(false);
 
-  // Keep latest callbacks without re-initialising the map.
   const addRef = useRef(onAddWaypoint);
   const moveRef = useRef(onMoveWaypoint);
+  const insertRef = useRef(onInsertWaypoint);
   addRef.current = onAddWaypoint;
   moveRef.current = onMoveWaypoint;
+  insertRef.current = onInsertWaypoint;
 
   // --- Map initialisation (once) ---
   useEffect(() => {
@@ -63,14 +67,15 @@ export default function MapView({
     map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
 
     map.on("load", () => {
-      map.addSource("route", { type: "geojson", data: EMPTY_ROUTE });
-      // Casing underneath for contrast, coloured line on top.
+      map.addSource("route", { type: "geojson", data: EMPTY });
+      map.addSource("drag", { type: "geojson", data: EMPTY });
+
       map.addLayer({
         id: "route-casing",
         type: "line",
         source: "route",
         layout: { "line-join": "round", "line-cap": "round" },
-        paint: { "line-color": "#0f172a", "line-width": 8, "line-opacity": 0.6 },
+        paint: { "line-color": "#0f172a", "line-width": 9, "line-opacity": 0.6 },
       });
       map.addLayer({
         id: "route-line",
@@ -78,7 +83,6 @@ export default function MapView({
         source: "route",
         layout: { "line-join": "round", "line-cap": "round" },
         paint: {
-          // Colour each leg by its profile: curvy = orange, fast = blue.
           "line-color": [
             "match",
             ["get", "profile"],
@@ -89,11 +93,37 @@ export default function MapView({
           "line-width": 5,
         },
       });
+      // Preview dot shown while dragging the line to insert a point.
+      map.addLayer({
+        id: "drag-point",
+        type: "circle",
+        source: "drag",
+        paint: {
+          "circle-radius": 7,
+          "circle-color": "#f8fafc",
+          "circle-stroke-color": "#0f172a",
+          "circle-stroke-width": 2,
+        },
+      });
+
       loadedRef.current = true;
+      setupLineDrag(map);
     });
 
     map.on("click", (e) => {
+      if (suppressClickRef.current) {
+        suppressClickRef.current = false;
+        return;
+      }
       addRef.current(e.lngLat.lng, e.lngLat.lat);
+    });
+
+    // Hover affordance over the route line.
+    map.on("mouseenter", "route-line", () => {
+      map.getCanvas().style.cursor = "grab";
+    });
+    map.on("mouseleave", "route-line", () => {
+      map.getCanvas().style.cursor = "";
     });
 
     mapRef.current = map;
@@ -104,6 +134,58 @@ export default function MapView({
       loadedRef.current = false;
     };
   }, []);
+
+  // Set up drag-to-insert: grab the route line and drop to insert a waypoint
+  // into that leg. Works for both mouse and touch.
+  function setupLineDrag(map: maplibregl.Map) {
+    let legIndex: number | null = null;
+    const dragSrc = () => map.getSource("drag") as maplibregl.GeoJSONSource;
+
+    const onDown = (
+      e: maplibregl.MapLayerMouseEvent | maplibregl.MapLayerTouchEvent,
+    ) => {
+      const idx = e.features?.[0]?.properties?.legIndex;
+      if (idx === undefined || idx === null) return;
+      e.preventDefault();
+      legIndex = Number(idx);
+      map.dragPan.disable();
+      map.getCanvas().style.cursor = "grabbing";
+    };
+
+    const onMove = (
+      e: maplibregl.MapMouseEvent | maplibregl.MapTouchEvent,
+    ) => {
+      if (legIndex === null) return;
+      dragSrc().setData({
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            properties: {},
+            geometry: { type: "Point", coordinates: [e.lngLat.lng, e.lngLat.lat] },
+          },
+        ],
+      });
+    };
+
+    const onUp = (e: maplibregl.MapMouseEvent | maplibregl.MapTouchEvent) => {
+      if (legIndex === null) return;
+      const leg = legIndex;
+      legIndex = null;
+      map.dragPan.enable();
+      map.getCanvas().style.cursor = "";
+      dragSrc().setData(EMPTY);
+      suppressClickRef.current = true;
+      insertRef.current(leg, e.lngLat.lng, e.lngLat.lat);
+    };
+
+    map.on("mousedown", "route-line", onDown);
+    map.on("touchstart", "route-line", onDown);
+    map.on("mousemove", onMove);
+    map.on("touchmove", onMove);
+    map.on("mouseup", onUp);
+    map.on("touchend", onUp);
+  }
 
   // --- Sync markers with waypoints ---
   useEffect(() => {
@@ -136,16 +218,20 @@ export default function MapView({
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-
     const apply = () => {
       const src = map.getSource("route") as maplibregl.GeoJSONSource | undefined;
-      if (!src) return;
-      src.setData(route?.geojson ?? EMPTY_ROUTE);
+      src?.setData(route?.geojson ?? EMPTY);
     };
-
     if (loadedRef.current) apply();
     else map.once("load", apply);
   }, [route]);
+
+  // --- Fly to a searched location ---
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !focus) return;
+    map.flyTo({ center: [focus.lng, focus.lat], zoom: Math.max(map.getZoom(), 11) });
+  }, [focus]);
 
   return <div className="map" ref={containerRef} />;
 }

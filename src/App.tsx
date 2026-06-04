@@ -1,11 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import MapView from "./components/MapView";
 import RoutePanel from "./components/RoutePanel";
+import SearchBox from "./components/SearchBox";
 import { fetchRoute } from "./lib/routing";
+import type { GeoResult } from "./lib/geocoding";
 import type { RouteProfile, RouteResult, Waypoint } from "./types";
 
 let nextId = 1;
 const makeId = () => `wp-${nextId++}`;
+
+export interface FocusPoint {
+  lng: number;
+  lat: number;
+  key: number;
+}
 
 export default function App() {
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
@@ -14,16 +22,33 @@ export default function App() {
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [focus, setFocus] = useState<FocusPoint | null>(null);
 
-  const addWaypoint = (lng: number, lat: number) =>
+  const addWaypoint = (lng: number, lat: number, name?: string) =>
     setWaypoints((wps) => [
       ...wps,
-      { id: makeId(), lng, lat, legProfile: defaultProfile },
+      { id: makeId(), lng, lat, name, legProfile: defaultProfile },
     ]);
+
+  // Insert a shaping point into a specific leg (legIndex = index of the leg
+  // being reshaped). The new point keeps that leg's profile.
+  const insertWaypoint = (legIndex: number, lng: number, lat: number) =>
+    setWaypoints((wps) => {
+      const dest = wps[legIndex + 1];
+      const newWp: Waypoint = {
+        id: makeId(),
+        lng,
+        lat,
+        legProfile: dest ? dest.legProfile : defaultProfile,
+      };
+      const copy = [...wps];
+      copy.splice(legIndex + 1, 0, newWp);
+      return copy;
+    });
 
   const moveWaypoint = (id: string, lng: number, lat: number) =>
     setWaypoints((wps) =>
-      wps.map((w) => (w.id === id ? { ...w, lng, lat } : w)),
+      wps.map((w) => (w.id === id ? { ...w, lng, lat, name: undefined } : w)),
     );
 
   const removeWaypoint = (id: string) =>
@@ -34,10 +59,25 @@ export default function App() {
       wps.map((w) => (w.id === id ? { ...w, legProfile: profile } : w)),
     );
 
+  const reorderWaypoint = (id: string, direction: -1 | 1) =>
+    setWaypoints((wps) => {
+      const i = wps.findIndex((w) => w.id === id);
+      const j = i + direction;
+      if (i < 0 || j < 0 || j >= wps.length) return wps;
+      const copy = [...wps];
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+      return copy;
+    });
+
   const clearAll = () => setWaypoints([]);
 
-  // Recompute the route whenever the waypoints change (coords or per-leg
-  // profile). A short debounce avoids hammering the server while dragging.
+  const onSearchSelect = (r: GeoResult) => {
+    addWaypoint(r.lng, r.lat, r.name);
+    setFocus({ lng: r.lng, lat: r.lat, key: Date.now() });
+  };
+
+  // Recompute the route whenever the waypoints change (coords, order or
+  // per-leg profile). A short debounce avoids hammering the server.
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => {
     if (waypoints.length < 2) {
@@ -63,7 +103,7 @@ export default function App() {
       } finally {
         setLoading(false);
       }
-    }, 350);
+    }, 300);
 
     return () => {
       controller.abort();
@@ -80,11 +120,15 @@ export default function App() {
         </h1>
       </header>
 
+      <SearchBox onSelect={onSearchSelect} />
+
       <MapView
         waypoints={waypoints}
         route={route}
+        focus={focus}
         onAddWaypoint={addWaypoint}
         onMoveWaypoint={moveWaypoint}
+        onInsertWaypoint={insertWaypoint}
       />
 
       <RoutePanel
@@ -96,6 +140,7 @@ export default function App() {
         onDefaultProfileChange={setDefaultProfile}
         onSetLegProfile={setLegProfile}
         onRemoveWaypoint={removeWaypoint}
+        onReorderWaypoint={reorderWaypoint}
         onClear={clearAll}
       />
     </div>

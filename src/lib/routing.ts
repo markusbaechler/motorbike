@@ -16,6 +16,7 @@ async function fetchLeg(
   from: Waypoint,
   to: Waypoint,
   profile: RouteProfile,
+  legIndex: number,
   signal?: AbortSignal,
 ): Promise<Leg> {
   const lonlats =
@@ -38,8 +39,8 @@ async function fetchLeg(
   }
 
   const props = (feature.properties ?? {}) as Record<string, string>;
-  // Tag the leg with its profile so the map can colour it.
-  feature.properties = { ...feature.properties, profile };
+  // Tag the leg with its profile (for colouring) and index (for line-drag).
+  feature.properties = { ...feature.properties, profile, legIndex };
 
   return {
     feature,
@@ -65,7 +66,13 @@ export async function fetchRoute(
   const legPromises: Promise<Leg>[] = [];
   for (let i = 1; i < waypoints.length; i++) {
     legPromises.push(
-      fetchLeg(waypoints[i - 1], waypoints[i], waypoints[i].legProfile, signal),
+      fetchLeg(
+        waypoints[i - 1],
+        waypoints[i],
+        waypoints[i].legProfile,
+        i - 1,
+        signal,
+      ),
     );
   }
 

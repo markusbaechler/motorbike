@@ -9,6 +9,8 @@ export interface Waypoint {
   id: string;
   lng: number;
   lat: number;
+  // Optional place name from the search; map-placed points have none.
+  name?: string;
   // Profile used for the leg arriving at this waypoint (from the previous
   // one). Ignored for the first waypoint, which has no incoming leg.
   legProfile: RouteProfile;
