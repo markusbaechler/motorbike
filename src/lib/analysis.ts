@@ -162,12 +162,14 @@ export function analyse(features: GeoJSON.Feature[]): RouteAnalysis {
   const passes = hasElevation ? countPasses(profile.map((p) => p.ele)) : 0;
 
   // --- Attractiveness (multi-signal, 0–10) ---
-  const curve01 = clamp(cornersPerKm / 3, 0, 1);
+  // Curves are weighted more sensitively (2 corners/km already counts as very
+  // twisty), and small-road share + curves can each carry the score high.
+  const curve01 = clamp(cornersPerKm / 2, 0, 1);
   const scenicShare = hasData ? roadKm.neben / totalKm : 0;
   const motorwayShare = hasData ? roadKm.autobahn / totalKm : 0;
   const attract01 = hasData
-    ? clamp(0.5 * scenicShare + 0.5 * curve01 - 0.3 * motorwayShare, 0, 1)
-    : curve01;
+    ? clamp(0.6 * scenicShare + 0.6 * curve01 - 0.3 * motorwayShare, 0, 1)
+    : clamp(0.4 + 0.6 * curve01, 0, 1);
   const attractiveness = round1(attract01 * 10);
 
   // --- Bergigkeit (0–10) ---

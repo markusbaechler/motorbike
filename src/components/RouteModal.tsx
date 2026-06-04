@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import ElevationChart from "./ElevationChart";
 import { analyse, type RouteAnalysis } from "../lib/analysis";
 import { buildGpx, downloadGpx } from "../lib/gpx";
@@ -43,6 +43,8 @@ function placeName(wp: Waypoint): string {
 export default function RouteModal({ waypoints, route, onClose }: Props) {
   const analysis = useMemo(() => analyse(route.geojson.features), [route]);
   const days = useMemo(() => computeDays(waypoints), [waypoints]);
+  const [showWhole, setShowWhole] = useState(false);
+  const multiDay = days.length > 1;
 
   const dayAnalyses = useMemo(
     () =>
@@ -129,8 +131,8 @@ export default function RouteModal({ waypoints, route, onClose }: Props) {
             )}
           </section>
 
-          {/* Per-day rating */}
-          {days.length > 1 && (
+          {/* Per-day rating + elevation profile */}
+          {multiDay && (
             <section className="modal-section">
               <h3>Pro Tag</h3>
               {dayAnalyses.map(({ span, a, overnight }) => (
@@ -144,25 +146,54 @@ export default function RouteModal({ waypoints, route, onClose }: Props) {
                     {dayStats(span, route).distanceKm.toFixed(0)} km · Attraktivität{" "}
                     {a.scores.attractiveness} · Bergigkeit {a.scores.bergigkeit} · {a.passes} Pässe
                   </div>
+                  <ElevationChart profile={a.profile} minEle={a.minEle} maxEle={a.maxEle} />
+                  {a.hasElevation && (
+                    <p className="elev-stats">
+                      ↗ {a.ascentM} m · ↘ {a.descentM} m · höchster Punkt {a.maxEle} m
+                    </p>
+                  )}
                 </div>
               ))}
             </section>
           )}
 
-          {/* Elevation profile */}
-          <section className="modal-section">
-            <h3>Höhenprofil</h3>
-            <ElevationChart
-              profile={analysis.profile}
-              minEle={analysis.minEle}
-              maxEle={analysis.maxEle}
-            />
-            {analysis.hasElevation && (
-              <p className="elev-stats">
-                ↗ {analysis.ascentM} m · ↘ {analysis.descentM} m · höchster Punkt {analysis.maxEle} m
-              </p>
-            )}
-          </section>
+          {/* Whole-tour elevation: always for single-day, optional otherwise */}
+          {!multiDay ? (
+            <section className="modal-section">
+              <h3>Höhenprofil</h3>
+              <ElevationChart
+                profile={analysis.profile}
+                minEle={analysis.minEle}
+                maxEle={analysis.maxEle}
+              />
+              {analysis.hasElevation && (
+                <p className="elev-stats">
+                  ↗ {analysis.ascentM} m · ↘ {analysis.descentM} m · höchster Punkt {analysis.maxEle} m
+                </p>
+              )}
+            </section>
+          ) : (
+            <section className="modal-section">
+              <button className="export-btn" onClick={() => setShowWhole((v) => !v)}>
+                {showWhole ? "Gesamtprofil ausblenden" : "Gesamtprofil der Tour anzeigen"}
+              </button>
+              {showWhole && (
+                <>
+                  <ElevationChart
+                    profile={analysis.profile}
+                    minEle={analysis.minEle}
+                    maxEle={analysis.maxEle}
+                  />
+                  {analysis.hasElevation && (
+                    <p className="elev-stats">
+                      ↗ {analysis.ascentM} m · ↘ {analysis.descentM} m · höchster Punkt{" "}
+                      {analysis.maxEle} m
+                    </p>
+                  )}
+                </>
+              )}
+            </section>
+          )}
 
           {/* Export */}
           <section className="modal-section">
