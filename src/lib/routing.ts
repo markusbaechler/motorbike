@@ -4,77 +4,15 @@ import type { RouteProfile, RouteResult, Waypoint } from "../types";
 // user's browser. https://brouter.de/
 const BROUTER = "https://brouter.de";
 
-// Custom BRouter profile that strongly prefers small, winding back-roads and
-// heavily penalises motorways / trunk / primary roads — i.e. a "curvy" car
-// route for motorcycle touring. Uploaded once per session; BRouter returns a
-// profile id we then route against.
-const CURVY_PROFILE = `
----context:global
-assign validForCars = 1
-assign turnInstructionMode = 1
-
----context:way
-assign turncost = 0
-assign initialcost = 0
-
-assign blocked = or highway= or access=private access=no
-
-assign costfactor
-  switch blocked                                   100000
-  switch highway=motorway|motorway_link            9
-  switch highway=trunk|trunk_link                  7
-  switch highway=primary|primary_link              4
-  switch highway=secondary|secondary_link          1.3
-  switch highway=tertiary|tertiary_link            1.0
-  switch highway=unclassified                      1.1
-  switch highway=residential|living_street         1.6
-  switch highway=service                           3
-  switch highway=track|path|footway|cycleway|bridleway|steps|pedestrian   100000
-  2.5
-
----context:node
-assign initialcost = 0
-`;
-
-// Map a logical UI profile to a concrete BRouter profile name.
-// "schnell" uses the stock motorway-friendly profile; "kurvig" uses our
-// uploaded custom profile (falling back to car-eco if the upload fails).
-let curvyIdPromise: Promise<string> | null = null;
-
-async function getCurvyProfileId(signal?: AbortSignal): Promise<string> {
-  if (!curvyIdPromise) {
-    curvyIdPromise = (async () => {
-      const res = await fetch(`${BROUTER}/brouter/profile`, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain" },
-        body: CURVY_PROFILE,
-        signal,
-      });
-      if (!res.ok) throw new Error(`Profil-Upload fehlgeschlagen (HTTP ${res.status}).`);
-      const data = (await res.json()) as { profileid?: string; error?: string };
-      if (!data.profileid) throw new Error(data.error || "Kein Profil-Id erhalten.");
-      return data.profileid;
-    })();
-    // Allow a retry on a later call if this upload fails.
-    curvyIdPromise.catch(() => {
-      curvyIdPromise = null;
-    });
-  }
-  return curvyIdPromise;
-}
-
-async function resolveBrouterProfile(
-  profile: RouteProfile,
-  signal?: AbortSignal,
-): Promise<string> {
-  if (profile === "schnell") return "car-fast";
-  try {
-    return await getCurvyProfileId(signal);
-  } catch {
-    // Fallback so the app keeps working even if the upload is unavailable.
-    return "car-eco";
-  }
-}
+// Map each logical UI profile to one or more stock BRouter profiles, tried in
+// order (fallback if the first is unavailable on the public server).
+//   kurvig  -> "moped": may not use motorways/trunk by law, so it routes over
+//              small, winding back-roads (scenic / curvy).
+//   schnell -> "car-fast": motorway-friendly, direct.
+const BROUTER_PROFILES: Record<RouteProfile, string[]> = {
+  kurvig: ["moped", "car-eco"],
+  schnell: ["car-fast", "car-eco"],
+};
 
 interface Leg {
   feature: GeoJSON.Feature;
@@ -90,37 +28,53 @@ async function fetchLeg(
   legIndex: number,
   signal?: AbortSignal,
 ): Promise<Leg> {
-  const brouterProfile = await resolveBrouterProfile(profile, signal);
-
   const lonlats =
     `${from.lng.toFixed(6)},${from.lat.toFixed(6)}|` +
     `${to.lng.toFixed(6)},${to.lat.toFixed(6)}`;
 
-  const url =
-    `${BROUTER}/brouter?lonlats=${lonlats}` +
-    `&profile=${brouterProfile}&alternativeidx=0&format=geojson`;
+  let lastError = "unbekannter Fehler";
 
-  const res = await fetch(url, { signal });
-  if (!res.ok) {
-    throw new Error(`Routing fehlgeschlagen (HTTP ${res.status}).`);
+  for (const brouterProfile of BROUTER_PROFILES[profile]) {
+    const url =
+      `${BROUTER}/brouter?lonlats=${lonlats}` +
+      `&profile=${brouterProfile}&alternativeidx=0&format=geojson`;
+
+    let res: Response;
+    try {
+      res = await fetch(url, { signal });
+    } catch (e) {
+      if ((e as Error).name === "AbortError") throw e;
+      lastError = (e as Error).message;
+      continue;
+    }
+
+    if (!res.ok) {
+      // BRouter returns a helpful message in the body for 400s.
+      const body = (await res.text()).replace(/\s+/g, " ").trim();
+      lastError = `HTTP ${res.status} – ${body.slice(0, 160)}`;
+      continue;
+    }
+
+    const geojson = (await res.json()) as GeoJSON.FeatureCollection;
+    const feature = geojson.features?.[0];
+    if (!feature) {
+      lastError = "leere Antwort vom Routing-Dienst";
+      continue;
+    }
+
+    const props = (feature.properties ?? {}) as Record<string, string>;
+    // Tag the leg with its logical profile (for colouring) and index (drag).
+    feature.properties = { ...feature.properties, profile, legIndex };
+
+    return {
+      feature,
+      distanceKm: Number(props["track-length"] ?? 0) / 1000,
+      durationMin: Number(props["total-time"] ?? 0) / 60,
+      profile,
+    };
   }
 
-  const geojson = (await res.json()) as GeoJSON.FeatureCollection;
-  const feature = geojson.features?.[0];
-  if (!feature) {
-    throw new Error("Keine Route für diesen Abschnitt gefunden.");
-  }
-
-  const props = (feature.properties ?? {}) as Record<string, string>;
-  // Tag the leg with its logical profile (for colouring) and index (drag).
-  feature.properties = { ...feature.properties, profile, legIndex };
-
-  return {
-    feature,
-    distanceKm: Number(props["track-length"] ?? 0) / 1000,
-    durationMin: Number(props["total-time"] ?? 0) / 60,
-    profile,
-  };
+  throw new Error(`Etappe ${legIndex + 1}: ${lastError}`);
 }
 
 /**
