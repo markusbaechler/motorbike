@@ -1,6 +1,67 @@
+import { useEffect, useRef, useState } from "react";
 import MapView from "./components/MapView";
+import RoutePanel from "./components/RoutePanel";
+import { fetchRoute } from "./lib/routing";
+import type { RouteProfile, RouteResult, Waypoint } from "./types";
+
+let nextId = 1;
+const makeId = () => `wp-${nextId++}`;
 
 export default function App() {
+  const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
+  const [profile, setProfile] = useState<RouteProfile>("car-eco");
+  const [route, setRoute] = useState<RouteResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const addWaypoint = (lng: number, lat: number) =>
+    setWaypoints((wps) => [...wps, { id: makeId(), lng, lat }]);
+
+  const moveWaypoint = (id: string, lng: number, lat: number) =>
+    setWaypoints((wps) =>
+      wps.map((w) => (w.id === id ? { ...w, lng, lat } : w)),
+    );
+
+  const removeWaypoint = (id: string) =>
+    setWaypoints((wps) => wps.filter((w) => w.id !== id));
+
+  const clearAll = () => setWaypoints([]);
+
+  // Recompute the route whenever the waypoints or profile change.
+  // A short debounce avoids hammering the routing server while dragging.
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => {
+    if (waypoints.length < 2) {
+      setRoute(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await fetchRoute(waypoints, profile, controller.signal);
+        setRoute(result);
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          setRoute(null);
+          setError((err as Error).message);
+        }
+      } finally {
+        setLoading(false);
+      }
+    }, 350);
+
+    return () => {
+      controller.abort();
+      clearTimeout(debounceRef.current);
+    };
+  }, [waypoints, profile]);
+
   return (
     <div className="app">
       <header className="topbar">
@@ -9,7 +70,24 @@ export default function App() {
           Motorbike <span className="tag">Routenplaner</span>
         </h1>
       </header>
-      <MapView />
+
+      <MapView
+        waypoints={waypoints}
+        route={route}
+        onAddWaypoint={addWaypoint}
+        onMoveWaypoint={moveWaypoint}
+      />
+
+      <RoutePanel
+        waypoints={waypoints}
+        profile={profile}
+        route={route}
+        loading={loading}
+        error={error}
+        onProfileChange={setProfile}
+        onRemoveWaypoint={removeWaypoint}
+        onClear={clearAll}
+      />
     </div>
   );
 }
