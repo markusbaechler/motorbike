@@ -213,9 +213,10 @@ export default function MapView({
 
       const el = document.createElement("div");
       if (isOvernight) {
-        // Highlight overnight stops with a bed marker.
+        // Highlight overnight stops with a bed marker (inline SVG, not emoji).
         el.className = "wp-marker bed";
-        el.textContent = "🛏";
+        el.innerHTML =
+          '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v12"/><path d="M21 19v-5a3 3 0 0 0-3-3H8a3 3 0 0 0-3 3"/><path d="M3 14h18"/></svg>';
       } else {
         el.className = "wp-marker";
         el.style.background = markerColor(index, waypoints.length);

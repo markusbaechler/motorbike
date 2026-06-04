@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import Icon from "./Icon";
 import { searchPlaces, type GeoResult } from "../lib/geocoding";
 
 interface Props {
@@ -51,7 +52,7 @@ export default function SearchBox({ onSelect }: Props) {
   return (
     <div className="searchbox">
       <div className="searchbox-input">
-        <span className="search-icon">⌕</span>
+        <Icon name="search" size={20} className="search-icon" />
         <input
           type="text"
           value={query}

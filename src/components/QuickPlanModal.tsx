@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Icon from "./Icon";
 import PlaceInput from "./PlaceInput";
 import { searchPlaces, type GeoResult } from "../lib/geocoding";
 import type { RouteProfile } from "../types";
@@ -205,9 +206,9 @@ export default function QuickPlanModal({
         onPick={(r) => patchStop(di, slot.id, { value: r.name, picked: r })}
       />
       <span className="qp-actions">
-        <button className="wp-btn" onClick={() => moveStop(di, slot.id, -1)} aria-label="Nach oben">↑</button>
-        <button className="wp-btn" onClick={() => moveStop(di, slot.id, 1)} aria-label="Nach unten">↓</button>
-        <button className="wp-btn remove" disabled={!canRemove} onClick={() => removeStop(di, slot.id)} aria-label="Entfernen">✕</button>
+        <button className="wp-btn" onClick={() => moveStop(di, slot.id, -1)} aria-label="Nach oben"><Icon name="up" size={16} /></button>
+        <button className="wp-btn" onClick={() => moveStop(di, slot.id, 1)} aria-label="Nach unten"><Icon name="down" size={16} /></button>
+        <button className="wp-btn remove" disabled={!canRemove} onClick={() => removeStop(di, slot.id)} aria-label="Entfernen"><Icon name="x" size={16} /></button>
       </span>
     </div>
   );
@@ -217,7 +218,7 @@ export default function QuickPlanModal({
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <h2>{initialStops ? "Route bearbeiten" : "Tour schnell planen"}</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Schließen">✕</button>
+          <button className="modal-close" onClick={onClose} aria-label="Schließen"><Icon name="x" size={18} /></button>
         </div>
 
         <div className="modal-body">
@@ -246,7 +247,7 @@ export default function QuickPlanModal({
                     onClick={() => toggleDay(day.id, isLastDay)}
                     aria-expanded={open}
                   >
-                    <span className="day-chevron">{open ? "▾" : "▸"}</span>
+                    <span className="day-chevron" data-open={open}><Icon name="chevron" size={16} /></span>
                     <span className="qp-day-title">Tag {di + 1}</span>
                     {!open && <span className="qp-day-summary">→ {destName}</span>}
                   </button>
@@ -274,7 +275,7 @@ export default function QuickPlanModal({
                 ) : (
                   <div className="qp-row locked">
                     <span className="wp-dot" data-role="start">1</span>
-                    <span className="qp-locked">🛏 ab {startName}</span>
+                    <span className="qp-locked"><Icon name="bed" size={14} /> ab {startName}</span>
                   </div>
                 )}
 
@@ -295,7 +296,7 @@ export default function QuickPlanModal({
                 })}
 
                 <button className="add-stop-btn" onClick={() => addStop(di)}>
-                  + Zwischenziel
+                  <Icon name="plus" size={15} /> Zwischenziel
                 </button>
                 </>
                 )}
@@ -303,7 +304,7 @@ export default function QuickPlanModal({
             );
           })}
 
-          <button className="add-day-btn" onClick={addDay}>+ Tag hinzufügen</button>
+          <button className="add-day-btn" onClick={addDay}><Icon name="plus" size={16} /> Tag hinzufügen</button>
 
           <div className="qp-profile">
             <span className="default-label">Profil (alle Etappen):</span>

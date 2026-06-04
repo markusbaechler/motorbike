@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import Icon from "./Icon";
 import ElevationChart from "./ElevationChart";
 import { analyse, type RouteAnalysis } from "../lib/analysis";
 import { buildGpx, downloadGpx } from "../lib/gpx";
@@ -97,7 +98,9 @@ export default function RouteModal({ waypoints, route, onClose }: Props) {
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <h2>Routen-Details</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Schließen">✕</button>
+          <button className="modal-close" onClick={onClose} aria-label="Schließen">
+            <Icon name="x" size={18} />
+          </button>
         </div>
 
         <div className="modal-body">
@@ -204,7 +207,7 @@ export default function RouteModal({ waypoints, route, onClose }: Props) {
           <section className="modal-section">
             <h3>Export fürs Navi (GPX)</h3>
             <button className="export-btn primary" onClick={exportWhole}>
-              ⬇ Gesamte Tour (GPX)
+              <Icon name="download" size={17} /> Gesamte Tour (GPX)
             </button>
             {days.length > 1 && (
               <div className="export-days">

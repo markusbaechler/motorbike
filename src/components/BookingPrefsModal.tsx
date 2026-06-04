@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Icon from "./Icon";
 import type { BookingPrefs } from "../lib/storage";
 
 interface Props {
@@ -22,9 +23,9 @@ function Stepper({
     <div className="stepper-row">
       <span className="stepper-label">{label}</span>
       <div className="stepper">
-        <button className="wp-btn" onClick={() => onChange(Math.max(min, value - 1))}>−</button>
+        <button className="wp-btn" onClick={() => onChange(Math.max(min, value - 1))} aria-label="weniger"><Icon name="minus" size={16} /></button>
         <span className="stepper-val">{value}</span>
-        <button className="wp-btn" onClick={() => onChange(value + 1)}>+</button>
+        <button className="wp-btn" onClick={() => onChange(value + 1)} aria-label="mehr"><Icon name="plus" size={16} /></button>
       </div>
     </div>
   );
@@ -46,7 +47,7 @@ export default function BookingPrefsModal({ prefs, onSave, onClose }: Props) {
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <h2>Reisende & Zimmer</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Schließen">✕</button>
+          <button className="modal-close" onClick={onClose} aria-label="Schließen"><Icon name="x" size={18} /></button>
         </div>
         <div className="modal-body">
           <p className="modal-note" style={{ marginTop: 0 }}>

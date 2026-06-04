@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Icon from "./Icon";
 import { computeDays, dayStats, dayNumbers } from "../lib/days";
 import type { BookingPrefs } from "../lib/storage";
 import type { RouteProfile, RouteResult, Waypoint } from "../types";
@@ -125,7 +126,11 @@ export default function RoutePanel({
           </span>
           <span className="wp-name">
             {placeName(wp)}
-            {wp.dayEnd && <span className="bed-tag" title="Übernachtung">🛏</span>}
+            {wp.dayEnd && (
+              <span className="bed-tag" title="Übernachtung">
+                <Icon name="bed" size={13} />
+              </span>
+            )}
           </span>
           <span className="wp-actions">
             {i > 0 && !isLast && (
@@ -135,7 +140,7 @@ export default function RoutePanel({
                 aria-label="Übernachtung / Tagesende"
                 title="Hier übernachten (Tag beenden)"
               >
-                🛏
+                <Icon name="bed" size={16} />
               </button>
             )}
             <button
@@ -144,7 +149,7 @@ export default function RoutePanel({
               onClick={() => onReorderWaypoint(wp.id, -1)}
               aria-label="Nach oben"
             >
-              ↑
+              <Icon name="up" size={16} />
             </button>
             <button
               className="wp-btn"
@@ -152,14 +157,14 @@ export default function RoutePanel({
               onClick={() => onReorderWaypoint(wp.id, 1)}
               aria-label="Nach unten"
             >
-              ↓
+              <Icon name="down" size={16} />
             </button>
             <button
               className="wp-btn remove"
               onClick={() => onRemoveWaypoint(wp.id)}
               aria-label="Entfernen"
             >
-              ✕
+              <Icon name="x" size={16} />
             </button>
           </span>
         </div>
@@ -171,10 +176,10 @@ export default function RoutePanel({
     <div className="panel">
       <div className="panel-row top">
         <button className="quickplan-btn" onClick={onOpenQuickPlan}>
-          ⚡ Schnell planen
+          <Icon name="zap" size={16} /> Schnell planen
         </button>
         <button className="quickplan-btn secondary" onClick={onOpenRoutes}>
-          📂 Routen
+          <Icon name="folder" size={16} /> Routen
         </button>
         <span className="default-label">Neue Etappe:</span>
         <ProfileToggle value={defaultProfile} onChange={onDefaultProfileChange} />
@@ -204,7 +209,7 @@ export default function RoutePanel({
             <span className="dot">·</span>
             <strong>{formatDuration(route.durationMin)}</strong>
             <button className="details-btn" onClick={onOpenDetails}>
-              📊 Details &amp; Export
+              <Icon name="chart" size={15} /> Details
             </button>
           </span>
         )}
@@ -213,7 +218,7 @@ export default function RoutePanel({
       {days.length > 0 && (
         <div className="booking-row">
           <span className="booking-summary">
-            🏨 {bookingPrefs.adults} Erw.
+            <Icon name="bed" size={15} /> {bookingPrefs.adults} Erw.
             {bookingPrefs.children > 0 ? `, ${bookingPrefs.children} Kinder` : ""} ·{" "}
             {bookingPrefs.rooms} Zimmer
           </span>
@@ -242,7 +247,9 @@ export default function RoutePanel({
                 onClick={() => toggleDay(span.day)}
                 aria-expanded={open}
               >
-                <span className="day-chevron">{open ? "▾" : "▸"}</span>
+                <span className="day-chevron" data-open={open}>
+                  <Icon name="chevron" size={16} />
+                </span>
                 <span className="day-title">
                   Tag {span.day}
                   {overnight.dayName ? `: ${overnight.dayName}` : ""}
@@ -254,7 +261,7 @@ export default function RoutePanel({
                   </span>
                 )}
                 <span className="day-overnight">
-                  {isFinalDay ? "🏁 " : "🛏 "}
+                  <Icon name={isFinalDay ? "flag" : "bed"} size={13} />
                   {placeName(overnight)}
                 </span>
               </button>
@@ -278,7 +285,7 @@ export default function RoutePanel({
                     onClick={() => onOpenHotel(placeName(overnight), overnight.dayDate)}
                     title="Hotels an diesem Übernachtungsort suchen"
                   >
-                    🏨 Hotels
+                    <Icon name="bed" size={15} /> Hotels
                   </button>
                 </div>
               )}
@@ -307,7 +314,7 @@ export default function RoutePanel({
 
       {waypoints.length >= 2 && !pendingDay && (
         <button className="add-day-btn" onClick={onAddDay}>
-          + Tag hinzufügen
+          <Icon name="plus" size={16} /> Tag hinzufügen
         </button>
       )}
 

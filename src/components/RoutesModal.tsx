@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import Icon from "./Icon";
 import {
   deleteRoute,
   exportRouteFile,
@@ -75,7 +76,9 @@ export default function RoutesModal({ currentWaypoints, onLoad, onClose }: Props
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <h2>Meine Routen</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Schließen">✕</button>
+          <button className="modal-close" onClick={onClose} aria-label="Schließen">
+            <Icon name="x" size={18} />
+          </button>
         </div>
 
         <div className="modal-body">
@@ -92,7 +95,7 @@ export default function RoutesModal({ currentWaypoints, onLoad, onClose }: Props
                 disabled={!canSave}
               />
               <button className="export-btn primary" disabled={!canSave} onClick={doSave}>
-                💾 Speichern
+                <Icon name="save" size={17} /> Speichern
               </button>
             </div>
             {!canSave && (
@@ -118,9 +121,15 @@ export default function RoutesModal({ currentWaypoints, onLoad, onClose }: Props
                       <button className="export-btn" onClick={() => { onLoad(r.waypoints); onClose(); }}>
                         Laden
                       </button>
-                      <button className="wp-btn" onClick={() => doRename(r)} aria-label="Umbenennen">✏</button>
-                      <button className="wp-btn" onClick={() => exportRouteFile(r.name, r.waypoints)} aria-label="Als Datei">⬇</button>
-                      <button className="wp-btn remove" onClick={() => doDelete(r)} aria-label="Löschen">🗑</button>
+                      <button className="wp-btn" onClick={() => doRename(r)} aria-label="Umbenennen">
+                        <Icon name="pencil" size={15} />
+                      </button>
+                      <button className="wp-btn" onClick={() => exportRouteFile(r.name, r.waypoints)} aria-label="Als Datei">
+                        <Icon name="download" size={15} />
+                      </button>
+                      <button className="wp-btn remove" onClick={() => doDelete(r)} aria-label="Löschen">
+                        <Icon name="trash" size={15} />
+                      </button>
                     </div>
                   </li>
                 ))}
