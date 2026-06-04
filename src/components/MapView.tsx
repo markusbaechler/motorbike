@@ -77,7 +77,17 @@ export default function MapView({
         type: "line",
         source: "route",
         layout: { "line-join": "round", "line-cap": "round" },
-        paint: { "line-color": "#f97316", "line-width": 5 },
+        paint: {
+          // Colour each leg by its profile: curvy = orange, fast = blue.
+          "line-color": [
+            "match",
+            ["get", "profile"],
+            "car-fast",
+            "#3b82f6",
+            /* car-eco / default */ "#f97316",
+          ],
+          "line-width": 5,
+        },
       });
       loadedRef.current = true;
     });

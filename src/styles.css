@@ -117,20 +117,42 @@ body,
   flex-wrap: wrap;
 }
 
-.profile-btn {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text);
-  border: 1px solid transparent;
-  border-radius: 999px;
-  padding: 8px 16px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
+.default-label {
+  font-size: 0.85rem;
+  opacity: 0.75;
 }
 
-.profile-btn.active {
-  background: var(--accent);
-  color: #07263a;
+/* Segmented profile toggle (Kurvig / Schnell) */
+.toggle {
+  display: inline-flex;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.toggle-btn {
+  background: transparent;
+  color: var(--text);
+  border: none;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.toggle-btn.active {
+  opacity: 1;
+}
+
+.toggle-btn.car-eco.active {
+  background: #f97316;
+  color: #2a1206;
+}
+
+.toggle-btn.car-fast.active {
+  background: #3b82f6;
+  color: #051429;
 }
 
 .clear-btn {
@@ -178,11 +200,36 @@ body,
   gap: 6px;
 }
 
-.wp-list li {
+.wp-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wp-row {
   display: flex;
   align-items: center;
   gap: 10px;
   font-size: 0.85rem;
+}
+
+/* Segment (leg) row between two waypoints */
+.segment {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 8px;
+  font-size: 0.8rem;
+}
+
+.segment-arrow {
+  opacity: 0.65;
+  flex: 0 0 auto;
+}
+
+.segment-stats {
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
 }
 
 .wp-dot {

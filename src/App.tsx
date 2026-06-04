@@ -9,13 +9,17 @@ const makeId = () => `wp-${nextId++}`;
 
 export default function App() {
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
-  const [profile, setProfile] = useState<RouteProfile>("car-eco");
+  // Profile assigned to a newly added leg; per-leg overrides happen in the list.
+  const [defaultProfile, setDefaultProfile] = useState<RouteProfile>("car-eco");
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const addWaypoint = (lng: number, lat: number) =>
-    setWaypoints((wps) => [...wps, { id: makeId(), lng, lat }]);
+    setWaypoints((wps) => [
+      ...wps,
+      { id: makeId(), lng, lat, legProfile: defaultProfile },
+    ]);
 
   const moveWaypoint = (id: string, lng: number, lat: number) =>
     setWaypoints((wps) =>
@@ -25,10 +29,15 @@ export default function App() {
   const removeWaypoint = (id: string) =>
     setWaypoints((wps) => wps.filter((w) => w.id !== id));
 
+  const setLegProfile = (id: string, profile: RouteProfile) =>
+    setWaypoints((wps) =>
+      wps.map((w) => (w.id === id ? { ...w, legProfile: profile } : w)),
+    );
+
   const clearAll = () => setWaypoints([]);
 
-  // Recompute the route whenever the waypoints or profile change.
-  // A short debounce avoids hammering the routing server while dragging.
+  // Recompute the route whenever the waypoints change (coords or per-leg
+  // profile). A short debounce avoids hammering the server while dragging.
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => {
     if (waypoints.length < 2) {
@@ -44,7 +53,7 @@ export default function App() {
       setLoading(true);
       setError(null);
       try {
-        const result = await fetchRoute(waypoints, profile, controller.signal);
+        const result = await fetchRoute(waypoints, controller.signal);
         setRoute(result);
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
@@ -60,7 +69,7 @@ export default function App() {
       controller.abort();
       clearTimeout(debounceRef.current);
     };
-  }, [waypoints, profile]);
+  }, [waypoints]);
 
   return (
     <div className="app">
@@ -80,11 +89,12 @@ export default function App() {
 
       <RoutePanel
         waypoints={waypoints}
-        profile={profile}
+        defaultProfile={defaultProfile}
         route={route}
         loading={loading}
         error={error}
-        onProfileChange={setProfile}
+        onDefaultProfileChange={setDefaultProfile}
+        onSetLegProfile={setLegProfile}
         onRemoveWaypoint={removeWaypoint}
         onClear={clearAll}
       />

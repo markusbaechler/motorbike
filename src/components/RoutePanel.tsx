@@ -2,19 +2,20 @@ import type { RouteProfile, RouteResult, Waypoint } from "../types";
 
 interface Props {
   waypoints: Waypoint[];
-  profile: RouteProfile;
+  defaultProfile: RouteProfile;
   route: RouteResult | null;
   loading: boolean;
   error: string | null;
-  onProfileChange: (p: RouteProfile) => void;
+  onDefaultProfileChange: (p: RouteProfile) => void;
+  onSetLegProfile: (waypointId: string, p: RouteProfile) => void;
   onRemoveWaypoint: (id: string) => void;
   onClear: () => void;
 }
 
-const PROFILES: { id: RouteProfile; label: string; hint: string }[] = [
-  { id: "car-eco", label: "Kurvig", hint: "bevorzugt kleine Land- & Nebenstraßen" },
-  { id: "car-fast", label: "Schnell", hint: "direkte Strecke" },
-];
+const PROFILE_LABEL: Record<RouteProfile, string> = {
+  "car-eco": "Kurvig",
+  "car-fast": "Schnell",
+};
 
 function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
@@ -22,29 +23,44 @@ function formatDuration(minutes: number): string {
   return h > 0 ? `${h} h ${m} min` : `${m} min`;
 }
 
+function ProfileToggle({
+  value,
+  onChange,
+}: {
+  value: RouteProfile;
+  onChange: (p: RouteProfile) => void;
+}) {
+  return (
+    <span className="toggle">
+      {(["car-eco", "car-fast"] as RouteProfile[]).map((p) => (
+        <button
+          key={p}
+          className={`toggle-btn ${value === p ? "active" : ""} ${p}`}
+          onClick={() => onChange(p)}
+        >
+          {PROFILE_LABEL[p]}
+        </button>
+      ))}
+    </span>
+  );
+}
+
 export default function RoutePanel({
   waypoints,
-  profile,
+  defaultProfile,
   route,
   loading,
   error,
-  onProfileChange,
+  onDefaultProfileChange,
+  onSetLegProfile,
   onRemoveWaypoint,
   onClear,
 }: Props) {
   return (
     <div className="panel">
-      <div className="panel-row profiles">
-        {PROFILES.map((p) => (
-          <button
-            key={p.id}
-            className={`profile-btn ${profile === p.id ? "active" : ""}`}
-            onClick={() => onProfileChange(p.id)}
-            title={p.hint}
-          >
-            {p.label}
-          </button>
-        ))}
+      <div className="panel-row top">
+        <span className="default-label">Neue Etappe:</span>
+        <ProfileToggle value={defaultProfile} onChange={onDefaultProfileChange} />
         {waypoints.length > 0 && (
           <button className="clear-btn" onClick={onClear}>
             Zurücksetzen
@@ -73,25 +89,55 @@ export default function RoutePanel({
       </div>
 
       {waypoints.length > 0 && (
-        <ol className="wp-list">
-          {waypoints.map((wp, i) => (
-            <li key={wp.id}>
-              <span className="wp-dot" data-role={i === 0 ? "start" : i === waypoints.length - 1 ? "end" : "via"}>
-                {i + 1}
-              </span>
-              <span className="wp-coords">
-                {wp.lat.toFixed(4)}, {wp.lng.toFixed(4)}
-              </span>
-              <button
-                className="wp-remove"
-                onClick={() => onRemoveWaypoint(wp.id)}
-                aria-label="Wegpunkt entfernen"
-              >
-                ✕
-              </button>
-            </li>
-          ))}
-        </ol>
+        <ul className="wp-list">
+          {waypoints.map((wp, i) => {
+            const leg = i > 0 ? route?.legs[i - 1] : undefined;
+            return (
+              <li key={wp.id} className="wp-item">
+                {/* Segment row: profile for the leg arriving at this waypoint */}
+                {i > 0 && (
+                  <div className="segment">
+                    <span className="segment-arrow">↳ Etappe {i}→{i + 1}</span>
+                    <ProfileToggle
+                      value={wp.legProfile}
+                      onChange={(p) => onSetLegProfile(wp.id, p)}
+                    />
+                    {leg && (
+                      <span className="segment-stats">
+                        {leg.distanceKm.toFixed(0)} km
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                <div className="wp-row">
+                  <span
+                    className="wp-dot"
+                    data-role={
+                      i === 0
+                        ? "start"
+                        : i === waypoints.length - 1
+                          ? "end"
+                          : "via"
+                    }
+                  >
+                    {i + 1}
+                  </span>
+                  <span className="wp-coords">
+                    {wp.lat.toFixed(4)}, {wp.lng.toFixed(4)}
+                  </span>
+                  <button
+                    className="wp-remove"
+                    onClick={() => onRemoveWaypoint(wp.id)}
+                    aria-label="Wegpunkt entfernen"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       )}
     </div>
   );
