@@ -93,6 +93,8 @@ export default function MapView({
             ["get", "profile"],
             "schnell",
             "#3b82f6",
+            "kurvig_plus",
+            "#db2777",
             /* kurvig / default */ "#f97316",
           ],
           "line-width": 5,

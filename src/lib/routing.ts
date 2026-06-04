@@ -10,7 +10,8 @@ const BROUTER = "https://brouter.de";
 //              small, winding back-roads (scenic / curvy).
 //   schnell -> "car-fast": motorway-friendly, direct.
 const BROUTER_PROFILES: Record<RouteProfile, string[]> = {
-  kurvig: ["moped", "car-eco"],
+  kurvig: ["car-eco", "car-fast"],
+  kurvig_plus: ["moped", "car-eco"],
   schnell: ["car-fast", "car-eco"],
 };
 
@@ -18,7 +19,8 @@ const BROUTER_PROFILES: Record<RouteProfile, string[]> = {
 // profile in particular assumes very low speeds). We estimate the duration
 // from distance using a realistic average speed per mode instead.
 const AVG_SPEED_KMH: Record<RouteProfile, number> = {
-  kurvig: 50,
+  kurvig: 55,
+  kurvig_plus: 45,
   schnell: 90,
 };
 

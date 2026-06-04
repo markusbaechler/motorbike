@@ -2,7 +2,10 @@
 
 // Logical routing modes shown in the UI. Each maps to a concrete BRouter
 // profile in lib/routing.ts.
-export type RouteProfile = "kurvig" | "schnell";
+//   kurvig      -> scenic back-roads, reliable & contiguous (car-eco)
+//   kurvig_plus -> maximally twisty (moped), can detour in the high Alps
+//   schnell     -> motorway-friendly, direct (car-fast)
+export type RouteProfile = "kurvig" | "kurvig_plus" | "schnell";
 
 export interface Waypoint {
   id: string;

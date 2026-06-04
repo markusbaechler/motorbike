@@ -188,13 +188,13 @@ export default function QuickPlanModal({
           <div className="qp-profile">
             <span className="default-label">Profil (alle Etappen):</span>
             <span className="toggle">
-              {(["kurvig", "schnell"] as RouteProfile[]).map((p) => (
+              {(["kurvig", "kurvig_plus", "schnell"] as RouteProfile[]).map((p) => (
                 <button
                   key={p}
                   className={`toggle-btn ${profile === p ? "active" : ""} ${p}`}
                   onClick={() => chooseProfile(p)}
                 >
-                  {p === "kurvig" ? "Kurvig" : "Schnell"}
+                  {p === "kurvig" ? "Kurvig" : p === "kurvig_plus" ? "Kurvig+" : "Schnell"}
                 </button>
               ))}
             </span>

@@ -150,9 +150,18 @@ body,
   color: #2a1206;
 }
 
+.toggle-btn.kurvig_plus.active {
+  background: #db2777;
+  color: #2a0613;
+}
+
 .toggle-btn.schnell.active {
   background: #3b82f6;
   color: #051429;
+}
+
+.toggle-btn {
+  padding: 6px 10px;
 }
 
 .clear-btn {
