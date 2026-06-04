@@ -4,7 +4,10 @@ import RoutePanel from "./components/RoutePanel";
 import RouteModal from "./components/RouteModal";
 import QuickPlanModal, { type QuickStop } from "./components/QuickPlanModal";
 import RoutesModal from "./components/RoutesModal";
+import BookingPrefsModal from "./components/BookingPrefsModal";
 import SearchBox from "./components/SearchBox";
+import { getBookingPrefs, saveBookingPrefs, type BookingPrefs } from "./lib/storage";
+import { addDays, buildBookingUrl } from "./lib/booking";
 import { fetchRoute } from "./lib/routing";
 import type { GeoResult } from "./lib/geocoding";
 import type { RouteProfile, RouteResult, Waypoint } from "./types";
@@ -29,6 +32,19 @@ export default function App() {
   const [showDetails, setShowDetails] = useState(false);
   const [showQuickPlan, setShowQuickPlan] = useState(false);
   const [showRoutes, setShowRoutes] = useState(false);
+  const [showBookingPrefs, setShowBookingPrefs] = useState(false);
+  const [bookingPrefs, setBookingPrefsState] = useState<BookingPrefs>(() => getBookingPrefs());
+
+  const updateBookingPrefs = (p: BookingPrefs) => {
+    saveBookingPrefs(p);
+    setBookingPrefsState(p);
+  };
+
+  const openHotel = (place: string, checkin?: string) => {
+    const checkout = checkin ? addDays(checkin, 1) : undefined;
+    const url = buildBookingUrl(place, checkin, checkout, bookingPrefs);
+    window.open(url, "_blank", "noopener");
+  };
   // Bumped to ask the map to fit the whole route into view.
   const [fitSignal, setFitSignal] = useState(0);
   // True right after "+ Tag hinzufügen": the next added point starts a new day.
@@ -195,9 +211,12 @@ export default function App() {
         loading={loading}
         error={error}
         pendingDay={pendingDay}
+        bookingPrefs={bookingPrefs}
         onOpenDetails={() => setShowDetails(true)}
         onOpenQuickPlan={() => setShowQuickPlan(true)}
         onOpenRoutes={() => setShowRoutes(true)}
+        onOpenBookingPrefs={() => setShowBookingPrefs(true)}
+        onOpenHotel={openHotel}
         onDefaultProfileChange={setDefaultProfile}
         onSetLegProfile={setLegProfile}
         onToggleDayEnd={toggleDayEnd}
@@ -221,6 +240,14 @@ export default function App() {
           currentWaypoints={waypoints}
           onLoad={loadRoute}
           onClose={() => setShowRoutes(false)}
+        />
+      )}
+
+      {showBookingPrefs && (
+        <BookingPrefsModal
+          prefs={bookingPrefs}
+          onSave={updateBookingPrefs}
+          onClose={() => setShowBookingPrefs(false)}
         />
       )}
 

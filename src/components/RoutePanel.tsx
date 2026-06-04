@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { computeDays, dayStats, dayNumbers } from "../lib/days";
+import type { BookingPrefs } from "../lib/storage";
 import type { RouteProfile, RouteResult, Waypoint } from "../types";
 
 interface Props {
@@ -9,9 +10,12 @@ interface Props {
   loading: boolean;
   error: string | null;
   pendingDay: boolean;
+  bookingPrefs: BookingPrefs;
   onOpenDetails: () => void;
   onOpenQuickPlan: () => void;
   onOpenRoutes: () => void;
+  onOpenBookingPrefs: () => void;
+  onOpenHotel: (place: string, checkin?: string) => void;
   onDefaultProfileChange: (p: RouteProfile) => void;
   onSetLegProfile: (waypointId: string, p: RouteProfile) => void;
   onToggleDayEnd: (id: string) => void;
@@ -67,9 +71,12 @@ export default function RoutePanel({
   loading,
   error,
   pendingDay,
+  bookingPrefs,
   onOpenDetails,
   onOpenQuickPlan,
   onOpenRoutes,
+  onOpenBookingPrefs,
+  onOpenHotel,
   onDefaultProfileChange,
   onSetLegProfile,
   onToggleDayEnd,
@@ -203,6 +210,19 @@ export default function RoutePanel({
         )}
       </div>
 
+      {days.length > 0 && (
+        <div className="booking-row">
+          <span className="booking-summary">
+            🏨 {bookingPrefs.adults} Erw.
+            {bookingPrefs.children > 0 ? `, ${bookingPrefs.children} Kinder` : ""} ·{" "}
+            {bookingPrefs.rooms} Zimmer
+          </span>
+          <button className="booking-edit" onClick={onOpenBookingPrefs}>
+            ändern
+          </button>
+        </div>
+      )}
+
       {days.length > 0 ? (
         days.map((span) => {
           const stats = dayStats(span, route);
@@ -253,6 +273,13 @@ export default function RoutePanel({
                     value={overnight.dayDate ?? ""}
                     onChange={(e) => onSetDayMeta(overnight.id, { dayDate: e.target.value })}
                   />
+                  <button
+                    className="hotel-btn"
+                    onClick={() => onOpenHotel(placeName(overnight), overnight.dayDate)}
+                    title="Hotels an diesem Übernachtungsort suchen"
+                  >
+                    🏨 Hotels
+                  </button>
                 </div>
               )}
               {open && <ul className="wp-list">{indices.map(renderWaypoint)}</ul>}

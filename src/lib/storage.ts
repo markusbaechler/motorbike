@@ -83,3 +83,28 @@ export function parseRouteFile(text: string): { name: string; waypoints: Waypoin
   }
   return { name: typeof d.name === "string" ? d.name : "Importierte Route", waypoints: d.waypoints };
 }
+
+// --- Booking / accommodation preferences (once per device) ---
+
+export interface BookingPrefs {
+  adults: number;
+  children: number;
+  rooms: number;
+  affiliateId?: string;
+}
+
+const BOOKING_KEY = "motorbike.booking.v1";
+const DEFAULT_PREFS: BookingPrefs = { adults: 2, children: 0, rooms: 1 };
+
+export function getBookingPrefs(): BookingPrefs {
+  try {
+    return { ...DEFAULT_PREFS, ...JSON.parse(localStorage.getItem(BOOKING_KEY) ?? "{}") };
+  } catch {
+    return { ...DEFAULT_PREFS };
+  }
+}
+
+export function saveBookingPrefs(prefs: BookingPrefs): void {
+  localStorage.setItem(BOOKING_KEY, JSON.stringify(prefs));
+}
+
