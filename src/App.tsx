@@ -23,12 +23,25 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [focus, setFocus] = useState<FocusPoint | null>(null);
+  // True right after "+ Tag hinzufügen": the next added point starts a new day.
+  const [pendingDay, setPendingDay] = useState(false);
 
-  const addWaypoint = (lng: number, lat: number, name?: string) =>
+  const addWaypoint = (lng: number, lat: number, name?: string) => {
+    setPendingDay(false);
     setWaypoints((wps) => [
       ...wps,
       { id: makeId(), lng, lat, name, legProfile: defaultProfile },
     ]);
+  };
+
+  // End the current day at the last waypoint (overnight) so the next point
+  // added begins a new day.
+  const addDay = () =>
+    setWaypoints((wps) => {
+      if (wps.length < 2) return wps;
+      setPendingDay(true);
+      return wps.map((w, i) => (i === wps.length - 1 ? { ...w, dayEnd: true } : w));
+    });
 
   // Insert a shaping point into a specific leg (legIndex = index of the leg
   // being reshaped). The new point keeps that leg's profile.
@@ -74,7 +87,10 @@ export default function App() {
       return copy;
     });
 
-  const clearAll = () => setWaypoints([]);
+  const clearAll = () => {
+    setPendingDay(false);
+    setWaypoints([]);
+  };
 
   const onSearchSelect = (r: GeoResult) => {
     addWaypoint(r.lng, r.lat, r.name);
@@ -142,9 +158,11 @@ export default function App() {
         route={route}
         loading={loading}
         error={error}
+        pendingDay={pendingDay}
         onDefaultProfileChange={setDefaultProfile}
         onSetLegProfile={setLegProfile}
         onToggleDayEnd={toggleDayEnd}
+        onAddDay={addDay}
         onRemoveWaypoint={removeWaypoint}
         onReorderWaypoint={reorderWaypoint}
         onClear={clearAll}

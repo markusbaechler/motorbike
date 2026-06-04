@@ -7,9 +7,11 @@ interface Props {
   route: RouteResult | null;
   loading: boolean;
   error: string | null;
+  pendingDay: boolean;
   onDefaultProfileChange: (p: RouteProfile) => void;
   onSetLegProfile: (waypointId: string, p: RouteProfile) => void;
   onToggleDayEnd: (id: string) => void;
+  onAddDay: () => void;
   onRemoveWaypoint: (id: string) => void;
   onReorderWaypoint: (id: string, direction: -1 | 1) => void;
   onClear: () => void;
@@ -58,9 +60,11 @@ export default function RoutePanel({
   route,
   loading,
   error,
+  pendingDay,
   onDefaultProfileChange,
   onSetLegProfile,
   onToggleDayEnd,
+  onAddDay,
   onRemoveWaypoint,
   onReorderWaypoint,
   onClear,
@@ -204,10 +208,30 @@ export default function RoutePanel({
         )
       )}
 
+      {pendingDay && (
+        <div className="day-group pending">
+          <div className="day-header">
+            <span className="day-title">Tag {days.length + 1}</span>
+            <span className="day-overnight">noch offen</span>
+          </div>
+          <p className="pending-hint">
+            Ort oben suchen oder auf die Karte tippen – er wird zum Ziel von Tag{" "}
+            {days.length + 1}.
+          </p>
+        </div>
+      )}
+
+      {waypoints.length >= 2 && !pendingDay && (
+        <button className="add-day-btn" onClick={onAddDay}>
+          + Tag hinzufügen
+        </button>
+      )}
+
       {waypoints.length >= 2 && (
         <p className="edit-hint">
-          Tipp: 🛏 markiert ein Tagesende (Übernachtung). Streckenlinie ziehen
-          fügt einen Zwischenpunkt ein.
+          „+ Tag hinzufügen" beendet den Tag am letzten Punkt (Übernachtung).
+          Alternativ 🛏 an einem Stopp antippen. Streckenlinie ziehen fügt einen
+          Zwischenpunkt ein.
         </p>
       )}
     </div>
