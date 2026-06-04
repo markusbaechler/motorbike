@@ -1,12 +1,18 @@
 import { bearing, bearingDelta, haversine, type Coord } from "./geo";
-import type { RouteResult } from "../types";
 
 export interface ElevationPoint {
   km: number;
   ele: number;
 }
 
+export interface RoadKm {
+  autobahn: number;
+  schnell: number;
+  neben: number;
+}
+
 export interface RouteAnalysis {
+  distanceKm: number;
   hasElevation: boolean;
   profile: ElevationPoint[];
   ascentM: number;
@@ -14,18 +20,22 @@ export interface RouteAnalysis {
   minEle: number;
   maxEle: number;
   cornersPerKm: number;
+  passes: number;
+  hasRoadData: boolean;
+  roadKm: RoadKm;
   scores: {
-    curves: number; // 0–10
-    climb: number; // 0–10
+    attractiveness: number; // 0–10
+    bergigkeit: number; // 0–10
     overall: number; // 0–10
   };
 }
 
-// Flatten all leg geometries into one ordered coordinate list, dropping
-// duplicated join points between consecutive legs.
-function collectCoords(route: RouteResult): Coord[] {
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+const round1 = (v: number) => Math.round(v * 10) / 10;
+
+function collectCoords(features: GeoJSON.Feature[]): Coord[] {
   const coords: Coord[] = [];
-  for (const f of route.geojson.features) {
+  for (const f of features) {
     const g = f.geometry;
     if (g.type !== "LineString") continue;
     for (const c of g.coordinates) {
@@ -37,8 +47,6 @@ function collectCoords(route: RouteResult): Coord[] {
   return coords;
 }
 
-// Keep only points at least `minGap` metres apart, to reduce GPS jitter
-// before measuring curvature.
 function thin(coords: Coord[], minGap: number): Coord[] {
   if (coords.length === 0) return coords;
   const out: Coord[] = [coords[0]];
@@ -48,12 +56,69 @@ function thin(coords: Coord[], minGap: number): Coord[] {
   return out;
 }
 
-const clamp10 = (v: number) => Math.max(0, Math.min(10, v));
+// Distance per road category, parsed from BRouter's per-segment "messages"
+// table (columns include Distance and WayTags like "highway=secondary …").
+function roadBreakdown(features: GeoJSON.Feature[]): { roadKm: RoadKm; hasData: boolean } {
+  let autobahn = 0;
+  let schnell = 0;
+  let neben = 0;
+  let hasData = false;
 
-export function analyseRoute(route: RouteResult): RouteAnalysis {
-  const coords = collectCoords(route);
+  for (const f of features) {
+    const msgs = (f.properties as { messages?: string[][] } | undefined)?.messages;
+    if (!Array.isArray(msgs) || msgs.length < 2) continue;
+    const header = msgs[0];
+    const di = header.indexOf("Distance");
+    const wi = header.indexOf("WayTags");
+    if (di < 0 || wi < 0) continue;
+    hasData = true;
+    for (let r = 1; r < msgs.length; r++) {
+      const row = msgs[r];
+      const dist = Number(row[di]) || 0;
+      const m = String(row[wi] ?? "").match(/highway=([^\s]+)/);
+      const hw = m ? m[1] : "";
+      if (hw === "motorway" || hw === "motorway_link") autobahn += dist;
+      else if (hw === "trunk" || hw === "trunk_link") schnell += dist;
+      else neben += dist;
+    }
+  }
 
-  // Elevation profile + ascent/descent
+  return {
+    roadKm: { autobahn: autobahn / 1000, schnell: schnell / 1000, neben: neben / 1000 },
+    hasData,
+  };
+}
+
+// Count mountain passes as prominent high points in the elevation profile
+// (a climb of >=thresh followed by a descent of >=thresh).
+function countPasses(eles: number[], thresh = 140): number {
+  if (eles.length < 3) return 0;
+  let passes = 0;
+  let state: "climb" | "descend" = "descend";
+  let valley = eles[0];
+  let peak = eles[0];
+  for (const e of eles) {
+    if (state === "climb") {
+      if (e > peak) peak = e;
+      if (peak - e >= thresh) {
+        if (peak - valley >= thresh) passes++;
+        state = "descend";
+        valley = e;
+      }
+    } else {
+      if (e < valley) valley = e;
+      if (e - valley >= thresh) {
+        state = "climb";
+        peak = e;
+      }
+    }
+  }
+  return passes;
+}
+
+export function analyse(features: GeoJSON.Feature[]): RouteAnalysis {
+  const coords = collectCoords(features);
+
   const profile: ElevationPoint[] = [];
   let cumM = 0;
   let ascentM = 0;
@@ -72,7 +137,7 @@ export function analyseRoute(route: RouteResult): RouteAnalysis {
       maxEle = Math.max(maxEle, ele);
       if (prevEle !== null) {
         const d = ele - prevEle;
-        if (d > 1) ascentM += d; // ignore <1 m noise
+        if (d > 1) ascentM += d;
         else if (d < -1) descentM += -d;
       }
       prevEle = ele;
@@ -80,12 +145,10 @@ export function analyseRoute(route: RouteResult): RouteAnalysis {
     }
   }
 
-  const totalKm = cumM / 1000 || 1;
+  const distanceKm = cumM / 1000;
+  const totalKm = distanceKm || 1;
 
-  // Curviness: count *real* corners (sharp direction changes), not the dense
-  // micro-wiggles of the raw geometry. We resample to ~60 m spacing and count
-  // vertices whose turn angle exceeds 30° — i.e. bends/hairpins. Motorways and
-  // valley roads have ~0 corners/km; alpine pass roads have many.
+  // Curves: count real corners (>25° on a ~40 m resampled track).
   const resampled = thin(coords, 40);
   let cornerCount = 0;
   for (let i = 1; i < resampled.length - 1; i++) {
@@ -95,16 +158,28 @@ export function analyseRoute(route: RouteResult): RouteAnalysis {
   }
   const cornersPerKm = cornerCount / totalKm;
 
-  // Heuristic scores (0–10). Transparent, not an external rating.
-  // Curves: ~3 real corners/km is already a very twisty road -> 10.
-  const curves = clamp10((cornersPerKm / 3) * 10);
-  // Bergigkeit: combine how high it goes (pass altitude) with climb density.
-  const altScore = hasElevation ? clamp10((maxEle / 2400) * 10) : 0;
-  const ascentScore = clamp10((ascentM / totalKm / 18) * 10);
-  const climb = clamp10(Math.max(altScore, ascentScore) * 0.85 + Math.min(altScore, ascentScore) * 0.15);
-  const overall = Math.round((curves * 0.55 + climb * 0.45) * 10) / 10;
+  const { roadKm, hasData } = roadBreakdown(features);
+  const passes = hasElevation ? countPasses(profile.map((p) => p.ele)) : 0;
+
+  // --- Attractiveness (multi-signal, 0–10) ---
+  const curve01 = clamp(cornersPerKm / 3, 0, 1);
+  const scenicShare = hasData ? roadKm.neben / totalKm : 0;
+  const motorwayShare = hasData ? roadKm.autobahn / totalKm : 0;
+  const attract01 = hasData
+    ? clamp(0.5 * scenicShare + 0.5 * curve01 - 0.3 * motorwayShare, 0, 1)
+    : curve01;
+  const attractiveness = round1(attract01 * 10);
+
+  // --- Bergigkeit (0–10) ---
+  const alt01 = hasElevation ? clamp(maxEle / 2400, 0, 1) : 0;
+  const pass01 = clamp(passes / 4, 0, 1);
+  const ascent01 = clamp(ascentM / totalKm / 18, 0, 1);
+  const bergigkeit = round1(clamp(0.5 * alt01 + 0.3 * pass01 + 0.2 * ascent01, 0, 1) * 10);
+
+  const overall = round1(attractiveness * 0.6 + bergigkeit * 0.4);
 
   return {
+    distanceKm,
     hasElevation,
     profile,
     ascentM: Math.round(ascentM),
@@ -112,10 +187,9 @@ export function analyseRoute(route: RouteResult): RouteAnalysis {
     minEle: hasElevation ? Math.round(minEle) : 0,
     maxEle: hasElevation ? Math.round(maxEle) : 0,
     cornersPerKm: Math.round(cornersPerKm * 10) / 10,
-    scores: {
-      curves: Math.round(curves * 10) / 10,
-      climb: Math.round(climb * 10) / 10,
-      overall,
-    },
+    passes,
+    hasRoadData: hasData,
+    roadKm,
+    scores: { attractiveness, bergigkeit, overall },
   };
 }

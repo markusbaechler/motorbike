@@ -756,6 +756,69 @@ body,
   font-variant-numeric: tabular-nums;
 }
 
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.stat {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 10px 6px;
+  text-align: center;
+}
+
+.stat-val {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-lbl {
+  display: block;
+  font-size: 0.68rem;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
+.day-rating {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.day-rating:last-child {
+  border-bottom: none;
+}
+
+.day-rating-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.day-rating-dest {
+  flex: 1 1 auto;
+  opacity: 0.75;
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.day-rating-score {
+  color: var(--accent);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.day-rating-meta {
+  font-size: 0.76rem;
+  opacity: 0.65;
+  margin-top: 2px;
+}
+
 .export-btn {
   background: rgba(255, 255, 255, 0.08);
   color: var(--text);
