@@ -9,6 +9,7 @@ interface Props {
   waypoints: Waypoint[];
   route: RouteResult | null;
   focus: FocusPoint | null;
+  fitSignal: number;
   onAddWaypoint: (lng: number, lat: number) => void;
   onMoveWaypoint: (id: string, lng: number, lat: number) => void;
   onInsertWaypoint: (legIndex: number, lng: number, lat: number) => void;
@@ -26,6 +27,7 @@ export default function MapView({
   waypoints,
   route,
   focus,
+  fitSignal,
   onAddWaypoint,
   onMoveWaypoint,
   onInsertWaypoint,
@@ -43,6 +45,9 @@ export default function MapView({
   addRef.current = onAddWaypoint;
   moveRef.current = onMoveWaypoint;
   insertRef.current = onInsertWaypoint;
+
+  const waypointsRef = useRef(waypoints);
+  waypointsRef.current = waypoints;
 
   // --- Map initialisation (once) ---
   useEffect(() => {
@@ -232,6 +237,20 @@ export default function MapView({
     if (!map || !focus) return;
     map.flyTo({ center: [focus.lng, focus.lat], zoom: Math.max(map.getZoom(), 11) });
   }, [focus]);
+
+  // --- Fit the whole route into view (e.g. after quick-plan) ---
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || fitSignal === 0) return;
+    const wps = waypointsRef.current;
+    if (wps.length < 1) return;
+    const bounds = new maplibregl.LngLatBounds();
+    wps.forEach((w) => bounds.extend([w.lng, w.lat]));
+    map.fitBounds(bounds, {
+      padding: { top: 90, bottom: 320, left: 50, right: 50 },
+      maxZoom: 12,
+    });
+  }, [fitSignal]);
 
   return <div className="map" ref={containerRef} />;
 }

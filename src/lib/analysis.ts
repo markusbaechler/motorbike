@@ -86,23 +86,23 @@ export function analyseRoute(route: RouteResult): RouteAnalysis {
   // micro-wiggles of the raw geometry. We resample to ~60 m spacing and count
   // vertices whose turn angle exceeds 30° — i.e. bends/hairpins. Motorways and
   // valley roads have ~0 corners/km; alpine pass roads have many.
-  const resampled = thin(coords, 60);
+  const resampled = thin(coords, 40);
   let cornerCount = 0;
   for (let i = 1; i < resampled.length - 1; i++) {
     const b1 = bearing(resampled[i - 1], resampled[i]);
     const b2 = bearing(resampled[i], resampled[i + 1]);
-    if (bearingDelta(b1, b2) > 30) cornerCount++;
+    if (bearingDelta(b1, b2) > 25) cornerCount++;
   }
   const cornersPerKm = cornerCount / totalKm;
 
   // Heuristic scores (0–10). Transparent, not an external rating.
-  // Curves: ~4 real corners/km is already a very twisty road -> 10.
-  const curves = clamp10((cornersPerKm / 4) * 10);
+  // Curves: ~3 real corners/km is already a very twisty road -> 10.
+  const curves = clamp10((cornersPerKm / 3) * 10);
   // Bergigkeit: combine how high it goes (pass altitude) with climb density.
-  const altScore = hasElevation ? clamp10((maxEle / 2500) * 10) : 0;
-  const ascentScore = clamp10((ascentM / totalKm / 20) * 10);
-  const climb = clamp10((altScore + ascentScore) / 2);
-  const overall = Math.round((curves * 0.6 + climb * 0.4) * 10) / 10;
+  const altScore = hasElevation ? clamp10((maxEle / 2400) * 10) : 0;
+  const ascentScore = clamp10((ascentM / totalKm / 18) * 10);
+  const climb = clamp10(Math.max(altScore, ascentScore) * 0.85 + Math.min(altScore, ascentScore) * 0.15);
+  const overall = Math.round((curves * 0.55 + climb * 0.45) * 10) / 10;
 
   return {
     hasElevation,

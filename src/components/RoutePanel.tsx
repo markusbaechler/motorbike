@@ -10,6 +10,7 @@ interface Props {
   error: string | null;
   pendingDay: boolean;
   onOpenDetails: () => void;
+  onOpenQuickPlan: () => void;
   onDefaultProfileChange: (p: RouteProfile) => void;
   onSetLegProfile: (waypointId: string, p: RouteProfile) => void;
   onToggleDayEnd: (id: string) => void;
@@ -64,6 +65,7 @@ export default function RoutePanel({
   error,
   pendingDay,
   onOpenDetails,
+  onOpenQuickPlan,
   onDefaultProfileChange,
   onSetLegProfile,
   onToggleDayEnd,
@@ -153,6 +155,9 @@ export default function RoutePanel({
   return (
     <div className="panel">
       <div className="panel-row top">
+        <button className="quickplan-btn" onClick={onOpenQuickPlan}>
+          ⚡ Schnell planen
+        </button>
         <span className="default-label">Neue Etappe:</span>
         <ProfileToggle value={defaultProfile} onChange={onDefaultProfileChange} />
         {waypoints.length > 0 && (

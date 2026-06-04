@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import MapView from "./components/MapView";
 import RoutePanel from "./components/RoutePanel";
 import RouteModal from "./components/RouteModal";
+import QuickPlanModal from "./components/QuickPlanModal";
 import SearchBox from "./components/SearchBox";
 import { fetchRoute } from "./lib/routing";
 import type { GeoResult } from "./lib/geocoding";
@@ -25,6 +26,9 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [focus, setFocus] = useState<FocusPoint | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [showQuickPlan, setShowQuickPlan] = useState(false);
+  // Bumped to ask the map to fit the whole route into view.
+  const [fitSignal, setFitSignal] = useState(0);
   // True right after "+ Tag hinzufügen": the next added point starts a new day.
   const [pendingDay, setPendingDay] = useState(false);
 
@@ -99,6 +103,23 @@ export default function App() {
     setFocus({ lng: r.lng, lat: r.lat, key: Date.now() });
   };
 
+  // Build the whole route at once from the quick-plan dialog.
+  const applyQuickPlan = (places: GeoResult[], profile: RouteProfile) => {
+    setPendingDay(false);
+    setDefaultProfile(profile);
+    setWaypoints(
+      places.map((p) => ({
+        id: makeId(),
+        lng: p.lng,
+        lat: p.lat,
+        name: p.name,
+        legProfile: profile,
+      })),
+    );
+    setShowQuickPlan(false);
+    setFitSignal((n) => n + 1);
+  };
+
   // Recompute the route whenever the waypoints change (coords, order or
   // per-leg profile). A short debounce avoids hammering the server.
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
@@ -149,6 +170,7 @@ export default function App() {
         waypoints={waypoints}
         route={route}
         focus={focus}
+        fitSignal={fitSignal}
         onAddWaypoint={addWaypoint}
         onMoveWaypoint={moveWaypoint}
         onInsertWaypoint={insertWaypoint}
@@ -162,6 +184,7 @@ export default function App() {
         error={error}
         pendingDay={pendingDay}
         onOpenDetails={() => setShowDetails(true)}
+        onOpenQuickPlan={() => setShowQuickPlan(true)}
         onDefaultProfileChange={setDefaultProfile}
         onSetLegProfile={setLegProfile}
         onToggleDayEnd={toggleDayEnd}
@@ -176,6 +199,13 @@ export default function App() {
           waypoints={waypoints}
           route={route}
           onClose={() => setShowDetails(false)}
+        />
+      )}
+
+      {showQuickPlan && (
+        <QuickPlanModal
+          onApply={applyQuickPlan}
+          onClose={() => setShowQuickPlan(false)}
         />
       )}
     </div>

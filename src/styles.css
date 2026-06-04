@@ -389,6 +389,97 @@ body,
   opacity: 0.8;
 }
 
+.quickplan-btn {
+  background: var(--accent);
+  color: #07263a;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Quick-plan dialog */
+.qp-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.qp-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.place-input {
+  position: relative;
+  flex: 1 1 auto;
+}
+
+.place-input input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.place-input input:focus {
+  border-color: var(--accent);
+}
+
+.place-results {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  background: #15233b;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.place-results li {
+  padding: 9px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 0.88rem;
+}
+
+.place-results li:hover {
+  background: rgba(56, 189, 248, 0.18);
+}
+
+.add-stop-btn {
+  background: transparent;
+  color: var(--accent);
+  border: 1px dashed rgba(56, 189, 248, 0.5);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.qp-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0;
+}
+
 .details-btn {
   margin-left: auto;
   background: rgba(56, 189, 248, 0.15);
