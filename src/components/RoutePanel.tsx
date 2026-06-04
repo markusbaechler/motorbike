@@ -9,6 +9,7 @@ interface Props {
   loading: boolean;
   error: string | null;
   pendingDay: boolean;
+  onOpenDetails: () => void;
   onDefaultProfileChange: (p: RouteProfile) => void;
   onSetLegProfile: (waypointId: string, p: RouteProfile) => void;
   onToggleDayEnd: (id: string) => void;
@@ -62,6 +63,7 @@ export default function RoutePanel({
   loading,
   error,
   pendingDay,
+  onOpenDetails,
   onDefaultProfileChange,
   onSetLegProfile,
   onToggleDayEnd,
@@ -178,6 +180,9 @@ export default function RoutePanel({
             <strong>{route.distanceKm.toFixed(1)} km</strong>
             <span className="dot">·</span>
             <strong>{formatDuration(route.durationMin)}</strong>
+            <button className="details-btn" onClick={onOpenDetails}>
+              📊 Details &amp; Export
+            </button>
           </span>
         )}
       </div>

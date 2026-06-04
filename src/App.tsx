@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import MapView from "./components/MapView";
 import RoutePanel from "./components/RoutePanel";
+import RouteModal from "./components/RouteModal";
 import SearchBox from "./components/SearchBox";
 import { fetchRoute } from "./lib/routing";
 import type { GeoResult } from "./lib/geocoding";
@@ -23,6 +24,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [focus, setFocus] = useState<FocusPoint | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
   // True right after "+ Tag hinzufügen": the next added point starts a new day.
   const [pendingDay, setPendingDay] = useState(false);
 
@@ -159,6 +161,7 @@ export default function App() {
         loading={loading}
         error={error}
         pendingDay={pendingDay}
+        onOpenDetails={() => setShowDetails(true)}
         onDefaultProfileChange={setDefaultProfile}
         onSetLegProfile={setLegProfile}
         onToggleDayEnd={toggleDayEnd}
@@ -167,6 +170,14 @@ export default function App() {
         onReorderWaypoint={reorderWaypoint}
         onClear={clearAll}
       />
+
+      {showDetails && route && (
+        <RouteModal
+          waypoints={waypoints}
+          route={route}
+          onClose={() => setShowDetails(false)}
+        />
+      )}
     </div>
   );
 }
