@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { DEFAULT_CENTER, DEFAULT_ZOOM, MAP_STYLE_URL } from "../config";
+import { computeDays, dayNumbers } from "../lib/days";
 import type { FocusPoint } from "../App";
 import type { RouteResult, Waypoint } from "../types";
 
@@ -115,6 +116,7 @@ export default function MapView({
 
       loadedRef.current = true;
       setupLineDrag(map);
+      addPassLabels(map);
     });
 
     map.on("click", (e) => {
@@ -202,11 +204,23 @@ export default function MapView({
     for (const m of markersRef.current) m.remove();
     markersRef.current = [];
 
+    const days = computeDays(waypoints);
+    const nums = dayNumbers(waypoints, days);
+
     waypoints.forEach((wp, index) => {
+      const isLast = index === waypoints.length - 1;
+      const isOvernight = !!wp.dayEnd && !isLast;
+
       const el = document.createElement("div");
-      el.className = "wp-marker";
-      el.style.background = markerColor(index, waypoints.length);
-      el.textContent = String(index + 1);
+      if (isOvernight) {
+        // Highlight overnight stops with a bed marker.
+        el.className = "wp-marker bed";
+        el.textContent = "🛏";
+      } else {
+        el.className = "wp-marker";
+        el.style.background = markerColor(index, waypoints.length);
+        el.textContent = String(nums[index]);
+      }
 
       const marker = new maplibregl.Marker({ element: el, draggable: true })
         .setLngLat([wp.lng, wp.lat])
@@ -255,4 +269,59 @@ export default function MapView({
   }, [fitSignal]);
 
   return <div className="map" ref={containerRef} />;
+}
+
+// Add a clearly-readable label layer for mountain passes / saddles on top of
+// the base map. Best-effort: if the vector source/layer isn't present it simply
+// renders nothing. Reuses a font that already exists in the style's glyphs.
+function addPassLabels(map: maplibregl.Map) {
+  try {
+    if (map.getLayer("pass-labels")) return;
+    const style = map.getStyle();
+    const vectorSource = Object.keys(style.sources).find(
+      (id) => (style.sources[id] as { type?: string }).type === "vector",
+    );
+    if (!vectorSource) return;
+
+    const fontLayer = style.layers.find(
+      (l) => l.type === "symbol" && l.layout && (l.layout as Record<string, unknown>)["text-font"],
+    );
+    const font = (fontLayer?.layout as Record<string, string[]> | undefined)?.["text-font"] ?? [
+      "Noto Sans Regular",
+    ];
+
+    map.addLayer({
+      id: "pass-labels",
+      type: "symbol",
+      source: vectorSource,
+      "source-layer": "mountain_peak",
+      filter: [
+        "any",
+        ["==", ["get", "class"], "pass"],
+        ["==", ["get", "class"], "saddle"],
+      ],
+      minzoom: 8,
+      layout: {
+        "text-field": [
+          "case",
+          ["has", "ele"],
+          ["concat", ["coalesce", ["get", "name:de"], ["get", "name"], ""], " · ", ["to-string", ["get", "ele"]], " m"],
+          ["coalesce", ["get", "name:de"], ["get", "name"], ""],
+        ],
+        "text-font": font,
+        "text-size": 13,
+        "text-offset": [0, 0.6],
+        "text-anchor": "top",
+        "text-allow-overlap": false,
+        "icon-image": "",
+      },
+      paint: {
+        "text-color": "#7c2d12",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.6,
+      },
+    });
+  } catch {
+    /* base map lacks pass data – ignore */
+  }
 }

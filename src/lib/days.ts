@@ -48,3 +48,18 @@ export function dayStats(span: DaySpan, route: RouteResult | null): DayStats {
   }
   return { distanceKm, durationMin };
 }
+
+/**
+ * Per-day waypoint numbering that restarts at 1 each day. The shared overnight
+ * point counts as the previous day's last stop; the next day starts at 1 with
+ * its first new stop.
+ */
+export function dayNumbers(waypoints: Waypoint[], days: DaySpan[]): number[] {
+  const nums = new Array<number>(waypoints.length).fill(1);
+  for (const span of days) {
+    const firstIdx = span.day === 1 ? span.startIdx : span.startIdx + 1;
+    let c = 1;
+    for (let i = firstIdx; i <= span.endIdx; i++) nums[i] = c++;
+  }
+  return nums;
+}

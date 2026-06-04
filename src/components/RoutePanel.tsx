@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { computeDays, dayStats } from "../lib/days";
+import { computeDays, dayStats, dayNumbers } from "../lib/days";
 import type { RouteProfile, RouteResult, Waypoint } from "../types";
 
 interface Props {
@@ -76,6 +76,7 @@ export default function RoutePanel({
   onClear,
 }: Props) {
   const days = computeDays(waypoints);
+  const nums = dayNumbers(waypoints, days);
 
   // Collapse inactive days by default; only the last (active) day is open.
   // The user can toggle any day open/closed.
@@ -105,9 +106,11 @@ export default function RoutePanel({
         <div className="wp-row">
           <span
             className="wp-dot"
-            data-role={i === 0 ? "start" : isLast ? "end" : "via"}
+            data-role={
+              i === 0 ? "start" : isLast ? "end" : wp.dayEnd ? "bed" : "via"
+            }
           >
-            {i + 1}
+            {nums[i]}
           </span>
           <span className="wp-name">
             {placeName(wp)}
