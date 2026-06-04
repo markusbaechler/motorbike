@@ -3,6 +3,7 @@ import MapView from "./components/MapView";
 import RoutePanel from "./components/RoutePanel";
 import RouteModal from "./components/RouteModal";
 import QuickPlanModal, { type QuickStop } from "./components/QuickPlanModal";
+import RoutesModal from "./components/RoutesModal";
 import SearchBox from "./components/SearchBox";
 import { fetchRoute } from "./lib/routing";
 import type { GeoResult } from "./lib/geocoding";
@@ -27,6 +28,7 @@ export default function App() {
   const [focus, setFocus] = useState<FocusPoint | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [showQuickPlan, setShowQuickPlan] = useState(false);
+  const [showRoutes, setShowRoutes] = useState(false);
   // Bumped to ask the map to fit the whole route into view.
   const [fitSignal, setFitSignal] = useState(0);
   // True right after "+ Tag hinzufügen": the next added point starts a new day.
@@ -123,6 +125,13 @@ export default function App() {
     setFitSignal((n) => n + 1);
   };
 
+  // Load a saved/imported route (fresh ids to avoid collisions).
+  const loadRoute = (saved: Waypoint[]) => {
+    setPendingDay(false);
+    setWaypoints(saved.map((w) => ({ ...w, id: makeId() })));
+    setFitSignal((n) => n + 1);
+  };
+
   // Recompute the route whenever the waypoints change (coords, order or
   // per-leg profile). A short debounce avoids hammering the server.
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
@@ -188,6 +197,7 @@ export default function App() {
         pendingDay={pendingDay}
         onOpenDetails={() => setShowDetails(true)}
         onOpenQuickPlan={() => setShowQuickPlan(true)}
+        onOpenRoutes={() => setShowRoutes(true)}
         onDefaultProfileChange={setDefaultProfile}
         onSetLegProfile={setLegProfile}
         onToggleDayEnd={toggleDayEnd}
@@ -203,6 +213,14 @@ export default function App() {
           waypoints={waypoints}
           route={route}
           onClose={() => setShowDetails(false)}
+        />
+      )}
+
+      {showRoutes && (
+        <RoutesModal
+          currentWaypoints={waypoints}
+          onLoad={loadRoute}
+          onClose={() => setShowRoutes(false)}
         />
       )}
 
