@@ -73,6 +73,11 @@ export default function QuickPlanModal({
   const [profile, setProfile] = useState<RouteProfile>(defaultProfile);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Collapse inactive days; only the current (last) day is open by default.
+  const [openOverrides, setOpenOverrides] = useState<Record<number, boolean>>({});
+  const isDayOpen = (id: number, isLast: boolean) => openOverrides[id] ?? isLast;
+  const toggleDay = (id: number, isLast: boolean) =>
+    setOpenOverrides((o) => ({ ...o, [id]: !isDayOpen(id, isLast) }));
 
   const patchStart = (patch: Partial<Slot>) => setStart((s) => ({ ...s, ...patch }));
 
@@ -230,17 +235,30 @@ export default function QuickPlanModal({
             let prevBias = di === 0
               ? start.picked
               : prevDayLast?.picked;
+            const isLastDay = di === days.length - 1;
+            const open = isDayOpen(day.id, isLastDay);
+            const destName = day.stops[day.stops.length - 1]?.value || "—";
             return (
-              <div className="qp-day" key={day.id}>
+              <div className={`qp-day ${open ? "" : "collapsed"}`} key={day.id}>
                 <div className="qp-day-head">
-                  <span className="qp-day-title">Tag {di + 1}</span>
+                  <button
+                    className="qp-day-toggle"
+                    onClick={() => toggleDay(day.id, isLastDay)}
+                    aria-expanded={open}
+                  >
+                    <span className="day-chevron">{open ? "▾" : "▸"}</span>
+                    <span className="qp-day-title">Tag {di + 1}</span>
+                    {!open && <span className="qp-day-summary">→ {destName}</span>}
+                  </button>
                   {di > 0 && (
                     <button className="qp-day-remove" onClick={() => removeDay(di)}>
-                      Tag entfernen
+                      entfernen
                     </button>
                   )}
                 </div>
 
+                {open && (
+                <>
                 {/* Start of the day */}
                 {di === 0 ? (
                   <div className="qp-row">
@@ -279,6 +297,8 @@ export default function QuickPlanModal({
                 <button className="add-stop-btn" onClick={() => addStop(di)}>
                   + Zwischenziel
                 </button>
+                </>
+                )}
               </div>
             );
           })}
