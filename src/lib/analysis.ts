@@ -13,7 +13,7 @@ export interface RouteAnalysis {
   descentM: number;
   minEle: number;
   maxEle: number;
-  curvatureDegPerKm: number;
+  cornersPerKm: number;
   scores: {
     curves: number; // 0–10
     climb: number; // 0–10
@@ -82,19 +82,26 @@ export function analyseRoute(route: RouteResult): RouteAnalysis {
 
   const totalKm = cumM / 1000 || 1;
 
-  // Curvature: sum of heading changes over a jitter-reduced track.
-  const thinned = thin(coords, 25);
-  let totalTurn = 0;
-  for (let i = 1; i < thinned.length - 1; i++) {
-    const b1 = bearing(thinned[i - 1], thinned[i]);
-    const b2 = bearing(thinned[i], thinned[i + 1]);
-    totalTurn += bearingDelta(b1, b2);
+  // Curviness: count *real* corners (sharp direction changes), not the dense
+  // micro-wiggles of the raw geometry. We resample to ~60 m spacing and count
+  // vertices whose turn angle exceeds 30° — i.e. bends/hairpins. Motorways and
+  // valley roads have ~0 corners/km; alpine pass roads have many.
+  const resampled = thin(coords, 60);
+  let cornerCount = 0;
+  for (let i = 1; i < resampled.length - 1; i++) {
+    const b1 = bearing(resampled[i - 1], resampled[i]);
+    const b2 = bearing(resampled[i], resampled[i + 1]);
+    if (bearingDelta(b1, b2) > 30) cornerCount++;
   }
-  const curvatureDegPerKm = totalTurn / totalKm;
+  const cornersPerKm = cornerCount / totalKm;
 
   // Heuristic scores (0–10). Transparent, not an external rating.
-  const curves = clamp10(curvatureDegPerKm / 15); // 150°/km -> 10
-  const climb = clamp10(ascentM / totalKm / 2.5); // 25 m/km -> 10
+  // Curves: ~4 real corners/km is already a very twisty road -> 10.
+  const curves = clamp10((cornersPerKm / 4) * 10);
+  // Bergigkeit: combine how high it goes (pass altitude) with climb density.
+  const altScore = hasElevation ? clamp10((maxEle / 2500) * 10) : 0;
+  const ascentScore = clamp10((ascentM / totalKm / 20) * 10);
+  const climb = clamp10((altScore + ascentScore) / 2);
   const overall = Math.round((curves * 0.6 + climb * 0.4) * 10) / 10;
 
   return {
@@ -104,7 +111,7 @@ export function analyseRoute(route: RouteResult): RouteAnalysis {
     descentM: Math.round(descentM),
     minEle: hasElevation ? Math.round(minEle) : 0,
     maxEle: hasElevation ? Math.round(maxEle) : 0,
-    curvatureDegPerKm: Math.round(curvatureDegPerKm),
+    cornersPerKm: Math.round(cornersPerKm * 10) / 10,
     scores: {
       curves: Math.round(curves * 10) / 10,
       climb: Math.round(climb * 10) / 10,

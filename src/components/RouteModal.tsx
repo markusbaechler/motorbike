@@ -80,9 +80,9 @@ export default function RouteModal({ waypoints, route, onClose }: Props) {
             <ScoreBar label="Kurvenreichtum" value={analysis.scores.curves} />
             <ScoreBar label="Höhenmeter / Bergigkeit" value={analysis.scores.climb} />
             <p className="modal-note">
-              Berechnete Einschätzung aus Kurvendichte ({analysis.curvatureDegPerKm}°/km)
-              und Höhenprofil – kein externes Rating. Sehenswürdigkeiten fließen
-              später mit ein.
+              Berechnete Einschätzung aus Kurvendichte ({analysis.cornersPerKm} echte
+              Kurven/km) und Höhenprofil (höchster Punkt {analysis.maxEle} m) – kein
+              externes Rating. Sehenswürdigkeiten fließen später mit ein.
             </p>
           </section>
 
