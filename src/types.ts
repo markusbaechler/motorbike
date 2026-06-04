@@ -13,6 +13,9 @@ export interface Waypoint {
   // Profile used for the leg arriving at this waypoint (from the previous
   // one). Ignored for the first waypoint, which has no incoming leg.
   legProfile: RouteProfile;
+  // Marks this waypoint as the end of a day (overnight stop). The next day
+  // starts here. The final waypoint always ends the last day implicitly.
+  dayEnd?: boolean;
 }
 
 export interface LegSummary {

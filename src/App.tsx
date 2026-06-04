@@ -59,6 +59,11 @@ export default function App() {
       wps.map((w) => (w.id === id ? { ...w, legProfile: profile } : w)),
     );
 
+  const toggleDayEnd = (id: string) =>
+    setWaypoints((wps) =>
+      wps.map((w) => (w.id === id ? { ...w, dayEnd: !w.dayEnd } : w)),
+    );
+
   const reorderWaypoint = (id: string, direction: -1 | 1) =>
     setWaypoints((wps) => {
       const i = wps.findIndex((w) => w.id === id);
@@ -139,6 +144,7 @@ export default function App() {
         error={error}
         onDefaultProfileChange={setDefaultProfile}
         onSetLegProfile={setLegProfile}
+        onToggleDayEnd={toggleDayEnd}
         onRemoveWaypoint={removeWaypoint}
         onReorderWaypoint={reorderWaypoint}
         onClear={clearAll}

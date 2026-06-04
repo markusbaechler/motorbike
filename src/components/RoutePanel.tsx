@@ -1,3 +1,4 @@
+import { computeDays, dayStats } from "../lib/days";
 import type { RouteProfile, RouteResult, Waypoint } from "../types";
 
 interface Props {
@@ -8,6 +9,7 @@ interface Props {
   error: string | null;
   onDefaultProfileChange: (p: RouteProfile) => void;
   onSetLegProfile: (waypointId: string, p: RouteProfile) => void;
+  onToggleDayEnd: (id: string) => void;
   onRemoveWaypoint: (id: string) => void;
   onReorderWaypoint: (id: string, direction: -1 | 1) => void;
   onClear: () => void;
@@ -22,6 +24,10 @@ function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = Math.round(minutes % 60);
   return h > 0 ? `${h} h ${m} min` : `${m} min`;
+}
+
+function placeName(wp: Waypoint): string {
+  return wp.name ?? `${wp.lat.toFixed(4)}, ${wp.lng.toFixed(4)}`;
 }
 
 function ProfileToggle({
@@ -54,10 +60,81 @@ export default function RoutePanel({
   error,
   onDefaultProfileChange,
   onSetLegProfile,
+  onToggleDayEnd,
   onRemoveWaypoint,
   onReorderWaypoint,
   onClear,
 }: Props) {
+  const days = computeDays(waypoints);
+
+  const renderWaypoint = (i: number) => {
+    const wp = waypoints[i];
+    const leg = i > 0 ? route?.legs[i - 1] : undefined;
+    const isLast = i === waypoints.length - 1;
+    return (
+      <li key={wp.id} className="wp-item">
+        {i > 0 && (
+          <div className="segment">
+            <span className="segment-arrow">↳ Etappe {i}→{i + 1}</span>
+            <ProfileToggle
+              value={wp.legProfile}
+              onChange={(p) => onSetLegProfile(wp.id, p)}
+            />
+            {leg && <span className="segment-stats">{leg.distanceKm.toFixed(0)} km</span>}
+          </div>
+        )}
+
+        <div className="wp-row">
+          <span
+            className="wp-dot"
+            data-role={i === 0 ? "start" : isLast ? "end" : "via"}
+          >
+            {i + 1}
+          </span>
+          <span className="wp-name">
+            {placeName(wp)}
+            {wp.dayEnd && <span className="bed-tag" title="Übernachtung">🛏</span>}
+          </span>
+          <span className="wp-actions">
+            {i > 0 && !isLast && (
+              <button
+                className={`wp-btn bed ${wp.dayEnd ? "active" : ""}`}
+                onClick={() => onToggleDayEnd(wp.id)}
+                aria-label="Übernachtung / Tagesende"
+                title="Hier übernachten (Tag beenden)"
+              >
+                🛏
+              </button>
+            )}
+            <button
+              className="wp-btn"
+              disabled={i === 0}
+              onClick={() => onReorderWaypoint(wp.id, -1)}
+              aria-label="Nach oben"
+            >
+              ↑
+            </button>
+            <button
+              className="wp-btn"
+              disabled={isLast}
+              onClick={() => onReorderWaypoint(wp.id, 1)}
+              aria-label="Nach unten"
+            >
+              ↓
+            </button>
+            <button
+              className="wp-btn remove"
+              onClick={() => onRemoveWaypoint(wp.id)}
+              aria-label="Entfernen"
+            >
+              ✕
+            </button>
+          </span>
+        </div>
+      </li>
+    );
+  };
+
   return (
     <div className="panel">
       <div className="panel-row top">
@@ -83,6 +160,8 @@ export default function RoutePanel({
         {error && <span className="error">⚠ {error}</span>}
         {route && !loading && !error && (
           <span className="stats">
+            {days.length > 1 && <strong>{days.length} Tage</strong>}
+            {days.length > 1 && <span className="dot">·</span>}
             <strong>{route.distanceKm.toFixed(1)} km</strong>
             <span className="dot">·</span>
             <strong>{formatDuration(route.durationMin)}</strong>
@@ -90,73 +169,45 @@ export default function RoutePanel({
         )}
       </div>
 
-      {waypoints.length > 0 && (
-        <ul className="wp-list">
-          {waypoints.map((wp, i) => {
-            const leg = i > 0 ? route?.legs[i - 1] : undefined;
-            return (
-              <li key={wp.id} className="wp-item">
-                {i > 0 && (
-                  <div className="segment">
-                    <span className="segment-arrow">↳ Etappe {i}→{i + 1}</span>
-                    <ProfileToggle
-                      value={wp.legProfile}
-                      onChange={(p) => onSetLegProfile(wp.id, p)}
-                    />
-                    {leg && (
-                      <span className="segment-stats">{leg.distanceKm.toFixed(0)} km</span>
-                    )}
-                  </div>
-                )}
+      {days.length > 0 ? (
+        days.map((span) => {
+          const stats = dayStats(span, route);
+          const overnight = waypoints[span.endIdx];
+          const isFinalDay = span.endIdx === waypoints.length - 1;
+          // Day 1 shows its start; later days start from the shared overnight
+          // point of the previous day, so skip rendering it again.
+          const firstIdx = span.day === 1 ? span.startIdx : span.startIdx + 1;
+          const indices: number[] = [];
+          for (let i = firstIdx; i <= span.endIdx; i++) indices.push(i);
 
-                <div className="wp-row">
-                  <span
-                    className="wp-dot"
-                    data-role={
-                      i === 0 ? "start" : i === waypoints.length - 1 ? "end" : "via"
-                    }
-                  >
-                    {i + 1}
+          return (
+            <div key={span.day} className="day-group">
+              <div className="day-header">
+                <span className="day-title">Tag {span.day}</span>
+                {route && (
+                  <span className="day-stats">
+                    {stats.distanceKm.toFixed(0)} km · {formatDuration(stats.durationMin)}
                   </span>
-                  <span className="wp-name">
-                    {wp.name ?? `${wp.lat.toFixed(4)}, ${wp.lng.toFixed(4)}`}
-                  </span>
-                  <span className="wp-actions">
-                    <button
-                      className="wp-btn"
-                      disabled={i === 0}
-                      onClick={() => onReorderWaypoint(wp.id, -1)}
-                      aria-label="Nach oben"
-                    >
-                      ↑
-                    </button>
-                    <button
-                      className="wp-btn"
-                      disabled={i === waypoints.length - 1}
-                      onClick={() => onReorderWaypoint(wp.id, 1)}
-                      aria-label="Nach unten"
-                    >
-                      ↓
-                    </button>
-                    <button
-                      className="wp-btn remove"
-                      onClick={() => onRemoveWaypoint(wp.id)}
-                      aria-label="Entfernen"
-                    >
-                      ✕
-                    </button>
-                  </span>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+                )}
+                <span className="day-overnight">
+                  {isFinalDay ? "🏁 " : "🛏 "}
+                  {placeName(overnight)}
+                </span>
+              </div>
+              <ul className="wp-list">{indices.map(renderWaypoint)}</ul>
+            </div>
+          );
+        })
+      ) : (
+        waypoints.length > 0 && (
+          <ul className="wp-list">{waypoints.map((_, i) => renderWaypoint(i))}</ul>
+        )
       )}
 
       {waypoints.length >= 2 && (
         <p className="edit-hint">
-          Tipp: Streckenlinie ziehen, um einen Zwischenpunkt einzufügen · Marker
-          ziehen zum Verschieben.
+          Tipp: 🛏 markiert ein Tagesende (Übernachtung). Streckenlinie ziehen
+          fügt einen Zwischenpunkt ein.
         </p>
       )}
     </div>

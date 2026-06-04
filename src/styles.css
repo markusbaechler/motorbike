@@ -295,6 +295,57 @@ body,
   line-height: 1.4;
 }
 
+/* Day grouping */
+.day-group {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.day-group + .day-group {
+  margin-top: 8px;
+}
+
+.day-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.day-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--accent);
+}
+
+.day-stats {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+}
+
+.day-overnight {
+  margin-left: auto;
+  font-size: 0.8rem;
+  opacity: 0.85;
+  max-width: 55%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bed-tag {
+  margin-left: 6px;
+  font-size: 0.8rem;
+}
+
+.wp-btn.bed.active {
+  background: rgba(56, 189, 248, 0.3);
+}
+
 /* Floating place-search box under the title bar */
 .searchbox {
   position: absolute;
