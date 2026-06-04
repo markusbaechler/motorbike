@@ -352,6 +352,47 @@ body,
   font-size: 0.8rem;
 }
 
+.day-date-tag {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+
+.day-meta {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 8px;
+}
+
+.day-name-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 7px 10px;
+  color: var(--text);
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.day-name-input:focus,
+.day-date-input:focus {
+  border-color: var(--accent);
+}
+
+.day-date-input {
+  flex: 0 0 auto;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 7px 10px;
+  color: var(--text);
+  font-size: 0.85rem;
+  outline: none;
+  color-scheme: dark;
+}
+
 .day-title {
   font-weight: 700;
   font-size: 0.95rem;

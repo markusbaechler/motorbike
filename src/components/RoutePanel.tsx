@@ -14,6 +14,7 @@ interface Props {
   onDefaultProfileChange: (p: RouteProfile) => void;
   onSetLegProfile: (waypointId: string, p: RouteProfile) => void;
   onToggleDayEnd: (id: string) => void;
+  onSetDayMeta: (id: string, patch: { dayName?: string; dayDate?: string }) => void;
   onAddDay: () => void;
   onRemoveWaypoint: (id: string) => void;
   onReorderWaypoint: (id: string, direction: -1 | 1) => void;
@@ -70,6 +71,7 @@ export default function RoutePanel({
   onDefaultProfileChange,
   onSetLegProfile,
   onToggleDayEnd,
+  onSetDayMeta,
   onAddDay,
   onRemoveWaypoint,
   onReorderWaypoint,
@@ -216,7 +218,11 @@ export default function RoutePanel({
                 aria-expanded={open}
               >
                 <span className="day-chevron">{open ? "▾" : "▸"}</span>
-                <span className="day-title">Tag {span.day}</span>
+                <span className="day-title">
+                  Tag {span.day}
+                  {overnight.dayName ? `: ${overnight.dayName}` : ""}
+                </span>
+                {overnight.dayDate && <span className="day-date-tag">{overnight.dayDate}</span>}
                 {route && (
                   <span className="day-stats">
                     {stats.distanceKm.toFixed(0)} km · {formatDuration(stats.durationMin)}
@@ -227,6 +233,23 @@ export default function RoutePanel({
                   {placeName(overnight)}
                 </span>
               </button>
+              {open && (
+                <div className="day-meta">
+                  <input
+                    className="day-name-input"
+                    type="text"
+                    placeholder={`Etappenname (z. B. Tag ${span.day})`}
+                    value={overnight.dayName ?? ""}
+                    onChange={(e) => onSetDayMeta(overnight.id, { dayName: e.target.value })}
+                  />
+                  <input
+                    className="day-date-input"
+                    type="date"
+                    value={overnight.dayDate ?? ""}
+                    onChange={(e) => onSetDayMeta(overnight.id, { dayDate: e.target.value })}
+                  />
+                </div>
+              )}
               {open && <ul className="wp-list">{indices.map(renderWaypoint)}</ul>}
             </div>
           );

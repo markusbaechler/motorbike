@@ -83,6 +83,9 @@ export default function App() {
       wps.map((w) => (w.id === id ? { ...w, dayEnd: !w.dayEnd } : w)),
     );
 
+  const setDayMeta = (id: string, patch: { dayName?: string; dayDate?: string }) =>
+    setWaypoints((wps) => wps.map((w) => (w.id === id ? { ...w, ...patch } : w)));
+
   const reorderWaypoint = (id: string, direction: -1 | 1) =>
     setWaypoints((wps) => {
       const i = wps.findIndex((w) => w.id === id);
@@ -188,6 +191,7 @@ export default function App() {
         onDefaultProfileChange={setDefaultProfile}
         onSetLegProfile={setLegProfile}
         onToggleDayEnd={toggleDayEnd}
+        onSetDayMeta={setDayMeta}
         onAddDay={addDay}
         onRemoveWaypoint={removeWaypoint}
         onReorderWaypoint={reorderWaypoint}

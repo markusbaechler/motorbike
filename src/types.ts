@@ -19,6 +19,10 @@ export interface Waypoint {
   // Marks this waypoint as the end of a day (overnight stop). The next day
   // starts here. The final waypoint always ends the last day implicitly.
   dayEnd?: boolean;
+  // Optional label + date for the day that ENDS at this waypoint (i.e. set on
+  // each day's destination waypoint).
+  dayName?: string;
+  dayDate?: string; // ISO yyyy-mm-dd
 }
 
 export interface LegSummary {

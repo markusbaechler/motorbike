@@ -138,8 +138,13 @@ export default function RouteModal({ waypoints, route, onClose }: Props) {
               {dayAnalyses.map(({ span, a, overnight }) => (
                 <div className="day-rating" key={span.day}>
                   <div className="day-rating-head">
-                    <strong>Tag {span.day}</strong>
-                    <span className="day-rating-dest">→ {placeName(overnight)}</span>
+                    <strong>
+                      Tag {span.day}
+                      {overnight.dayName ? `: ${overnight.dayName}` : ""}
+                    </strong>
+                    <span className="day-rating-dest">
+                      {overnight.dayDate ? `${overnight.dayDate} · ` : ""}→ {placeName(overnight)}
+                    </span>
                     <span className="day-rating-score">{a.scores.overall}/10</span>
                   </div>
                   <div className="day-rating-meta">
