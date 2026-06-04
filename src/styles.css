@@ -414,9 +414,16 @@ body,
   gap: 10px;
 }
 
+.qp-actions {
+  display: flex;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
 .place-input {
   position: relative;
   flex: 1 1 auto;
+  min-width: 0;
 }
 
 .place-input input {

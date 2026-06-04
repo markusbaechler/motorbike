@@ -34,8 +34,10 @@ function buildLabel(p: PhotonProps): string {
 export async function searchPlaces(
   query: string,
   signal?: AbortSignal,
+  bias?: { lat: number; lng: number },
 ): Promise<GeoResult[]> {
-  const url = `${PHOTON_URL}?q=${encodeURIComponent(query)}&limit=5&lang=de`;
+  const biasParam = bias ? `&lat=${bias.lat}&lon=${bias.lng}` : "";
+  const url = `${PHOTON_URL}?q=${encodeURIComponent(query)}&limit=5&lang=de${biasParam}`;
   const res = await fetch(url, { signal });
   if (!res.ok) {
     throw new Error(`Ortssuche fehlgeschlagen (HTTP ${res.status}).`);

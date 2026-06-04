@@ -4,6 +4,7 @@ import { searchPlaces, type GeoResult } from "../lib/geocoding";
 interface Props {
   value: string;
   placeholder: string;
+  bias?: { lat: number; lng: number };
   onChange: (value: string) => void;
   onPick: (result: GeoResult) => void;
 }
@@ -11,9 +12,10 @@ interface Props {
 /**
  * A text field with place autocomplete that keeps its chosen value (unlike
  * the header SearchBox, which clears after selecting). Used in the quick-plan
- * dialog, one per stop.
+ * dialog, one per stop. An optional `bias` keeps results near a reference
+ * point (e.g. the previous stop) for contiguous routes.
  */
-export default function PlaceInput({ value, placeholder, onChange, onPick }: Props) {
+export default function PlaceInput({ value, placeholder, bias, onChange, onPick }: Props) {
   const [results, setResults] = useState<GeoResult[]>([]);
   const [open, setOpen] = useState(false);
   const justPicked = useRef(false);
@@ -36,7 +38,7 @@ export default function PlaceInput({ value, placeholder, onChange, onPick }: Pro
       const controller = new AbortController();
       controllerRef.current = controller;
       try {
-        const found = await searchPlaces(value.trim(), controller.signal);
+        const found = await searchPlaces(value.trim(), controller.signal, bias);
         setResults(found);
         setOpen(true);
       } catch (err) {

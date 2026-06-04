@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import MapView from "./components/MapView";
 import RoutePanel from "./components/RoutePanel";
 import RouteModal from "./components/RouteModal";
-import QuickPlanModal from "./components/QuickPlanModal";
+import QuickPlanModal, { type QuickStop } from "./components/QuickPlanModal";
 import SearchBox from "./components/SearchBox";
 import { fetchRoute } from "./lib/routing";
 import type { GeoResult } from "./lib/geocoding";
@@ -104,16 +104,15 @@ export default function App() {
   };
 
   // Build the whole route at once from the quick-plan dialog.
-  const applyQuickPlan = (places: GeoResult[], profile: RouteProfile) => {
+  const applyQuickPlan = (stops: QuickStop[]) => {
     setPendingDay(false);
-    setDefaultProfile(profile);
     setWaypoints(
-      places.map((p) => ({
+      stops.map((s) => ({
         id: makeId(),
-        lng: p.lng,
-        lat: p.lat,
-        name: p.name,
-        legProfile: profile,
+        lng: s.lng,
+        lat: s.lat,
+        name: s.name,
+        legProfile: s.legProfile,
       })),
     );
     setShowQuickPlan(false);
@@ -204,6 +203,17 @@ export default function App() {
 
       {showQuickPlan && (
         <QuickPlanModal
+          defaultProfile={defaultProfile}
+          initialStops={
+            waypoints.length >= 2
+              ? waypoints.map((w) => ({
+                  name: w.name,
+                  lng: w.lng,
+                  lat: w.lat,
+                  legProfile: w.legProfile,
+                }))
+              : undefined
+          }
           onApply={applyQuickPlan}
           onClose={() => setShowQuickPlan(false)}
         />
