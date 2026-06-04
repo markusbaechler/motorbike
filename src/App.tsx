@@ -113,6 +113,7 @@ export default function App() {
         lat: s.lat,
         name: s.name,
         legProfile: s.legProfile,
+        dayEnd: s.dayEnd,
       })),
     );
     setShowQuickPlan(false);
@@ -211,6 +212,7 @@ export default function App() {
                   lng: w.lng,
                   lat: w.lat,
                   legProfile: w.legProfile,
+                  dayEnd: w.dayEnd,
                 }))
               : undefined
           }

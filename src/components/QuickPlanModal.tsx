@@ -8,6 +8,7 @@ export interface QuickStop {
   lng: number;
   lat: number;
   legProfile: RouteProfile;
+  dayEnd?: boolean;
 }
 
 interface Slot {
@@ -15,6 +16,7 @@ interface Slot {
   value: string;
   picked?: GeoResult;
   legProfile: RouteProfile;
+  dayEnd?: boolean;
 }
 
 interface Props {
@@ -43,6 +45,7 @@ export default function QuickPlanModal({
         value: s.name ?? `${s.lat.toFixed(4)}, ${s.lng.toFixed(4)}`,
         picked: { name: s.name ?? "Punkt", lng: s.lng, lat: s.lat },
         legProfile: s.legProfile,
+        dayEnd: s.dayEnd,
       }));
     }
     return [
@@ -84,6 +87,9 @@ export default function QuickPlanModal({
     setSlots((s) => s.map((slot) => ({ ...slot, legProfile: p })));
   };
 
+  const toggleDayEnd = (id: number) =>
+    setSlots((s) => s.map((slot) => (slot.id === id ? { ...slot, dayEnd: !slot.dayEnd } : slot)));
+
   const submit = async () => {
     setBusy(true);
     setError(null);
@@ -103,6 +109,7 @@ export default function QuickPlanModal({
             lng: place.lng,
             lat: place.lat,
             legProfile: slot.legProfile,
+            dayEnd: slot.dayEnd,
           });
           prev = { lat: place.lat, lng: place.lng };
         }
@@ -136,49 +143,69 @@ export default function QuickPlanModal({
           </p>
 
           <div className="qp-rows">
-            {slots.map((slot, i) => (
-              <div className="qp-row" key={slot.id}>
-                <span
-                  className="wp-dot"
-                  data-role={i === 0 ? "start" : i === slots.length - 1 ? "end" : "via"}
-                >
-                  {i + 1}
-                </span>
-                <PlaceInput
-                  value={slot.value}
-                  placeholder={label(i)}
-                  bias={i > 0 ? slots[i - 1].picked : undefined}
-                  onChange={(v) => update(slot.id, { value: v, picked: undefined })}
-                  onPick={(r) => update(slot.id, { value: r.name, picked: r })}
-                />
-                <span className="qp-actions">
-                  <button
-                    className="wp-btn"
-                    disabled={i === 0}
-                    onClick={() => moveSlot(slot.id, -1)}
-                    aria-label="Nach oben"
-                  >
-                    ↑
-                  </button>
-                  <button
-                    className="wp-btn"
-                    disabled={i === slots.length - 1}
-                    onClick={() => moveSlot(slot.id, 1)}
-                    aria-label="Nach unten"
-                  >
-                    ↓
-                  </button>
-                  <button
-                    className="wp-btn remove"
-                    disabled={slots.length <= 2}
-                    onClick={() => removeSlot(slot.id)}
-                    aria-label="Entfernen"
-                  >
-                    ✕
-                  </button>
-                </span>
-              </div>
-            ))}
+            {slots.map((slot, i) => {
+              // Day number = 1 + overnight stops before this row. A new day
+              // starts on the row right after an overnight (dayEnd) stop.
+              const day = 1 + slots.slice(0, i).filter((s) => s.dayEnd).length;
+              const showHeader = i === 0 || !!slots[i - 1].dayEnd;
+              const isLast = i === slots.length - 1;
+              return (
+                <div key={slot.id}>
+                  {showHeader && <div className="qp-day-header">Tag {day}</div>}
+                  <div className="qp-row">
+                    <span
+                      className="wp-dot"
+                      data-role={i === 0 ? "start" : isLast ? "end" : "via"}
+                    >
+                      {i + 1}
+                    </span>
+                    <PlaceInput
+                      value={slot.value}
+                      placeholder={label(i)}
+                      bias={i > 0 ? slots[i - 1].picked : undefined}
+                      onChange={(v) => update(slot.id, { value: v, picked: undefined })}
+                      onPick={(r) => update(slot.id, { value: r.name, picked: r })}
+                    />
+                    <span className="qp-actions">
+                      {i > 0 && !isLast && (
+                        <button
+                          className={`wp-btn bed ${slot.dayEnd ? "active" : ""}`}
+                          onClick={() => toggleDayEnd(slot.id)}
+                          aria-label="Übernachtung / Tag beenden"
+                          title="Hier übernachten (Tag beenden)"
+                        >
+                          🛏
+                        </button>
+                      )}
+                      <button
+                        className="wp-btn"
+                        disabled={i === 0}
+                        onClick={() => moveSlot(slot.id, -1)}
+                        aria-label="Nach oben"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        className="wp-btn"
+                        disabled={isLast}
+                        onClick={() => moveSlot(slot.id, 1)}
+                        aria-label="Nach unten"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        className="wp-btn remove"
+                        disabled={slots.length <= 2}
+                        onClick={() => removeSlot(slot.id)}
+                        aria-label="Entfernen"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           <button className="add-stop-btn" onClick={addStop}>

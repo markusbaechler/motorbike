@@ -429,6 +429,17 @@ body,
   flex: 0 0 auto;
 }
 
+.qp-day-header {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--accent);
+  margin: 10px 0 4px;
+}
+
+.qp-rows > div:first-child .qp-day-header {
+  margin-top: 0;
+}
+
 .place-input {
   position: relative;
   flex: 1 1 auto;
