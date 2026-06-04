@@ -313,6 +313,22 @@ body,
   gap: 8px;
   flex-wrap: wrap;
   margin-bottom: 6px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  text-align: left;
+  padding: 2px 0;
+  cursor: pointer;
+}
+
+.day-group.collapsed .day-header {
+  margin-bottom: 0;
+}
+
+.day-chevron {
+  opacity: 0.7;
+  font-size: 0.8rem;
 }
 
 .day-title {

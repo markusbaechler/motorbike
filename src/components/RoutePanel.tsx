@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { computeDays, dayStats } from "../lib/days";
 import type { RouteProfile, RouteResult, Waypoint } from "../types";
 
@@ -70,6 +71,14 @@ export default function RoutePanel({
   onClear,
 }: Props) {
   const days = computeDays(waypoints);
+
+  // Collapse inactive days by default; only the last (active) day is open.
+  // The user can toggle any day open/closed.
+  const [openOverrides, setOpenOverrides] = useState<Record<number, boolean>>({});
+  const lastDay = days.length;
+  const isDayOpen = (d: number) => openOverrides[d] ?? d === lastDay;
+  const toggleDay = (d: number) =>
+    setOpenOverrides((o) => ({ ...o, [d]: !isDayOpen(d) }));
 
   const renderWaypoint = (i: number) => {
     const wp = waypoints[i];
@@ -184,9 +193,15 @@ export default function RoutePanel({
           const indices: number[] = [];
           for (let i = firstIdx; i <= span.endIdx; i++) indices.push(i);
 
+          const open = isDayOpen(span.day);
           return (
-            <div key={span.day} className="day-group">
-              <div className="day-header">
+            <div key={span.day} className={`day-group ${open ? "" : "collapsed"}`}>
+              <button
+                className="day-header"
+                onClick={() => toggleDay(span.day)}
+                aria-expanded={open}
+              >
+                <span className="day-chevron">{open ? "▾" : "▸"}</span>
                 <span className="day-title">Tag {span.day}</span>
                 {route && (
                   <span className="day-stats">
@@ -197,8 +212,8 @@ export default function RoutePanel({
                   {isFinalDay ? "🏁 " : "🛏 "}
                   {placeName(overnight)}
                 </span>
-              </div>
-              <ul className="wp-list">{indices.map(renderWaypoint)}</ul>
+              </button>
+              {open && <ul className="wp-list">{indices.map(renderWaypoint)}</ul>}
             </div>
           );
         })

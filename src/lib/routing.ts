@@ -14,6 +14,14 @@ const BROUTER_PROFILES: Record<RouteProfile, string[]> = {
   schnell: ["car-fast", "car-eco"],
 };
 
+// BRouter's per-profile travel time is unrealistic for motorcycles (the moped
+// profile in particular assumes very low speeds). We estimate the duration
+// from distance using a realistic average speed per mode instead.
+const AVG_SPEED_KMH: Record<RouteProfile, number> = {
+  kurvig: 50,
+  schnell: 90,
+};
+
 interface Leg {
   feature: GeoJSON.Feature;
   distanceKm: number;
@@ -66,10 +74,11 @@ async function fetchLeg(
     // Tag the leg with its logical profile (for colouring) and index (drag).
     feature.properties = { ...feature.properties, profile, legIndex };
 
+    const distanceKm = Number(props["track-length"] ?? 0) / 1000;
     return {
       feature,
-      distanceKm: Number(props["track-length"] ?? 0) / 1000,
-      durationMin: Number(props["total-time"] ?? 0) / 60,
+      distanceKm,
+      durationMin: (distanceKm / AVG_SPEED_KMH[profile]) * 60,
       profile,
     };
   }
