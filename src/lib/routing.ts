@@ -2,7 +2,79 @@ import type { RouteProfile, RouteResult, Waypoint } from "../types";
 
 // BRouter – free, key-less public routing server. Routing runs from the
 // user's browser. https://brouter.de/
-const BROUTER_URL = "https://brouter.de/brouter";
+const BROUTER = "https://brouter.de";
+
+// Custom BRouter profile that strongly prefers small, winding back-roads and
+// heavily penalises motorways / trunk / primary roads — i.e. a "curvy" car
+// route for motorcycle touring. Uploaded once per session; BRouter returns a
+// profile id we then route against.
+const CURVY_PROFILE = `
+---context:global
+assign validForCars = 1
+assign turnInstructionMode = 1
+
+---context:way
+assign turncost = 0
+assign initialcost = 0
+
+assign blocked = or highway= or access=private access=no
+
+assign costfactor
+  switch blocked                                   100000
+  switch highway=motorway|motorway_link            9
+  switch highway=trunk|trunk_link                  7
+  switch highway=primary|primary_link              4
+  switch highway=secondary|secondary_link          1.3
+  switch highway=tertiary|tertiary_link            1.0
+  switch highway=unclassified                      1.1
+  switch highway=residential|living_street         1.6
+  switch highway=service                           3
+  switch highway=track|path|footway|cycleway|bridleway|steps|pedestrian   100000
+  2.5
+
+---context:node
+assign initialcost = 0
+`;
+
+// Map a logical UI profile to a concrete BRouter profile name.
+// "schnell" uses the stock motorway-friendly profile; "kurvig" uses our
+// uploaded custom profile (falling back to car-eco if the upload fails).
+let curvyIdPromise: Promise<string> | null = null;
+
+async function getCurvyProfileId(signal?: AbortSignal): Promise<string> {
+  if (!curvyIdPromise) {
+    curvyIdPromise = (async () => {
+      const res = await fetch(`${BROUTER}/brouter/profile`, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: CURVY_PROFILE,
+        signal,
+      });
+      if (!res.ok) throw new Error(`Profil-Upload fehlgeschlagen (HTTP ${res.status}).`);
+      const data = (await res.json()) as { profileid?: string; error?: string };
+      if (!data.profileid) throw new Error(data.error || "Kein Profil-Id erhalten.");
+      return data.profileid;
+    })();
+    // Allow a retry on a later call if this upload fails.
+    curvyIdPromise.catch(() => {
+      curvyIdPromise = null;
+    });
+  }
+  return curvyIdPromise;
+}
+
+async function resolveBrouterProfile(
+  profile: RouteProfile,
+  signal?: AbortSignal,
+): Promise<string> {
+  if (profile === "schnell") return "car-fast";
+  try {
+    return await getCurvyProfileId(signal);
+  } catch {
+    // Fallback so the app keeps working even if the upload is unavailable.
+    return "car-eco";
+  }
+}
 
 interface Leg {
   feature: GeoJSON.Feature;
@@ -11,7 +83,6 @@ interface Leg {
   profile: RouteProfile;
 }
 
-// Fetch a single leg (between two consecutive waypoints) with its own profile.
 async function fetchLeg(
   from: Waypoint,
   to: Waypoint,
@@ -19,13 +90,15 @@ async function fetchLeg(
   legIndex: number,
   signal?: AbortSignal,
 ): Promise<Leg> {
+  const brouterProfile = await resolveBrouterProfile(profile, signal);
+
   const lonlats =
     `${from.lng.toFixed(6)},${from.lat.toFixed(6)}|` +
     `${to.lng.toFixed(6)},${to.lat.toFixed(6)}`;
 
   const url =
-    `${BROUTER_URL}?lonlats=${lonlats}` +
-    `&profile=${profile}&alternativeidx=0&format=geojson`;
+    `${BROUTER}/brouter?lonlats=${lonlats}` +
+    `&profile=${brouterProfile}&alternativeidx=0&format=geojson`;
 
   const res = await fetch(url, { signal });
   if (!res.ok) {
@@ -39,7 +112,7 @@ async function fetchLeg(
   }
 
   const props = (feature.properties ?? {}) as Record<string, string>;
-  // Tag the leg with its profile (for colouring) and index (for line-drag).
+  // Tag the leg with its logical profile (for colouring) and index (drag).
   feature.properties = { ...feature.properties, profile, legIndex };
 
   return {
@@ -52,8 +125,8 @@ async function fetchLeg(
 
 /**
  * Route through all waypoints in order, computing each leg with that leg's
- * own profile, then combining them into one result. Legs are fetched in
- * parallel. Requires at least two waypoints.
+ * own profile, then combining them. Legs are fetched in parallel. Requires at
+ * least two waypoints.
  */
 export async function fetchRoute(
   waypoints: Waypoint[],
@@ -66,13 +139,7 @@ export async function fetchRoute(
   const legPromises: Promise<Leg>[] = [];
   for (let i = 1; i < waypoints.length; i++) {
     legPromises.push(
-      fetchLeg(
-        waypoints[i - 1],
-        waypoints[i],
-        waypoints[i].legProfile,
-        i - 1,
-        signal,
-      ),
+      fetchLeg(waypoints[i - 1], waypoints[i], waypoints[i].legProfile, i - 1, signal),
     );
   }
 

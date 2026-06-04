@@ -86,9 +86,9 @@ export default function MapView({
           "line-color": [
             "match",
             ["get", "profile"],
-            "car-fast",
+            "schnell",
             "#3b82f6",
-            /* car-eco / default */ "#f97316",
+            /* kurvig / default */ "#f97316",
           ],
           "line-width": 5,
         },

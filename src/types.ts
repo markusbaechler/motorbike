@@ -1,9 +1,8 @@
 // Shared domain types for route planning.
 
-// BRouter server-side profiles (free public instance, no API key).
-// "car-eco" strongly prefers small, scenic back-roads (our "curvy" mode);
-// "car-fast" uses motorways for quick connecting legs.
-export type RouteProfile = "car-eco" | "car-fast";
+// Logical routing modes shown in the UI. Each maps to a concrete BRouter
+// profile in lib/routing.ts.
+export type RouteProfile = "kurvig" | "schnell";
 
 export interface Waypoint {
   id: string;

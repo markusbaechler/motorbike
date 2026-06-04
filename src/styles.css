@@ -145,12 +145,12 @@ body,
   opacity: 1;
 }
 
-.toggle-btn.car-eco.active {
+.toggle-btn.kurvig.active {
   background: #f97316;
   color: #2a1206;
 }
 
-.toggle-btn.car-fast.active {
+.toggle-btn.schnell.active {
   background: #3b82f6;
   color: #051429;
 }

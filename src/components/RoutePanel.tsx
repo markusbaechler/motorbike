@@ -14,8 +14,8 @@ interface Props {
 }
 
 const PROFILE_LABEL: Record<RouteProfile, string> = {
-  "car-eco": "Kurvig",
-  "car-fast": "Schnell",
+  kurvig: "Kurvig",
+  schnell: "Schnell",
 };
 
 function formatDuration(minutes: number): string {
@@ -33,7 +33,7 @@ function ProfileToggle({
 }) {
   return (
     <span className="toggle">
-      {(["car-eco", "car-fast"] as RouteProfile[]).map((p) => (
+      {(["kurvig", "schnell"] as RouteProfile[]).map((p) => (
         <button
           key={p}
           className={`toggle-btn ${value === p ? "active" : ""} ${p}`}

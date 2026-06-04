@@ -18,7 +18,7 @@ export interface FocusPoint {
 export default function App() {
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
   // Profile assigned to a newly added leg; per-leg overrides happen in the list.
-  const [defaultProfile, setDefaultProfile] = useState<RouteProfile>("car-eco");
+  const [defaultProfile, setDefaultProfile] = useState<RouteProfile>("kurvig");
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
