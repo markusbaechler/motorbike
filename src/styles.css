@@ -436,6 +436,63 @@ body,
   margin: 10px 0 4px;
 }
 
+.qp-day {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.qp-day-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.qp-day-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--accent);
+}
+
+.qp-day-remove {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  opacity: 0.6;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.qp-day-remove:hover {
+  opacity: 1;
+  color: #fca5a5;
+}
+
+.qp-row.locked .qp-locked {
+  flex: 1 1 auto;
+  font-size: 0.88rem;
+  opacity: 0.75;
+  padding: 8px 0;
+}
+
+.add-day-btn {
+  align-self: flex-start;
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--accent);
+  border: 1px dashed rgba(56, 189, 248, 0.5);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 4px;
+}
+
 .qp-rows > div:first-child .qp-day-header {
   margin-top: 0;
 }
