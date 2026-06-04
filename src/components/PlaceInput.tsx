@@ -18,7 +18,9 @@ interface Props {
 export default function PlaceInput({ value, placeholder, bias, onChange, onPick }: Props) {
   const [results, setResults] = useState<GeoResult[]>([]);
   const [open, setOpen] = useState(false);
-  const justPicked = useRef(false);
+  // Pre-filled values (editing an existing route) start as "already chosen",
+  // so we don't immediately fire a search and pop the dropdown open.
+  const justPicked = useRef(value.length > 0);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const controllerRef = useRef<AbortController>();
 
