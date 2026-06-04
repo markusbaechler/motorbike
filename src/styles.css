@@ -1,26 +1,38 @@
 :root {
-  --bg: #0b1120;
-  --surface: #131c2e;
-  --surface-2: #1b2740;
-  --panel: rgba(12, 18, 32, 0.82);
-  --border: rgba(255, 255, 255, 0.10);
-  --border-strong: rgba(255, 255, 255, 0.18);
-  --text: #f1f5f9;
-  --muted: #93a4bd;
-  --accent: #38bdf8;
-  --accent-ink: #052433;
+  --bg: #0a0c13;
+  --surface: #161a26;
+  --surface-2: #1f2434;
+  --panel: rgba(14, 16, 26, 0.72);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --text: #f5f6fb;
+  --muted: #a4adc4;
+
+  /* Brand: lively violet → magenta gradient */
+  --brand-from: #7c6cff;
+  --brand-to: #c95cf5;
+  --accent: #b39bff;
+  --accent-ink: #1a0f33;
+
+  /* Route profile semantics */
   --kurvig: #fb923c;
-  --kurvig-plus: #ec4899;
-  --schnell: #60a5fa;
+  --kurvig-plus: #f472b6;
+  --schnell: #38bdf8;
+
   --ok: #34d399;
-  --danger: #f87171;
-  --radius: 16px;
-  --radius-sm: 10px;
+  --danger: #fb7185;
+
+  --radius: 18px;
+  --radius-lg: 26px;
+  --radius-sm: 12px;
   --pill: 999px;
-  --shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
-  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  --shadow-sm: 0 6px 20px rgba(0, 0, 0, 0.3);
+  --brand-glow: 0 8px 24px rgba(124, 108, 255, 0.35);
+
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color-scheme: dark;
+  font-size: 16px;
 }
 
 * {
@@ -33,7 +45,10 @@ body,
   margin: 0;
   height: 100%;
   width: 100%;
-  background: var(--bg);
+  background:
+    radial-gradient(1200px 800px at 80% -10%, rgba(124, 108, 255, 0.12), transparent 60%),
+    radial-gradient(1000px 700px at -10% 110%, rgba(201, 92, 245, 0.1), transparent 55%),
+    var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -106,22 +121,32 @@ button {
 }
 
 .topbar h1 {
-  font-size: 1.02rem;
-  font-weight: 700;
+  font-size: 1.15rem;
+  font-weight: 800;
   margin: 0;
-  letter-spacing: 0.2px;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+  letter-spacing: -0.01em;
   display: flex;
   align-items: baseline;
-  gap: 6px;
+  gap: 7px;
+}
+
+.topbar h1 .brand {
+  background: linear-gradient(135deg, #c4b6ff, #f0a6ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .topbar .tag {
-  font-size: 0.66rem;
+  font-size: 0.62rem;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  opacity: 0.65;
-  font-weight: 600;
+  letter-spacing: 1.2px;
+  color: var(--accent);
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: var(--pill);
+  background: rgba(124, 108, 255, 0.16);
+  -webkit-text-fill-color: var(--accent);
 }
 
 /* MapLibre control tweaks so they sit clear of the safe areas */
@@ -172,15 +197,15 @@ button {
   backdrop-filter: blur(18px) saturate(140%);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   border-top: 1px solid var(--border-strong);
-  border-radius: 22px 22px 0 0;
-  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.45);
-  padding: 16px;
-  padding-top: 18px;
-  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  border-radius: 28px 28px 0 0;
+  box-shadow: 0 -16px 50px rgba(0, 0, 0, 0.5);
+  padding: 18px 18px;
+  padding-top: 22px;
+  padding-bottom: max(18px, env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  max-height: 54dvh;
+  gap: 14px;
+  max-height: 56dvh;
   overflow-y: auto;
 }
 
@@ -242,12 +267,12 @@ button {
 }
 
 .toggle-btn.kurvig.active {
-  background: #f97316;
+  background: var(--kurvig);
   color: #2a1206;
 }
 
 .toggle-btn.kurvig_plus.active {
-  background: #db2777;
+  background: var(--kurvig-plus);
   color: #2a0613;
 }
 
@@ -425,15 +450,15 @@ button {
 /* Day grouping */
 .day-group {
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.035);
-  transition: border-color 0.15s ease;
+  border-radius: var(--radius);
+  padding: 13px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .day-group:not(.collapsed) {
-  border-color: rgba(56, 189, 248, 0.35);
-  background: rgba(56, 189, 248, 0.05);
+  border-color: rgba(124, 108, 255, 0.4);
+  background: rgba(124, 108, 255, 0.07);
 }
 
 .day-group + .day-group {
@@ -624,20 +649,21 @@ button {
 }
 
 .quickplan-btn {
-  background: linear-gradient(180deg, #4cc6fb, var(--accent));
-  color: var(--accent-ink);
+  background: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+  color: #fff;
   border: none;
   border-radius: var(--pill);
-  padding: 9px 16px;
-  font-size: 0.88rem;
+  padding: 10px 18px;
+  font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: var(--shadow-sm);
-  transition: transform 0.06s ease, filter 0.15s ease, background 0.15s ease;
+  box-shadow: var(--brand-glow);
+  transition: transform 0.08s ease, filter 0.15s ease, box-shadow 0.15s ease;
 }
 
 .quickplan-btn:hover {
-  filter: brightness(1.06);
+  filter: brightness(1.07);
+  box-shadow: 0 10px 30px rgba(124, 108, 255, 0.45);
 }
 
 .quickplan-btn:active {
@@ -920,7 +946,7 @@ button {
 .modal {
   background: var(--surface);
   border: 1px solid var(--border-strong);
-  border-radius: 20px;
+  border-radius: var(--radius-lg);
   width: 100%;
   max-width: 480px;
   max-height: 88dvh;
@@ -1027,7 +1053,8 @@ button {
 .score-fill {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, #f97316, #fbbf24);
+  border-radius: var(--pill);
+  background: linear-gradient(90deg, var(--brand-from), var(--brand-to));
 }
 
 .score-val {
@@ -1150,16 +1177,18 @@ button {
 }
 
 .export-btn.primary {
-  background: linear-gradient(180deg, #4cc6fb, var(--accent));
-  color: var(--accent-ink);
+  background: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+  color: #fff;
   border-color: transparent;
   width: 100%;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--brand-glow);
+  padding: 13px 16px;
+  font-size: 0.95rem;
 }
 
 .export-btn.primary:hover {
-  filter: brightness(1.06);
-  background: linear-gradient(180deg, #4cc6fb, var(--accent));
+  filter: brightness(1.07);
+  background: linear-gradient(135deg, var(--brand-from), var(--brand-to));
 }
 
 .export-btn.primary:active {

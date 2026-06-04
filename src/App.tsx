@@ -188,7 +188,8 @@ export default function App() {
       <header className="topbar">
         <img src="./icon.svg" alt="" />
         <h1>
-          Motorbike <span className="tag">Routenplaner</span>
+          <span className="brand">Motorbike</span>{" "}
+          <span className="tag">Routenplaner</span>
         </h1>
       </header>
 

@@ -19,9 +19,9 @@ interface Props {
 const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
 function markerColor(index: number, total: number): string {
-  if (index === 0) return "#22c55e";
-  if (index === total - 1) return "#ef4444";
-  return "#3b82f6";
+  if (index === 0) return "#34d399";
+  if (index === total - 1) return "#fb7185";
+  return "#38bdf8";
 }
 
 export default function MapView({
@@ -93,10 +93,10 @@ export default function MapView({
             "match",
             ["get", "profile"],
             "schnell",
-            "#3b82f6",
+            "#38bdf8",
             "kurvig_plus",
-            "#db2777",
-            /* kurvig / default */ "#f97316",
+            "#f472b6",
+            /* kurvig / default */ "#fb923c",
           ],
           "line-width": 5,
         },
