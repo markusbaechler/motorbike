@@ -220,20 +220,33 @@ export async function findTours(
   }
 
   const inBand = (c: TourCandidate) =>
-    c.distanceKm >= target * 0.7 && c.distanceKm <= target * 1.35;
+    c.distanceKm >= target * 0.65 && c.distanceKm <= target * 1.45;
 
-  const fitness = (c: TourCandidate) =>
-    c.analysis.scores.overall +
-    c.roundness * 4 -
-    c.doubled * 10 -
-    (Math.abs(c.distanceKm - target) / target) * 5;
+  // What riders actually want: lots of climbing, passes, curves and small
+  // back-roads. Score that explicitly and only lightly weigh distance, so a
+  // twisty mountain loop beats a flat lap around the lake. Spurs are still
+  // penalised; roundness matters only a little.
+  const ascentPerKm = (c: TourCandidate) =>
+    c.distanceKm > 0 ? c.analysis.ascentM / c.distanceKm : 0;
+  const fun = (c: TourCandidate) => {
+    const s = c.analysis.scores;
+    return (
+      s.curves * 0.95 + // twisty
+      s.mountains * 1.5 + // altitude + passes + climb
+      s.scenic * 0.6 + // small back-roads
+      Math.min(c.analysis.passes, 8) * 0.9 + // explicit pass bonus
+      Math.min(ascentPerKm(c), 18) * 0.18 - // climbing density (hm/km)
+      c.doubled * 6 - // dead-end / there-and-back stubs
+      (Math.abs(c.distanceKm - target) / target) * 2
+    );
+  };
 
-  // Strongly prefer clean loops, but always return something.
-  let pool = ok.filter((c) => c.doubled <= 0.14 && c.roundness >= 0.28 && inBand(c));
-  if (pool.length === 0) pool = ok.filter((c) => c.doubled <= 0.2 && inBand(c));
-  if (pool.length === 0) pool = ok.filter((c) => c.doubled <= 0.28);
+  // Drop only the clearly broken ones (heavy spurs / wildly wrong length),
+  // then keep several so the rider can browse mountain alternatives.
+  let pool = ok.filter((c) => c.doubled <= 0.2 && inBand(c));
+  if (pool.length === 0) pool = ok.filter((c) => c.doubled <= 0.3);
   if (pool.length === 0) pool = ok;
 
-  pool.sort((a, b) => fitness(b) - fitness(a));
-  return pool;
+  pool.sort((a, b) => fun(b) - fun(a));
+  return pool.slice(0, 8);
 }

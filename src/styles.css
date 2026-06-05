@@ -2018,9 +2018,9 @@ button {
 .tg-preview-facts {
   flex: 1 1 auto;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2px 12px;
-  font-size: 0.82rem;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 3px 12px;
+  font-size: 0.8rem;
   color: var(--muted);
 }
 .tg-preview-facts b { color: var(--text); font-variant-numeric: tabular-nums; }

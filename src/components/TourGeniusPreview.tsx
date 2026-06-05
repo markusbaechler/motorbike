@@ -44,8 +44,10 @@ export default function TourGeniusPreview({
         <div className="tg-preview-facts">
           <span><b>{cand.distanceKm.toFixed(0)}</b> km</span>
           <span><b>{fmtDur(cand.durationMin)}</b></span>
+          <span><b>↑ {a.ascentM}</b> hm</span>
           <span><b>{a.passes}</b> Pässe</span>
-          <span><b>{Math.round(cand.roundness * 100)}%</b> Schleife</span>
+          <span><b>{a.cornersPerKm.toFixed(1)}</b> Kurven/km</span>
+          <span><b>{a.maxEle}</b> m höchster</span>
         </div>
       </div>
 
