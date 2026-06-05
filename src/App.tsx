@@ -79,17 +79,23 @@ export default function App() {
   const weatherFetched = useRef<Set<string>>(new Set());
   useEffect(() => {
     const days = computeDays(waypoints);
-    const targets = days
-      .map((d) => waypoints[d.endIdx])
-      .filter((w): w is Waypoint => !!w && !!w.dayDate);
+    const targets: { wp: Waypoint; date: string }[] = [];
+    for (const span of days) {
+      const date = waypoints[span.endIdx]?.dayDate;
+      if (!date) continue;
+      const firstIdx = span.day === 1 ? span.startIdx : span.startIdx + 1;
+      for (let i = firstIdx; i <= span.endIdx; i++) {
+        targets.push({ wp: waypoints[i], date });
+      }
+    }
     const controller = new AbortController();
     (async () => {
-      for (const w of targets) {
-        const key = `${w.id}:${w.dayDate}`;
+      for (const { wp, date } of targets) {
+        const key = `${wp.id}:${date}`;
         if (weatherFetched.current.has(key)) continue;
         weatherFetched.current.add(key);
         try {
-          const r = await fetchWeather(w.lat, w.lng, w.dayDate!, controller.signal);
+          const r = await fetchWeather(wp.lat, wp.lng, date, controller.signal);
           setWeather((prev) => ({ ...prev, [key]: r }));
         } catch (e) {
           if ((e as Error).name !== "AbortError") {

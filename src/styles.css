@@ -1861,3 +1861,14 @@ button {
   padding: 10px 12px;
   margin-bottom: 12px;
 }
+
+.wp-weather {
+  flex: 0 0 auto;
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+  padding: 2px 7px;
+  border-radius: var(--pill);
+  white-space: nowrap;
+}
+.wp-weather.fair { color: #fbbf24; background: rgba(251, 191, 36, 0.12); }
+.wp-weather.wet { color: #60a5fa; background: rgba(96, 165, 250, 0.14); }

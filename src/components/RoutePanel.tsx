@@ -139,10 +139,11 @@ export default function RoutePanel({
     else setMin((m) => !m);
   };
 
-  const renderWaypoint = (i: number) => {
+  const renderWaypoint = (i: number, dayDate?: string) => {
     const wp = waypoints[i];
     const leg = i > 0 ? route?.legs[i - 1] : undefined;
     const isLast = i === waypoints.length - 1;
+    const wx = dayDate ? weather[`${wp.id}:${dayDate}`] : undefined;
     return (
       <li key={wp.id} className="wp-item">
         {i > 0 && (
@@ -173,6 +174,14 @@ export default function RoutePanel({
               </span>
             )}
           </span>
+          {wx && (
+            <span
+              className={`wp-weather ${isFair(wx.code) ? "fair" : "wet"}`}
+              title={`${wx.label} · ${wx.tMax}°/${wx.tMin}° · ${wx.precipProb}% Regen · Wind ${wx.windMax} km/h`}
+            >
+              {wx.tMax}° · {wx.precipProb}%
+            </span>
+          )}
           <span className="wp-actions">
             {i > 0 && !isLast && (
               <button
@@ -370,23 +379,14 @@ export default function RoutePanel({
                   </button>
                 </div>
               )}
-              {open && (() => {
-                const wkey = `${overnight.id}:${overnight.dayDate}`;
-                const wx = overnight.dayDate ? weather[wkey] : undefined;
-                if (wx === undefined && !overnight.dayDate) return null;
-                return (
-                  <div className="day-weather">
-                    {wx ? (
-                      <span className={isFair(wx.code) ? "fair" : "wet"}>
-                        {wx.label} · {wx.tMax}° / {wx.tMin}° · {wx.precipProb}% Regen · Wind {wx.windMax} km/h
-                      </span>
-                    ) : overnight.dayDate ? (
-                      <span className="muted">Wetter: keine Vorhersage (zu weit weg/vergangen)</span>
-                    ) : null}
-                  </div>
-                );
-              })()}
-              {open && <ul className="wp-list">{indices.map(renderWaypoint)}</ul>}
+              {open && overnight.dayDate && weather[`${overnight.id}:${overnight.dayDate}`] === null && (
+                <p className="day-weather muted">Wetter: keine Vorhersage (Datum zu weit weg/vergangen).</p>
+              )}
+              {open && (
+                <ul className="wp-list">
+                  {indices.map((i) => renderWaypoint(i, overnight.dayDate))}
+                </ul>
+              )}
             </div>
           );
         })
