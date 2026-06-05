@@ -196,6 +196,9 @@ export default function RoutePanel({
         aria-label={min ? "Bedienfeld aufklappen" : "Bedienfeld minimieren"}
       >
         <span className="panel-handle-bar" />
+        <span className="panel-handle-chevron" data-open={!min}>
+          <Icon name="chevron" size={20} />
+        </span>
       </button>
 
       {min ? (
@@ -208,11 +211,8 @@ export default function RoutePanel({
                 {days.length > 1 ? ` · ${days.length} Tage` : ""}
               </>
             ) : (
-              "Route planen"
+              "Route planen — antippen zum Aufklappen"
             )}
-          </span>
-          <span className="day-chevron" data-open={false}>
-            <Icon name="chevron" size={18} />
           </span>
         </button>
       ) : (

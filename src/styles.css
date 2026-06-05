@@ -246,29 +246,51 @@ button {
 
 /* Tappable grabber/handle to minimise & expand the sheet */
 .panel-handle {
-  position: sticky;
-  top: -6px;
+  position: relative;
   align-self: stretch;
   display: flex;
+  align-items: center;
   justify-content: center;
-  padding: 4px 0 8px;
-  margin: -8px 0 0;
+  height: 32px;
+  width: 100%;
+  margin: -10px 0 0;
+  padding: 0;
   background: none;
   border: none;
   cursor: pointer;
 }
 
 .panel-handle-bar {
-  width: 44px;
+  width: 46px;
   height: 5px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.3);
+  transition: background 0.15s ease;
+}
+
+.panel-handle:hover .panel-handle-bar {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.panel-handle-chevron {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+
+/* chevron points down when open (collapse), up when minimised (expand) */
+.panel-handle-chevron[data-open="false"] {
+  transform: translateY(-50%) rotate(180deg);
 }
 
 .panel-minbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 10px;
   width: 100%;
   background: none;
@@ -277,7 +299,7 @@ button {
   font-size: 1.05rem;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
-  padding: 2px 2px 4px;
+  padding: 8px 2px 4px;
 }
 
 .panel-row {
