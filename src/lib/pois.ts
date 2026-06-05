@@ -86,45 +86,63 @@ export async function fetchPois(
   // Keep the around-list bounded (longer routes use a bigger step).
   let totalM = 0;
   for (let i = 1; i < coords.length; i++) totalM += haversine(coords[i - 1], coords[i]);
-  const step = Math.max(2500, totalM / 80);
+  const step = Math.max(3000, totalM / 50);
   const pts = downsample(coords, step);
   const around = pts.map((c) => `${c[1].toFixed(5)},${c[0].toFixed(5)}`).join(",");
 
   const parts: string[] = [];
   for (const cat of categories) {
-    for (const f of FILTERS[cat]) parts.push(`node(around:900,${around})${f};`);
+    for (const f of FILTERS[cat]) parts.push(`node(around:800,${around})${f};`);
   }
-  const query = `[out:json][timeout:90];(${parts.join("")});out body 300;`;
+  const query = `[out:json][timeout:25];(${parts.join("")});out body 300;`;
 
   const ENDPOINTS = [
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
-    "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
   ];
 
-  let data: { elements?: { id: number; lat: number; lon: number; tags?: Tags }[] } | null = null;
+  type OverpassData = {
+    elements?: { id: number; lat: number; lon: number; tags?: Tags }[];
+    remark?: string;
+  };
+
+  let data: OverpassData | null = null;
   let lastError = "Overpass nicht erreichbar";
   for (const url of ENDPOINTS) {
+    // Hard per-server timeout so a slow mirror never hangs the UI.
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 14000);
+    const forward = () => ctrl.abort();
+    signal?.addEventListener("abort", forward);
     try {
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: "data=" + encodeURIComponent(query),
-        signal,
+        signal: ctrl.signal,
       });
       if (!res.ok) {
         lastError = `HTTP ${res.status}`;
         continue;
       }
-      data = await res.json();
+      const json = (await res.json()) as OverpassData;
+      // Overpass reports query/timeout problems via "remark" with HTTP 200.
+      if (json.remark && (!json.elements || json.elements.length === 0)) {
+        lastError = json.remark.slice(0, 120);
+        continue;
+      }
+      data = json;
       break;
     } catch (e) {
-      if ((e as Error).name === "AbortError") throw e;
-      lastError = (e as Error).message;
+      if (signal?.aborted) throw new DOMException("aborted", "AbortError");
+      lastError = "Zeitüberschreitung";
+    } finally {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", forward);
     }
   }
   if (!data) {
-    throw new Error(`Laden fehlgeschlagen: ${lastError}`);
+    throw new Error(lastError);
   }
 
   const seen = new Set<string>();
