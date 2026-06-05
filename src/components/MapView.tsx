@@ -4,6 +4,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { DEFAULT_CENTER, DEFAULT_ZOOM, MAP_STYLE_URL } from "../config";
 import { computeDays, dayNumbers } from "../lib/days";
 import type { FocusPoint } from "../App";
+import type { Poi } from "../lib/pois";
 import type { RouteResult, Waypoint } from "../types";
 
 interface Props {
@@ -11,10 +12,21 @@ interface Props {
   route: RouteResult | null;
   focus: FocusPoint | null;
   fitSignal: number;
+  pois: Poi[];
   onAddWaypoint: (lng: number, lat: number) => void;
   onMoveWaypoint: (id: string, lng: number, lat: number) => void;
   onInsertWaypoint: (legIndex: number, lng: number, lat: number) => void;
+  onAddPoiStop: (poi: Poi) => void;
 }
+
+const POI_ICON: Record<string, string> = {
+  natur:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 20 6-10 4 6 3-4 5 8z"/></svg>',
+  motorrad:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17" r="3"/><circle cx="18.5" cy="17" r="3"/><path d="M5.5 17h6l4-7h3"/></svg>',
+  gastro:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v7a2 2 0 0 0 4 0V3M6 11v10M18 3c-1.7 0-3 2-3 5s1 4 3 4v9"/></svg>',
+};
 
 const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
@@ -29,9 +41,11 @@ export default function MapView({
   route,
   focus,
   fitSignal,
+  pois,
   onAddWaypoint,
   onMoveWaypoint,
   onInsertWaypoint,
+  onAddPoiStop,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -49,6 +63,10 @@ export default function MapView({
 
   const waypointsRef = useRef(waypoints);
   waypointsRef.current = waypoints;
+
+  const poiMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const addPoiStopRef = useRef(onAddPoiStop);
+  addPoiStopRef.current = onAddPoiStop;
 
   // --- Map initialisation (once) ---
   useEffect(() => {
@@ -268,6 +286,44 @@ export default function MapView({
       maxZoom: 12,
     });
   }, [fitSignal]);
+
+  // --- Sync POI markers ---
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    for (const m of poiMarkersRef.current) m.remove();
+    poiMarkersRef.current = [];
+
+    for (const poi of pois) {
+      const el = document.createElement("div");
+      el.className = `poi-marker ${poi.category}`;
+      el.innerHTML = POI_ICON[poi.category] ?? "";
+
+      const content = document.createElement("div");
+      content.className = "poi-popup";
+      const title = document.createElement("strong");
+      title.textContent = poi.name;
+      const kind = document.createElement("span");
+      kind.className = "poi-kind";
+      kind.textContent = poi.kind;
+      const btn = document.createElement("button");
+      btn.className = "poi-add";
+      btn.textContent = "Als Stopp hinzufügen";
+      btn.addEventListener("click", () => {
+        addPoiStopRef.current(poi);
+        popup.remove();
+      });
+      content.append(title, kind, btn);
+
+      const popup = new maplibregl.Popup({ offset: 16, closeButton: true }).setDOMContent(content);
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat([poi.lng, poi.lat])
+        .setPopup(popup)
+        .addTo(map);
+      poiMarkersRef.current.push(marker);
+    }
+  }, [pois]);
 
   return <div className="map" ref={containerRef} />;
 }

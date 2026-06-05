@@ -8,6 +8,8 @@ import BookingPrefsModal from "./components/BookingPrefsModal";
 import SearchBox from "./components/SearchBox";
 import { getBookingPrefs, saveBookingPrefs, type BookingPrefs } from "./lib/storage";
 import { addDays, buildBookingUrl } from "./lib/booking";
+import { fetchPois, type Poi, type PoiCategory } from "./lib/pois";
+import { haversine } from "./lib/geo";
 import { fetchRoute } from "./lib/routing";
 import type { GeoResult } from "./lib/geocoding";
 import type { RouteProfile, RouteResult, Waypoint } from "./types";
@@ -40,6 +42,70 @@ export default function App() {
     setBookingPrefsState(p);
   };
 
+  // --- Sehenswürdigkeiten / POIs ---
+  const [poiCats, setPoiCats] = useState<PoiCategory[]>([]);
+  const [pois, setPois] = useState<Poi[]>([]);
+  const [poiLoading, setPoiLoading] = useState(false);
+  const [poiError, setPoiError] = useState<string | null>(null);
+
+  const togglePoiCat = (c: PoiCategory) =>
+    setPoiCats((cs) => (cs.includes(c) ? cs.filter((x) => x !== c) : [...cs, c]));
+
+  const poiDebounce = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => {
+    if (!route || poiCats.length === 0) {
+      setPois([]);
+      setPoiError(null);
+      setPoiLoading(false);
+      return;
+    }
+    const coords: number[][] = [];
+    for (const f of route.geojson.features) {
+      if (f.geometry.type === "LineString") {
+        for (const c of f.geometry.coordinates) coords.push(c);
+      }
+    }
+    const controller = new AbortController();
+    clearTimeout(poiDebounce.current);
+    poiDebounce.current = setTimeout(async () => {
+      setPoiLoading(true);
+      setPoiError(null);
+      try {
+        setPois(await fetchPois(coords, poiCats, controller.signal));
+      } catch (e) {
+        if ((e as Error).name !== "AbortError") {
+          setPois([]);
+          setPoiError((e as Error).message);
+        }
+      } finally {
+        setPoiLoading(false);
+      }
+    }, 400);
+    return () => {
+      controller.abort();
+      clearTimeout(poiDebounce.current);
+    };
+  }, [route, poiCats]);
+
+  // Add a POI as a stop, inserted into the nearest leg of the route.
+  const addPoiStop = (poi: Poi) => {
+    if (!route) return;
+    let bestLeg = 0;
+    let bestDist = Infinity;
+    for (const f of route.geojson.features) {
+      if (f.geometry.type !== "LineString") continue;
+      const legIdx = (f.properties?.legIndex ?? 0) as number;
+      for (const c of f.geometry.coordinates) {
+        const d = haversine([poi.lng, poi.lat], c);
+        if (d < bestDist) {
+          bestDist = d;
+          bestLeg = legIdx;
+        }
+      }
+    }
+    insertWaypoint(bestLeg, poi.lng, poi.lat, poi.name);
+  };
+
   const openHotel = (place: string, checkin?: string) => {
     const checkout = checkin ? addDays(checkin, 1) : undefined;
     const url = buildBookingUrl(place, checkin, checkout, bookingPrefs);
@@ -69,13 +135,14 @@ export default function App() {
 
   // Insert a shaping point into a specific leg (legIndex = index of the leg
   // being reshaped). The new point keeps that leg's profile.
-  const insertWaypoint = (legIndex: number, lng: number, lat: number) =>
+  const insertWaypoint = (legIndex: number, lng: number, lat: number, name?: string) =>
     setWaypoints((wps) => {
       const dest = wps[legIndex + 1];
       const newWp: Waypoint = {
         id: makeId(),
         lng,
         lat,
+        name,
         legProfile: dest ? dest.legProfile : defaultProfile,
       };
       const copy = [...wps];
@@ -200,9 +267,11 @@ export default function App() {
         route={route}
         focus={focus}
         fitSignal={fitSignal}
+        pois={pois}
         onAddWaypoint={addWaypoint}
         onMoveWaypoint={moveWaypoint}
         onInsertWaypoint={insertWaypoint}
+        onAddPoiStop={addPoiStop}
       />
 
       <RoutePanel
@@ -218,6 +287,10 @@ export default function App() {
         onOpenRoutes={() => setShowRoutes(true)}
         onOpenBookingPrefs={() => setShowBookingPrefs(true)}
         onOpenHotel={openHotel}
+        poiCats={poiCats}
+        poiLoading={poiLoading}
+        poiError={poiError}
+        onTogglePoiCat={togglePoiCat}
         onDefaultProfileChange={setDefaultProfile}
         onSetLegProfile={setLegProfile}
         onToggleDayEnd={toggleDayEnd}
