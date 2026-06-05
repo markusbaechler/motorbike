@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import Icon from "./Icon";
 import { computeDays, dayStats, dayNumbers } from "../lib/days";
 import type { BookingPrefs } from "../lib/storage";
+import { isFair, type WeatherDay } from "../lib/weather";
 import type { RouteProfile, RouteResult, Waypoint } from "../types";
 
 interface Props {
@@ -21,6 +22,7 @@ interface Props {
   onSetLegProfile: (waypointId: string, p: RouteProfile) => void;
   onToggleDayEnd: (id: string) => void;
   onSetDayMeta: (id: string, patch: { dayName?: string; dayDate?: string }) => void;
+  weather: Record<string, WeatherDay | null>;
   onAddDay: () => void;
   onRemoveWaypoint: (id: string) => void;
   onReorderWaypoint: (id: string, direction: -1 | 1) => void;
@@ -95,6 +97,7 @@ export default function RoutePanel({
   onSetLegProfile,
   onToggleDayEnd,
   onSetDayMeta,
+  weather,
   onAddDay,
   onRemoveWaypoint,
   onReorderWaypoint,
@@ -362,6 +365,22 @@ export default function RoutePanel({
                   </button>
                 </div>
               )}
+              {open && (() => {
+                const wkey = `${overnight.id}:${overnight.dayDate}`;
+                const wx = overnight.dayDate ? weather[wkey] : undefined;
+                if (wx === undefined && !overnight.dayDate) return null;
+                return (
+                  <div className="day-weather">
+                    {wx ? (
+                      <span className={isFair(wx.code) ? "fair" : "wet"}>
+                        {wx.label} · {wx.tMax}° / {wx.tMin}° · {wx.precipProb}% Regen · Wind {wx.windMax} km/h
+                      </span>
+                    ) : overnight.dayDate ? (
+                      <span className="muted">Wetter: keine Vorhersage (zu weit weg/vergangen)</span>
+                    ) : null}
+                  </div>
+                );
+              })()}
               {open && <ul className="wp-list">{indices.map(renderWaypoint)}</ul>}
             </div>
           );

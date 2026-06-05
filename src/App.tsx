@@ -9,6 +9,8 @@ import Home from "./components/Home";
 import SearchBox from "./components/SearchBox";
 import { getBookingPrefs, saveBookingPrefs, listRoutes, type BookingPrefs } from "./lib/storage";
 import { addDays, buildBookingUrl } from "./lib/booking";
+import { computeDays } from "./lib/days";
+import { fetchWeather, type WeatherDay } from "./lib/weather";
 import { fetchRoute } from "./lib/routing";
 import type { GeoResult } from "./lib/geocoding";
 import type { RouteProfile, RouteResult, Waypoint } from "./types";
@@ -57,6 +59,33 @@ export default function App() {
     window.matchMedia?.("(display-mode: standalone)").matches ||
     (navigator as unknown as { standalone?: boolean }).standalone === true;
   const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  // Weather per day (overnight location + date) via Open-Meteo.
+  const [weather, setWeather] = useState<Record<string, WeatherDay | null>>({});
+  const weatherFetched = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const days = computeDays(waypoints);
+    const targets = days
+      .map((d) => waypoints[d.endIdx])
+      .filter((w): w is Waypoint => !!w && !!w.dayDate);
+    const controller = new AbortController();
+    (async () => {
+      for (const w of targets) {
+        const key = `${w.id}:${w.dayDate}`;
+        if (weatherFetched.current.has(key)) continue;
+        weatherFetched.current.add(key);
+        try {
+          const r = await fetchWeather(w.lat, w.lng, w.dayDate!, controller.signal);
+          setWeather((prev) => ({ ...prev, [key]: r }));
+        } catch (e) {
+          if ((e as Error).name !== "AbortError") {
+            weatherFetched.current.delete(key);
+          }
+        }
+      }
+    })();
+    return () => controller.abort();
+  }, [waypoints]);
+
   const doInstall = async () => {
     if (!installEvt) return;
     installEvt.prompt();
@@ -259,6 +288,7 @@ export default function App() {
         onSetLegProfile={setLegProfile}
         onToggleDayEnd={toggleDayEnd}
         onSetDayMeta={setDayMeta}
+        weather={weather}
         onAddDay={addDay}
         onRemoveWaypoint={removeWaypoint}
         onReorderWaypoint={reorderWaypoint}

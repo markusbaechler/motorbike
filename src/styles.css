@@ -1829,3 +1829,12 @@ button {
   padding: 12px 14px;
   text-shadow: none;
 }
+
+.day-weather {
+  font-size: 0.82rem;
+  margin: 2px 0 8px;
+  font-variant-numeric: tabular-nums;
+}
+.day-weather .fair { color: #fbbf24; }
+.day-weather .wet { color: #60a5fa; }
+.day-weather .muted { color: var(--muted); }
