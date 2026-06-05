@@ -1955,97 +1955,107 @@ button {
 }
 .tg-choice.active span { color: var(--accent); }
 
-.export-btn.primary,
-.tg-result-actions .export-btn {
+.export-btn.primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
 }
 
-.tg-result {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 16px;
-  border-radius: var(--radius-sm);
-  background: rgba(255, 157, 60, 0.08);
-  border: 1px solid rgba(255, 157, 60, 0.3);
-  margin-top: 4px;
+/* On-map preview of a generated round trip */
+.tg-preview {
+  position: absolute;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  width: min(440px, calc(100vw - 24px));
+  background: var(--panel, rgba(24, 22, 28, 0.96));
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 157, 60, 0.4);
+  border-radius: 16px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+  padding: 12px 14px;
 }
-.tg-score {
+.tg-preview-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.tg-preview-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+  color: var(--accent);
+  font-size: 0.92rem;
+}
+.tg-preview-variant {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.tg-preview-main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 11px;
+}
+.tg-preview-score {
   flex: 0 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
 }
-.tg-score-num {
-  font-size: 2.6rem;
+.tg-preview-score b {
+  font-size: 2rem;
   font-weight: 900;
   line-height: 1;
   color: var(--accent);
 }
-.tg-score-lab {
-  font-size: 0.72rem;
-  line-height: 1.25;
-  color: var(--muted);
-}
-.tg-bars { flex: 1 1 auto; min-width: 0; }
-.tg-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.78rem;
-  margin: 4px 0;
-}
-.tg-bar > span:first-child { width: 84px; color: var(--muted); }
-.tg-track {
-  flex: 1;
-  height: 7px;
-  border-radius: var(--pill);
-  background: rgba(255, 255, 255, 0.12);
-  overflow: hidden;
-}
-.tg-track > span {
-  display: block;
-  height: 100%;
-  background: linear-gradient(90deg, var(--brand-from), var(--brand-to));
-}
-.tg-bar > b { width: 26px; text-align: right; font-variant-numeric: tabular-nums; }
-
-.tg-stats {
+.tg-preview-score span { font-size: 0.78rem; color: var(--muted); }
+.tg-preview-facts {
+  flex: 1 1 auto;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin: 14px 0 4px;
-}
-.tg-stats > div {
-  text-align: center;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: var(--radius-sm);
-  padding: 9px 4px;
-}
-.tg-stats b { display: block; font-size: 1rem; font-variant-numeric: tabular-nums; }
-.tg-stats span { font-size: 0.72rem; color: var(--muted); }
-
-.tg-variant {
-  text-align: center;
-  font-size: 0.8rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 12px;
+  font-size: 0.82rem;
   color: var(--muted);
-  margin: 12px 0 10px;
 }
-.tg-result-actions {
+.tg-preview-facts b { color: var(--text); font-variant-numeric: tabular-nums; }
+.tg-preview-actions {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
-.tg-back {
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-weight: 600;
-  font-size: 0.88rem;
+.tg-pv-btn {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 10px 8px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
   cursor: pointer;
-  padding: 6px;
+  border: 1px solid var(--border-strong);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  transition: background 0.15s ease, filter 0.15s ease, transform 0.06s ease;
 }
-.tg-back:hover { color: var(--text); }
+.tg-pv-btn:hover { background: rgba(255, 255, 255, 0.13); }
+.tg-pv-btn:active { transform: translateY(1px); }
+.tg-pv-btn.ghost { color: var(--muted); }
+.tg-pv-btn.primary {
+  background: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+  color: #fff;
+  border-color: transparent;
+  box-shadow: var(--brand-glow);
+}
+.tg-pv-btn.primary:hover { filter: brightness(1.07); }
+
+@media (max-width: 560px) {
+  .tg-preview { top: 64px; }
+  .tg-pv-btn { padding: 11px 6px; font-size: 0.8rem; }
+}

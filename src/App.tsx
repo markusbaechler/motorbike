@@ -4,6 +4,8 @@ import RoutePanel from "./components/RoutePanel";
 import RouteModal from "./components/RouteModal";
 import QuickPlanModal, { type QuickStop } from "./components/QuickPlanModal";
 import TourGeniusModal from "./components/TourGeniusModal";
+import TourGeniusPreview from "./components/TourGeniusPreview";
+import type { TourCandidate } from "./lib/tourgen";
 import RoutesModal from "./components/RoutesModal";
 import BookingPrefsModal from "./components/BookingPrefsModal";
 import Home from "./components/Home";
@@ -38,6 +40,12 @@ export default function App() {
   const [showDetails, setShowDetails] = useState(false);
   const [showQuickPlan, setShowQuickPlan] = useState(false);
   const [showTourGenius, setShowTourGenius] = useState(false);
+  // Tour-Genius map preview: candidates being previewed (round trips), the
+  // currently shown one, and the waypoints to restore if the user discards.
+  const [geniusCands, setGeniusCands] = useState<TourCandidate[] | null>(null);
+  const [geniusIdx, setGeniusIdx] = useState(0);
+  const geniusPrev = useRef<Waypoint[]>([]);
+  const geniusProfile = useRef<RouteProfile>("kurvig");
   const [showRoutes, setShowRoutes] = useState(false);
   const [showBookingPrefs, setShowBookingPrefs] = useState(false);
   // Inviting start screen, shown on launch.
@@ -229,6 +237,46 @@ export default function App() {
     setFitSignal((n) => n + 1);
   };
 
+  // Put a Tour-Genius candidate (a round trip) onto the map as the working
+  // route so the user can see it before deciding.
+  const previewCandidate = (cand: TourCandidate, profile: RouteProfile) => {
+    setPendingDay(false);
+    setWaypoints(
+      cand.stops.map((s) => ({
+        id: makeId(),
+        lng: s.lng,
+        lat: s.lat,
+        name: s.name,
+        legProfile: profile,
+      })),
+    );
+    setFitSignal((n) => n + 1);
+  };
+
+  const onGeniusResults = (cands: TourCandidate[], profile: RouteProfile) => {
+    geniusPrev.current = waypoints; // snapshot to restore on discard
+    geniusProfile.current = profile;
+    setGeniusCands(cands);
+    setGeniusIdx(0);
+    setShowTourGenius(false);
+    previewCandidate(cands[0], profile);
+  };
+
+  const geniusNext = () => {
+    if (!geniusCands) return;
+    const next = (geniusIdx + 1) % geniusCands.length;
+    setGeniusIdx(next);
+    previewCandidate(geniusCands[next], geniusProfile.current);
+  };
+
+  const geniusAccept = () => setGeniusCands(null); // keep the route as-is
+
+  const geniusDiscard = () => {
+    setWaypoints(geniusPrev.current);
+    setGeniusCands(null);
+    setFitSignal((n) => n + 1);
+  };
+
   // Load a saved/imported route (fresh ids to avoid collisions).
   const loadRoute = (saved: Waypoint[]) => {
     setPendingDay(false);
@@ -368,8 +416,18 @@ export default function App() {
       {showTourGenius && (
         <TourGeniusModal
           defaultProfile={defaultProfile}
-          onApply={applyQuickPlan}
+          onResults={onGeniusResults}
           onClose={() => setShowTourGenius(false)}
+        />
+      )}
+
+      {geniusCands && (
+        <TourGeniusPreview
+          candidates={geniusCands}
+          idx={geniusIdx}
+          onNext={geniusNext}
+          onAccept={geniusAccept}
+          onDiscard={geniusDiscard}
         />
       )}
 

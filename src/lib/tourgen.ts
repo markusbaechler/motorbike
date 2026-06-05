@@ -29,8 +29,9 @@ const TARGET_KM: Record<TourDuration, number> = { half: 120, full: 250 };
 
 // Roads are longer than the straight polygon through the via-points.
 const DETOUR = 1.35;
-// Points placed on the circle, including the start (4 → a rounded square loop).
-const RING = 4;
+// Points placed on the circle, including the start. More points → a rounder,
+// unmistakable loop (and less chance a single unreachable via collapses it).
+const RING = 5;
 // Compass bearings to rotate the loop around the start by (one candidate each).
 const BEARINGS = [0, 45, 90, 135, 180, 225, 270, 315];
 
