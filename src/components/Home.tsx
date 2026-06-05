@@ -1,4 +1,3 @@
-import type { CSSProperties } from "react";
 import Icon from "./Icon";
 
 interface Props {
@@ -9,12 +8,16 @@ interface Props {
 }
 
 export default function Home({ savedCount, onPlan, onRoutes, onMap }: Props) {
-  // Relative to the page (works under the GitHub Pages subpath).
-  const heroStyle = {
-    "--hero-img": "url(./hero.jpg)",
-  } as CSSProperties;
   return (
-    <div className="home" style={heroStyle}>
+    <div className="home">
+      <img
+        className="home-bg"
+        src="./hero.jpg"
+        alt=""
+        onError={(e) => ((e.currentTarget.style.display = "none"))}
+      />
+      <div className="home-scrim" />
+
       <div className="home-inner">
         <img className="home-logo" src="./icon.svg" alt="" />
         <h1 className="home-title">
