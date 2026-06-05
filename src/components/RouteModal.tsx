@@ -60,8 +60,8 @@ export default function RouteModal({ waypoints, route, onClose }: Props) {
     [days, route, waypoints],
   );
 
-  const exportWhole = () => {
-    downloadGpx("motorradtour", buildGpx("Motorradtour", waypoints, route.geojson.features));
+  const exportWhole = (mode: "route" | "track") => {
+    downloadGpx("motorradtour", buildGpx("Motorradtour", waypoints, route.geojson.features, mode));
   };
 
   const exportDay = (startIdx: number, endIdx: number, day: number) => {
@@ -70,7 +70,7 @@ export default function RouteModal({ waypoints, route, onClose }: Props) {
       return i >= startIdx && i < endIdx;
     });
     const wps = waypoints.slice(startIdx, endIdx + 1);
-    downloadGpx(`tag-${day}`, buildGpx(`Tag ${day}`, wps, features));
+    downloadGpx(`tag-${day}`, buildGpx(`Tag ${day}`, wps, features, "route"));
   };
 
   const stats = (a: RouteAnalysis) => (
@@ -207,8 +207,15 @@ export default function RouteModal({ waypoints, route, onClose }: Props) {
           {/* Export */}
           <section className="modal-section">
             <h3>Export fürs Navi (GPX)</h3>
-            <button className="export-btn primary" onClick={exportWhole}>
-              <Icon name="download" size={17} /> Gesamte Tour (GPX)
+            <button className="export-btn primary" onClick={() => exportWhole("route")}>
+              <Icon name="download" size={17} /> Route-GPX (Beeline / Navi)
+            </button>
+            <button
+              className="export-btn"
+              style={{ width: "100%", marginTop: 8 }}
+              onClick={() => exportWhole("track")}
+            >
+              <Icon name="download" size={16} /> Track-GPX (exakte Linie)
             </button>
             {days.length > 1 && (
               <div className="export-days">
@@ -224,7 +231,8 @@ export default function RouteModal({ waypoints, route, onClose }: Props) {
               </div>
             )}
             <p className="modal-note">
-              GPX funktioniert mit Garmin, TomTom, calimoto, kurviger, OsmAnd u. a.
+              Für Abbiegehinweise in Beeline/Garmin die <strong>Route-GPX</strong> nutzen.
+              Die Track-GPX bildet die Linie exakt ab (ohne Abbiegehinweise).
             </p>
           </section>
         </div>

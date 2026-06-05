@@ -17,11 +17,12 @@ const BROUTER_PROFILES: Record<RouteProfile, string[]> = {
 
 // BRouter's per-profile travel time is unrealistic for motorcycles (the moped
 // profile in particular assumes very low speeds). We estimate the duration
-// from distance using a realistic average speed per mode instead.
+// from distance using realistic average speeds per mode (tuned to match real
+// navigation apps like Beeline, which factor in curves/elevation/stops).
 const AVG_SPEED_KMH: Record<RouteProfile, number> = {
-  kurvig: 55,
-  kurvig_plus: 45,
-  schnell: 90,
+  kurvig: 42,
+  kurvig_plus: 36,
+  schnell: 82,
 };
 
 interface Leg {
