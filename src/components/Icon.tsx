@@ -17,7 +17,8 @@ type IconName =
   | "download"
   | "save"
   | "trash"
-  | "users";
+  | "users"
+  | "info";
 
 const PATHS: Record<IconName, ReactNode> = {
   search: (
@@ -107,6 +108,13 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
       <circle cx="9" cy="7" r="4" />
       <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+    </>
+  ),
+  info: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <line x1="12" y1="11" x2="12" y2="16" />
+      <line x1="12" y1="8" x2="12" y2="8" />
     </>
   ),
 };

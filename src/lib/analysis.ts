@@ -24,9 +24,10 @@ export interface RouteAnalysis {
   hasRoadData: boolean;
   roadKm: RoadKm;
   scores: {
-    attractiveness: number; // 0–10
-    bergigkeit: number; // 0–10
-    overall: number; // 0–10
+    curves: number; // 0–10 Kurvenreichtum
+    mountains: number; // 0–10 Bergigkeit
+    scenic: number; // 0–10 Landschaft / kleine Straßen
+    overall: number; // 0–10 Gesamt-Attraktivität
   };
 }
 
@@ -161,24 +162,20 @@ export function analyse(features: GeoJSON.Feature[]): RouteAnalysis {
   const { roadKm, hasData } = roadBreakdown(features);
   const passes = hasElevation ? countPasses(profile.map((p) => p.ele)) : 0;
 
-  // --- Attractiveness (multi-signal, 0–10) ---
-  // Curves are weighted more sensitively (2 corners/km already counts as very
-  // twisty), and small-road share + curves can each carry the score high.
+  // --- Sub-scores (each 0–1) ---
+  // Curves: 2 real corners/km already counts as very twisty.
   const curve01 = clamp(cornersPerKm / 2, 0, 1);
-  const scenicShare = hasData ? roadKm.neben / totalKm : 0;
-  const motorwayShare = hasData ? roadKm.autobahn / totalKm : 0;
-  const attract01 = hasData
-    ? clamp(0.6 * scenicShare + 0.6 * curve01 - 0.3 * motorwayShare, 0, 1)
-    : clamp(0.4 + 0.6 * curve01, 0, 1);
-  const attractiveness = round1(attract01 * 10);
-
-  // --- Bergigkeit (0–10) ---
+  // Mountains: how high it goes (pass altitude) + number of passes + climb.
   const alt01 = hasElevation ? clamp(maxEle / 2400, 0, 1) : 0;
   const pass01 = clamp(passes / 4, 0, 1);
   const ascent01 = clamp(ascentM / totalKm / 18, 0, 1);
-  const bergigkeit = round1(clamp(0.5 * alt01 + 0.3 * pass01 + 0.2 * ascent01, 0, 1) * 10);
+  const mountains01 = clamp(0.5 * alt01 + 0.3 * pass01 + 0.2 * ascent01, 0, 1);
+  // Scenery proxy: share on small/back roads minus motorway share.
+  const scenicShare = hasData ? roadKm.neben / totalKm : 0.5;
+  const motorwayShare = hasData ? roadKm.autobahn / totalKm : 0;
+  const scenic01 = clamp(scenicShare - 0.6 * motorwayShare, 0, 1);
 
-  const overall = round1(attractiveness * 0.6 + bergigkeit * 0.4);
+  const overall = round1((curve01 * 0.4 + mountains01 * 0.3 + scenic01 * 0.3) * 10);
 
   return {
     distanceKm,
@@ -192,6 +189,11 @@ export function analyse(features: GeoJSON.Feature[]): RouteAnalysis {
     passes,
     hasRoadData: hasData,
     roadKm,
-    scores: { attractiveness, bergigkeit, overall },
+    scores: {
+      curves: round1(curve01 * 10),
+      mountains: round1(mountains01 * 10),
+      scenic: round1(scenic01 * 10),
+      overall,
+    },
   };
 }
