@@ -290,6 +290,7 @@ export default function App() {
         poiCats={poiCats}
         poiLoading={poiLoading}
         poiError={poiError}
+        poiCount={pois.length}
         onTogglePoiCat={togglePoiCat}
         onDefaultProfileChange={setDefaultProfile}
         onSetLegProfile={setLegProfile}

@@ -90,17 +90,36 @@ export async function fetchPois(
   }
   const query = `[out:json][timeout:25];(${parts.join("")});out body 250;`;
 
-  const res = await fetch("https://overpass-api.de/api/interpreter", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: "data=" + encodeURIComponent(query),
-    signal,
-  });
-  if (!res.ok) throw new Error(`Sehenswürdigkeiten konnten nicht geladen werden (HTTP ${res.status}).`);
+  const ENDPOINTS = [
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+  ];
 
-  const data = (await res.json()) as {
-    elements?: { id: number; lat: number; lon: number; tags?: Tags }[];
-  };
+  let data: { elements?: { id: number; lat: number; lon: number; tags?: Tags }[] } | null = null;
+  let lastError = "Overpass nicht erreichbar";
+  for (const url of ENDPOINTS) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "data=" + encodeURIComponent(query),
+        signal,
+      });
+      if (!res.ok) {
+        lastError = `HTTP ${res.status}`;
+        continue;
+      }
+      data = await res.json();
+      break;
+    } catch (e) {
+      if ((e as Error).name === "AbortError") throw e;
+      lastError = (e as Error).message;
+    }
+  }
+  if (!data) {
+    throw new Error(`Laden fehlgeschlagen: ${lastError}`);
+  }
 
   const seen = new Set<string>();
   const pois: Poi[] = [];
