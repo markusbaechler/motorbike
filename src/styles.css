@@ -1533,20 +1533,20 @@ button {
   position: absolute;
   inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  line-height: 1;
 }
 .gauge-val {
-  font-size: 2.1rem;
+  font-size: 2rem;
   font-weight: 800;
   letter-spacing: -0.02em;
 }
 .gauge-max {
-  font-size: 0.9rem;
+  font-size: 0.74rem;
   color: var(--muted);
-  align-self: flex-end;
-  margin-bottom: 0.5rem;
+  margin-top: 3px;
 }
 
 .rating-hero-info {

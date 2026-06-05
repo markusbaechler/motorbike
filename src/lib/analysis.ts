@@ -170,10 +170,10 @@ export function analyse(features: GeoJSON.Feature[]): RouteAnalysis {
   const pass01 = clamp(passes / 4, 0, 1);
   const ascent01 = clamp(ascentM / totalKm / 18, 0, 1);
   const mountains01 = clamp(0.5 * alt01 + 0.3 * pass01 + 0.2 * ascent01, 0, 1);
-  // Scenery proxy: share on small/back roads minus motorway share.
+  // Scenery proxy: share of distance on small/back roads (motorways & trunk
+  // roads are already excluded from "neben").
   const scenicShare = hasData ? roadKm.neben / totalKm : 0.5;
-  const motorwayShare = hasData ? roadKm.autobahn / totalKm : 0;
-  const scenic01 = clamp(scenicShare - 0.6 * motorwayShare, 0, 1);
+  const scenic01 = clamp(scenicShare, 0, 1);
 
   const overall = round1((curve01 * 0.4 + mountains01 * 0.3 + scenic01 * 0.3) * 10);
 
