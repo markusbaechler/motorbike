@@ -45,7 +45,8 @@ function svgProfile(profile: ElevationPoint[], minEle: number, maxEle: number): 
 
 function statBlock(a: RouteAnalysis): string {
   const cells: [string, string][] = [
-    [a.roadKm.neben.toFixed(0), "km Nebenstr."],
+    [a.roadKm.neben.toFixed(0), "km Landstr."],
+    [a.roadKm.haupt.toFixed(0), "km Hauptstr."],
     [a.roadKm.schnell.toFixed(0), "km Schnellstr."],
     [a.roadKm.autobahn.toFixed(0), "km Autobahn"],
     [String(a.passes), "Pässe"],
@@ -140,7 +141,7 @@ export function openRoadbook(
     .rate > span:first-child { width: 92px; color: #444; }
     .rate .track { flex: 1; height: 7px; background: #eee; border-radius: 99px; overflow: hidden; }
     .rate .track > span { display: block; height: 100%; background: linear-gradient(90deg,#ff8a1e,#f0392b); }
-    .stats { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 8px 0; }
+    .stats { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; margin: 8px 0; }
     .stats > div { text-align: center; background: #f7f7f7; border-radius: 8px; padding: 7px 4px; }
     .stats b { display: block; font-size: 15px; }
     .stats span { font-size: 10px; color: #777; }

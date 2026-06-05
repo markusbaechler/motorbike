@@ -8,7 +8,8 @@ export interface ElevationPoint {
 export interface RoadKm {
   autobahn: number;
   schnell: number;
-  neben: number;
+  haupt: number; // Hauptstrassen (primary/secondary)
+  neben: number; // Landstrassen / small back-roads (tertiary & below)
 }
 
 export interface RouteAnalysis {
@@ -62,6 +63,7 @@ function thin(coords: Coord[], minGap: number): Coord[] {
 function roadBreakdown(features: GeoJSON.Feature[]): { roadKm: RoadKm; hasData: boolean } {
   let autobahn = 0;
   let schnell = 0;
+  let haupt = 0;
   let neben = 0;
   let hasData = false;
 
@@ -80,12 +82,24 @@ function roadBreakdown(features: GeoJSON.Feature[]): { roadKm: RoadKm; hasData: 
       const hw = m ? m[1] : "";
       if (hw === "motorway" || hw === "motorway_link") autobahn += dist;
       else if (hw === "trunk" || hw === "trunk_link") schnell += dist;
+      else if (
+        hw === "primary" ||
+        hw === "primary_link" ||
+        hw === "secondary" ||
+        hw === "secondary_link"
+      )
+        haupt += dist;
       else neben += dist;
     }
   }
 
   return {
-    roadKm: { autobahn: autobahn / 1000, schnell: schnell / 1000, neben: neben / 1000 },
+    roadKm: {
+      autobahn: autobahn / 1000,
+      schnell: schnell / 1000,
+      haupt: haupt / 1000,
+      neben: neben / 1000,
+    },
     hasData,
   };
 }

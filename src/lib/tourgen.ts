@@ -228,14 +228,21 @@ export async function findTours(
   // penalised; roundness matters only a little.
   const ascentPerKm = (c: TourCandidate) =>
     c.distanceKm > 0 ? c.analysis.ascentM / c.distanceKm : 0;
+  const share = (km: number, c: TourCandidate) =>
+    c.distanceKm > 0 ? km / c.distanceKm : 0;
   const fun = (c: TourCandidate) => {
     const s = c.analysis.scores;
+    const rk = c.analysis.roadKm;
+    // Big roads the rider does NOT want: Hauptstrassen + Schnellstrassen + Autobahn.
+    const bigShare = share(rk.haupt + rk.schnell + rk.autobahn, c);
+    const smallShare = share(rk.neben, c); // little Landstrassen
     return (
       s.curves * 0.95 + // twisty
-      s.mountains * 1.5 + // altitude + passes + climb
-      s.scenic * 0.6 + // small back-roads
+      s.mountains * 1.4 + // altitude + passes + climb
       Math.min(c.analysis.passes, 8) * 0.9 + // explicit pass bonus
-      Math.min(ascentPerKm(c), 18) * 0.18 - // climbing density (hm/km)
+      Math.min(ascentPerKm(c), 18) * 0.18 + // climbing density (hm/km)
+      smallShare * 6 - // reward small Landstrassen
+      bigShare * 10 - // strongly punish Haupt-/Schnellstr./Autobahn
       c.doubled * 6 - // dead-end / there-and-back stubs
       (Math.abs(c.distanceKm - target) / target) * 2
     );

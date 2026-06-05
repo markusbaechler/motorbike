@@ -6,7 +6,6 @@ import { findTours, targetKm, type TourCandidate, type TourDuration } from "../l
 import type { RouteProfile } from "../types";
 
 interface Props {
-  defaultProfile: RouteProfile;
   onResults: (candidates: TourCandidate[], profile: RouteProfile) => void;
   onClose: () => void;
 }
@@ -16,13 +15,13 @@ const PROFILES: { id: RouteProfile; label: string }[] = [
   { id: "kurvig_plus", label: "Fun 2" },
 ];
 
-export default function TourGeniusModal({ defaultProfile, onResults, onClose }: Props) {
+export default function TourGeniusModal({ onResults, onClose }: Props) {
   const [value, setValue] = useState("");
   const [picked, setPicked] = useState<GeoResult | undefined>();
   const [duration, setDuration] = useState<TourDuration>("half");
-  const [profile, setProfile] = useState<RouteProfile>(
-    defaultProfile === "schnell" ? "kurvig" : defaultProfile,
-  );
+  // Default to the twistiest style (moped → avoids fast roads, prefers small
+  // Landstrassen) so the Genius leans into curvy back-roads, not Hauptstrassen.
+  const [profile, setProfile] = useState<RouteProfile>("kurvig_plus");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

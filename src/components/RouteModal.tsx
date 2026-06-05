@@ -144,7 +144,8 @@ export default function RouteModal({ waypoints, route, weather, onClose }: Props
 
   const stats = (a: RouteAnalysis) => {
     const items: [string, string][] = [
-      [a.roadKm.neben.toFixed(0), "km Nebenstr."],
+      [a.roadKm.neben.toFixed(0), "km Landstr."],
+      [a.roadKm.haupt.toFixed(0), "km Hauptstr."],
       [a.roadKm.schnell.toFixed(0), "km Schnellstr."],
       [a.roadKm.autobahn.toFixed(0), "km Autobahn"],
       [String(a.passes), "Pässe"],

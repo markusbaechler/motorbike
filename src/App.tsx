@@ -415,7 +415,6 @@ export default function App() {
 
       {showTourGenius && (
         <TourGeniusModal
-          defaultProfile={defaultProfile}
           onResults={onGeniusResults}
           onClose={() => setShowTourGenius(false)}
         />
