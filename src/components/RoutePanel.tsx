@@ -28,8 +28,8 @@ interface Props {
 }
 
 const PROFILE_LABEL: Record<RouteProfile, string> = {
-  kurvig: "Kurvig",
-  kurvig_plus: "Kurvig+",
+  kurvig: "Fun 1",
+  kurvig_plus: "Fun 2",
   schnell: "Schnell",
 };
 
@@ -247,7 +247,7 @@ export default function RoutePanel({
        <>
       <div className="panel-row top">
         <button className="quickplan-btn" onClick={onOpenQuickPlan}>
-          <Icon name="zap" size={16} /> Schnell planen
+          <Icon name="zap" size={16} /> Route planen
         </button>
         <button className="quickplan-btn secondary" onClick={onOpenRoutes}>
           <Icon name="folder" size={16} /> Routen

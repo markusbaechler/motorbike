@@ -217,7 +217,7 @@ export default function QuickPlanModal({
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
-          <h2>{initialStops ? "Route bearbeiten" : "Tour schnell planen"}</h2>
+          <h2>{initialStops ? "Route bearbeiten" : "Route planen"}</h2>
           <button className="modal-close" onClick={onClose} aria-label="Schließen"><Icon name="x" size={18} /></button>
         </div>
 
@@ -315,7 +315,7 @@ export default function QuickPlanModal({
                   className={`toggle-btn ${profile === p ? "active" : ""} ${p}`}
                   onClick={() => chooseProfile(p)}
                 >
-                  {p === "kurvig" ? "Kurvig" : p === "kurvig_plus" ? "Kurvig+" : "Schnell"}
+                  {p === "kurvig" ? "Fun 1" : p === "kurvig_plus" ? "Fun 2" : "Schnell"}
                 </button>
               ))}
             </span>
