@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Icon from "./Icon";
 import { computeDays, dayStats, dayNumbers } from "../lib/days";
 import type { BookingPrefs } from "../lib/storage";
@@ -114,6 +114,26 @@ export default function RoutePanel({
   // The whole bottom sheet can be minimised to free up the map.
   const [min, setMin] = useState(false);
 
+  // Drag the grabber: pull down to minimise, up to expand (tap also toggles).
+  const dragRef = useRef<{ y: number; moved: boolean } | null>(null);
+  const onHandleDown = (e: React.PointerEvent) => {
+    dragRef.current = { y: e.clientY, moved: false };
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+  };
+  const onHandleMove = (e: React.PointerEvent) => {
+    const d = dragRef.current;
+    if (d && Math.abs(e.clientY - d.y) > 6) d.moved = true;
+  };
+  const onHandleUp = (e: React.PointerEvent) => {
+    const d = dragRef.current;
+    dragRef.current = null;
+    if (!d) return;
+    const dy = e.clientY - d.y;
+    if (dy > 28) setMin(true);
+    else if (dy < -28) setMin(false);
+    else setMin((m) => !m);
+  };
+
   const renderWaypoint = (i: number) => {
     const wp = waypoints[i];
     const leg = i > 0 ? route?.legs[i - 1] : undefined;
@@ -190,16 +210,24 @@ export default function RoutePanel({
 
   return (
     <div className={`panel ${min ? "min" : ""}`}>
-      <button
+      <div
         className="panel-handle"
-        onClick={() => setMin((m) => !m)}
-        aria-label={min ? "Bedienfeld aufklappen" : "Bedienfeld minimieren"}
+        onPointerDown={onHandleDown}
+        onPointerMove={onHandleMove}
+        onPointerUp={onHandleUp}
+        title="Ziehen oder tippen zum Ein-/Ausklappen"
       >
         <span className="panel-handle-bar" />
-        <span className="panel-handle-chevron" data-open={!min}>
+        <button
+          className="panel-handle-chevron"
+          data-open={!min}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => setMin((m) => !m)}
+          aria-label={min ? "Bedienfeld aufklappen" : "Bedienfeld minimieren"}
+        >
           <Icon name="chevron" size={20} />
-        </span>
-      </button>
+        </button>
+      </div>
 
       {min ? (
         <button className="panel-minbar" onClick={() => setMin(false)}>

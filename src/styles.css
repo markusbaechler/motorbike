@@ -244,20 +244,53 @@ button {
   gap: 0;
 }
 
-/* Tappable grabber/handle to minimise & expand the sheet */
+/* Draggable grabber/handle to minimise & expand the sheet */
 .panel-handle {
   position: relative;
   align-self: stretch;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 32px;
+  height: 34px;
   width: 100%;
   margin: -10px 0 0;
   padding: 0;
   background: none;
   border: none;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.panel-handle:active {
+  cursor: grabbing;
+}
+
+.panel-handle-chevron {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: var(--muted);
   cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.panel-handle-chevron:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--text);
+}
+
+.panel-handle-chevron[data-open="false"] {
+  transform: translateY(-50%) rotate(180deg);
 }
 
 .panel-handle-bar {
@@ -270,21 +303,6 @@ button {
 
 .panel-handle:hover .panel-handle-bar {
   background: rgba(255, 255, 255, 0.5);
-}
-
-.panel-handle-chevron {
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: inline-flex;
-  color: var(--muted);
-  transition: transform 0.15s ease;
-}
-
-/* chevron points down when open (collapse), up when minimised (expand) */
-.panel-handle-chevron[data-open="false"] {
-  transform: translateY(-50%) rotate(180deg);
 }
 
 .panel-minbar {
