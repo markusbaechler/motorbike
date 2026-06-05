@@ -47,6 +47,7 @@ export default function App() {
   const [pois, setPois] = useState<Poi[]>([]);
   const [poiLoading, setPoiLoading] = useState(false);
   const [poiError, setPoiError] = useState<string | null>(null);
+  const [poiMeta, setPoiMeta] = useState<{ points: number; raw: number } | null>(null);
 
   const togglePoiCat = (c: PoiCategory) =>
     setPoiCats((cs) => (cs.includes(c) ? cs.filter((x) => x !== c) : [...cs, c]));
@@ -56,6 +57,7 @@ export default function App() {
     if (!route || poiCats.length === 0) {
       setPois([]);
       setPoiError(null);
+      setPoiMeta(null);
       setPoiLoading(false);
       return;
     }
@@ -71,10 +73,13 @@ export default function App() {
       setPoiLoading(true);
       setPoiError(null);
       try {
-        setPois(await fetchPois(coords, poiCats, controller.signal));
+        const r = await fetchPois(coords, poiCats, controller.signal);
+        setPois(r.pois);
+        setPoiMeta({ points: r.points, raw: r.raw });
       } catch (e) {
         if ((e as Error).name !== "AbortError") {
           setPois([]);
+          setPoiMeta(null);
           setPoiError((e as Error).message);
         }
       } finally {
@@ -291,6 +296,7 @@ export default function App() {
         poiLoading={poiLoading}
         poiError={poiError}
         poiCount={pois.length}
+        poiMeta={poiMeta}
         onTogglePoiCat={togglePoiCat}
         onDefaultProfileChange={setDefaultProfile}
         onSetLegProfile={setLegProfile}

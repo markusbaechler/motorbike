@@ -66,6 +66,12 @@ function downsample(coords: Coord[], stepM: number): Coord[] {
   return out;
 }
 
+export interface PoiResult {
+  pois: Poi[];
+  points: number; // around-polyline points used
+  raw: number; // raw OSM elements returned
+}
+
 /**
  * Fetch POIs of the given categories near the route via Overpass. The route is
  * downsampled and used as the centre-line of an `around` buffer.
@@ -74,21 +80,21 @@ export async function fetchPois(
   coords: Coord[],
   categories: PoiCategory[],
   signal?: AbortSignal,
-): Promise<Poi[]> {
-  if (coords.length < 2 || categories.length === 0) return [];
+): Promise<PoiResult> {
+  if (coords.length < 2 || categories.length === 0) return { pois: [], points: 0, raw: 0 };
 
   // Keep the around-list bounded (longer routes use a bigger step).
   let totalM = 0;
   for (let i = 1; i < coords.length; i++) totalM += haversine(coords[i - 1], coords[i]);
-  const step = Math.max(2000, totalM / 140);
+  const step = Math.max(2500, totalM / 80);
   const pts = downsample(coords, step);
   const around = pts.map((c) => `${c[1].toFixed(5)},${c[0].toFixed(5)}`).join(",");
 
   const parts: string[] = [];
   for (const cat of categories) {
-    for (const f of FILTERS[cat]) parts.push(`node(around:700,${around})${f};`);
+    for (const f of FILTERS[cat]) parts.push(`node(around:900,${around})${f};`);
   }
-  const query = `[out:json][timeout:25];(${parts.join("")});out body 250;`;
+  const query = `[out:json][timeout:90];(${parts.join("")});out body 300;`;
 
   const ENDPOINTS = [
     "https://overpass-api.de/api/interpreter",
@@ -123,6 +129,7 @@ export async function fetchPois(
 
   const seen = new Set<string>();
   const pois: Poi[] = [];
+  const raw = (data.elements ?? []).length;
   for (const el of data.elements ?? []) {
     if (el.lat == null || el.lon == null) continue;
     const tags = el.tags ?? {};
@@ -140,5 +147,5 @@ export async function fetchPois(
       kind: KIND_LABEL[c.kind] || c.kind,
     });
   }
-  return pois;
+  return { pois, points: pts.length, raw };
 }

@@ -22,6 +22,7 @@ interface Props {
   poiLoading: boolean;
   poiError: string | null;
   poiCount: number;
+  poiMeta: { points: number; raw: number } | null;
   onTogglePoiCat: (c: PoiCategory) => void;
   onDefaultProfileChange: (p: RouteProfile) => void;
   onSetLegProfile: (waypointId: string, p: RouteProfile) => void;
@@ -101,6 +102,7 @@ export default function RoutePanel({
   poiLoading,
   poiError,
   poiCount,
+  poiMeta,
   onTogglePoiCat,
   onDefaultProfileChange,
   onSetLegProfile,
@@ -332,7 +334,11 @@ export default function RoutePanel({
           )}
           {!poiLoading && !poiError && poiCats.length > 0 && (
             <span className="poi-status">
-              {poiCount > 0 ? `${poiCount} gefunden` : "keine gefunden"}
+              {poiCount > 0
+                ? `${poiCount} gefunden`
+                : poiMeta
+                  ? `keine (${poiMeta.points} Pkt · ${poiMeta.raw} roh)`
+                  : "keine gefunden"}
             </span>
           )}
         </div>
