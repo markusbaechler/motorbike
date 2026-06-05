@@ -153,7 +153,6 @@ export async function findTours(
   start: { lat: number; lng: number; name?: string },
   duration: TourDuration,
   profile: RouteProfile,
-  strictLoop = false,
   signal?: AbortSignal,
 ): Promise<TourCandidate[]> {
   const target = TARGET_KM[duration];
@@ -229,26 +228,11 @@ export async function findTours(
     c.doubled * 10 -
     (Math.abs(c.distanceKm - target) / target) * 5;
 
-  let pool: TourCandidate[];
-  if (strictLoop) {
-    // Hard requirement: genuine loops only – (almost) no retraced road. If none
-    // qualify we refuse rather than show an out-and-back.
-    pool = ok.filter((c) => c.doubled <= 0.08 && c.roundness >= 0.3 && inBand(c));
-    if (pool.length === 0) pool = ok.filter((c) => c.doubled <= 0.12 && inBand(c));
-    if (pool.length === 0) {
-      throw new Error(
-        "Keine reine Rundtour ohne Hin- und Rückwege gefunden. Anderen Startort " +
-          "oder andere Dauer versuchen – oder die Option „Hin- und Rückwege " +
-          "ausschliessen“ deaktivieren.",
-      );
-    }
-  } else {
-    // Strongly prefer clean loops, but always return something.
-    pool = ok.filter((c) => c.doubled <= 0.14 && c.roundness >= 0.28 && inBand(c));
-    if (pool.length === 0) pool = ok.filter((c) => c.doubled <= 0.2 && inBand(c));
-    if (pool.length === 0) pool = ok.filter((c) => c.doubled <= 0.28);
-    if (pool.length === 0) pool = ok;
-  }
+  // Strongly prefer clean loops, but always return something.
+  let pool = ok.filter((c) => c.doubled <= 0.14 && c.roundness >= 0.28 && inBand(c));
+  if (pool.length === 0) pool = ok.filter((c) => c.doubled <= 0.2 && inBand(c));
+  if (pool.length === 0) pool = ok.filter((c) => c.doubled <= 0.28);
+  if (pool.length === 0) pool = ok;
 
   pool.sort((a, b) => fitness(b) - fitness(a));
   return pool;
