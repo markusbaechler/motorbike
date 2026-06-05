@@ -315,6 +315,7 @@ export default function App() {
         <RouteModal
           waypoints={waypoints}
           route={route}
+          weather={weather}
           onClose={() => setShowDetails(false)}
         />
       )}

@@ -3,12 +3,15 @@ import Icon from "./Icon";
 import ElevationChart from "./ElevationChart";
 import { analyse, type RouteAnalysis } from "../lib/analysis";
 import { buildGpx, downloadGpx } from "../lib/gpx";
+import { openRoadbook } from "../lib/roadbook";
 import { computeDays, dayStats } from "../lib/days";
+import type { WeatherDay } from "../lib/weather";
 import type { RouteResult, Waypoint } from "../types";
 
 interface Props {
   waypoints: Waypoint[];
   route: RouteResult;
+  weather: Record<string, WeatherDay | null>;
   onClose: () => void;
 }
 
@@ -80,7 +83,7 @@ function ScoreBar({ icon, label, value }: { icon: Parameters<typeof Icon>[0]["na
   );
 }
 
-export default function RouteModal({ waypoints, route, onClose }: Props) {
+export default function RouteModal({ waypoints, route, weather, onClose }: Props) {
   const analysis = useMemo(() => analyse(route.geojson.features), [route]);
   const days = useMemo(() => computeDays(waypoints), [waypoints]);
   const multiDay = days.length > 1;
@@ -223,6 +226,22 @@ export default function RouteModal({ waypoints, route, onClose }: Props) {
               )}
             </section>
           )}
+
+          {/* Roadbook */}
+          <section className="modal-section">
+            <h3>Roadbook</h3>
+            <button
+              className="export-btn"
+              style={{ width: "100%" }}
+              onClick={() => openRoadbook("Motorradtour", waypoints, route, weather)}
+            >
+              <Icon name="chart" size={16} /> Roadbook drucken / als PDF
+            </button>
+            <p className="modal-note">
+              Druckfertige Tagesübersicht (Etappen, Zeiten, Übernachtung, Wetter). Im
+              Druckdialog „Als PDF speichern" wählen.
+            </p>
+          </section>
 
           {/* Export */}
           <section className="modal-section">
