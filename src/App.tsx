@@ -6,7 +6,9 @@ import QuickPlanModal, { type QuickStop } from "./components/QuickPlanModal";
 import RoutesModal from "./components/RoutesModal";
 import BookingPrefsModal from "./components/BookingPrefsModal";
 import Home from "./components/Home";
+import ShareModal from "./components/ShareModal";
 import SearchBox from "./components/SearchBox";
+import { readSharedRoute } from "./lib/share";
 import { getBookingPrefs, saveBookingPrefs, listRoutes, type BookingPrefs } from "./lib/storage";
 import { addDays, buildBookingUrl } from "./lib/booking";
 import { computeDays } from "./lib/days";
@@ -38,6 +40,19 @@ export default function App() {
   const [showBookingPrefs, setShowBookingPrefs] = useState(false);
   // Inviting start screen, shown on launch.
   const [showHome, setShowHome] = useState(true);
+  const [showShare, setShowShare] = useState(false);
+
+  // Load a route shared via URL hash (#r=…) on first launch.
+  useEffect(() => {
+    const shared = readSharedRoute();
+    if (shared && shared.length >= 2) {
+      setWaypoints(shared.map((w) => ({ ...w, id: makeId() })));
+      setShowHome(false);
+      setFitSignal((n) => n + 1);
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // PWA install handling (Android/Chrome native prompt; iOS shows a hint).
   type InstallPrompt = { prompt: () => void; userChoice: Promise<unknown> };
@@ -280,6 +295,7 @@ export default function App() {
         pendingDay={pendingDay}
         bookingPrefs={bookingPrefs}
         onOpenDetails={() => setShowDetails(true)}
+        onOpenShare={() => setShowShare(true)}
         onOpenQuickPlan={() => setShowQuickPlan(true)}
         onOpenRoutes={() => setShowRoutes(true)}
         onOpenBookingPrefs={() => setShowBookingPrefs(true)}
@@ -336,6 +352,10 @@ export default function App() {
           onApply={applyQuickPlan}
           onClose={() => setShowQuickPlan(false)}
         />
+      )}
+
+      {showShare && waypoints.length >= 2 && (
+        <ShareModal waypoints={waypoints} onClose={() => setShowShare(false)} />
       )}
 
       {showHome && (

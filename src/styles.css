@@ -1838,3 +1838,26 @@ button {
 .day-weather .fair { color: #fbbf24; }
 .day-weather .wet { color: #60a5fa; }
 .day-weather .muted { color: var(--muted); }
+
+.share-qr {
+  display: flex;
+  justify-content: center;
+  margin: 4px 0 14px;
+}
+.share-qr img {
+  width: 200px;
+  height: 200px;
+  border-radius: 14px;
+  background: #fff;
+  padding: 8px;
+}
+.share-url {
+  font-size: 0.78rem;
+  color: var(--muted);
+  word-break: break-all;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}

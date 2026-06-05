@@ -14,6 +14,7 @@ interface Props {
   pendingDay: boolean;
   bookingPrefs: BookingPrefs;
   onOpenDetails: () => void;
+  onOpenShare: () => void;
   onOpenQuickPlan: () => void;
   onOpenRoutes: () => void;
   onOpenBookingPrefs: () => void;
@@ -89,6 +90,7 @@ export default function RoutePanel({
   pendingDay,
   bookingPrefs,
   onOpenDetails,
+  onOpenShare,
   onOpenQuickPlan,
   onOpenRoutes,
   onOpenBookingPrefs,
@@ -284,6 +286,9 @@ export default function RoutePanel({
             <strong>{formatDuration(route.durationMin)}</strong>
             <button className="details-btn" onClick={onOpenDetails}>
               <Icon name="chart" size={15} /> Details
+            </button>
+            <button className="details-btn" onClick={onOpenShare}>
+              <Icon name="users" size={15} /> Teilen
             </button>
           </span>
         )}
