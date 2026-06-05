@@ -10,30 +10,29 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.svg"],
+      includeAssets: ["favicon.svg", "apple-touch-icon.png"],
       manifest: {
         name: "Motorbike – Routenplaner",
         short_name: "Motorbike",
         description:
-          "Plane kurvige Motorradrouten, entdecke Sehenswürdigkeiten und finde Übernachtungen.",
-        theme_color: "#0f172a",
-        background_color: "#0f172a",
+          "Plane kurvige Motorradtouren – Etappen, Pässe, GPX-Export fürs Navi.",
+        theme_color: "#100f12",
+        background_color: "#100f12",
         display: "standalone",
         orientation: "portrait",
         start_url: "./",
         scope: "./",
         icons: [
-          {
-            src: "icon.svg",
-            sizes: "any",
-            type: "image/svg+xml",
-            purpose: "any maskable",
-          },
+          { src: "pwa-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+          { src: "pwa-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+          { src: "maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+          { src: "icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
         ],
       },
       workbox: {
-        // Don't precache map tiles / API responses (handled at runtime later).
-        globPatterns: ["**/*.{js,css,html,svg,woff2}"],
+        // Precache app shell + icons; map tiles / APIs stay network.
+        globPatterns: ["**/*.{js,css,html,svg,woff2,png}"],
+        globIgnores: ["**/hero.jpg"],
       },
     }),
   ],
