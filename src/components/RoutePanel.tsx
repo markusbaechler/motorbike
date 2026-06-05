@@ -43,6 +43,19 @@ function placeName(wp: Waypoint): string {
   return wp.name ?? `${wp.lat.toFixed(4)}, ${wp.lng.toFixed(4)}`;
 }
 
+// Short display name: just the locality (drops region/country after the comma).
+function shortName(wp: Waypoint): string {
+  const n = placeName(wp);
+  return n.split(",")[0].trim();
+}
+
+function formatDate(iso?: string): string {
+  if (!iso) return "";
+  const d = new Date(iso + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("de-CH");
+}
+
 function ProfileToggle({
   value,
   onChange,
@@ -98,6 +111,9 @@ export default function RoutePanel({
   const toggleDay = (d: number) =>
     setOpenOverrides((o) => ({ ...o, [d]: !isDayOpen(d) }));
 
+  // The whole bottom sheet can be minimised to free up the map.
+  const [min, setMin] = useState(false);
+
   const renderWaypoint = (i: number) => {
     const wp = waypoints[i];
     const leg = i > 0 ? route?.legs[i - 1] : undefined;
@@ -106,7 +122,7 @@ export default function RoutePanel({
       <li key={wp.id} className="wp-item">
         {i > 0 && (
           <div className="segment">
-            <span className="segment-arrow">↳ Etappe {i}→{i + 1}</span>
+            <span className="segment-arrow">↳ Abschnitt {i}→{i + 1}</span>
             <ProfileToggle
               value={wp.legProfile}
               onChange={(p) => onSetLegProfile(wp.id, p)}
@@ -125,7 +141,7 @@ export default function RoutePanel({
             {nums[i]}
           </span>
           <span className="wp-name">
-            {placeName(wp)}
+            {shortName(wp)}
             {wp.dayEnd && (
               <span className="bed-tag" title="Übernachtung">
                 <Icon name="bed" size={13} />
@@ -173,7 +189,34 @@ export default function RoutePanel({
   };
 
   return (
-    <div className="panel">
+    <div className={`panel ${min ? "min" : ""}`}>
+      <button
+        className="panel-handle"
+        onClick={() => setMin((m) => !m)}
+        aria-label={min ? "Bedienfeld aufklappen" : "Bedienfeld minimieren"}
+      >
+        <span className="panel-handle-bar" />
+      </button>
+
+      {min ? (
+        <button className="panel-minbar" onClick={() => setMin(false)}>
+          <span>
+            {route ? (
+              <>
+                <strong>{route.distanceKm.toFixed(0)} km</strong> ·{" "}
+                {formatDuration(route.durationMin)}
+                {days.length > 1 ? ` · ${days.length} Tage` : ""}
+              </>
+            ) : (
+              "Route planen"
+            )}
+          </span>
+          <span className="day-chevron" data-open={false}>
+            <Icon name="chevron" size={18} />
+          </span>
+        </button>
+      ) : (
+       <>
       <div className="panel-row top">
         <button className="quickplan-btn" onClick={onOpenQuickPlan}>
           <Icon name="zap" size={16} /> Schnell planen
@@ -181,7 +224,7 @@ export default function RoutePanel({
         <button className="quickplan-btn secondary" onClick={onOpenRoutes}>
           <Icon name="folder" size={16} /> Routen
         </button>
-        <span className="default-label">Neue Etappe:</span>
+        <span className="default-label">Neuer Abschnitt:</span>
         <ProfileToggle value={defaultProfile} onChange={onDefaultProfileChange} />
         {waypoints.length > 0 && (
           <button className="clear-btn" onClick={onClear}>
@@ -252,9 +295,11 @@ export default function RoutePanel({
                 </span>
                 <span className="day-title">
                   Tag {span.day}
-                  {overnight.dayName ? `: ${overnight.dayName}` : ""}
+                  {!open && overnight.dayName ? `: ${overnight.dayName}` : ""}
                 </span>
-                {overnight.dayDate && <span className="day-date-tag">{overnight.dayDate}</span>}
+                {!open && overnight.dayDate && (
+                  <span className="day-date-tag">{formatDate(overnight.dayDate)}</span>
+                )}
                 {route && (
                   <span className="day-stats">
                     {stats.distanceKm.toFixed(0)} km · {formatDuration(stats.durationMin)}
@@ -262,7 +307,7 @@ export default function RoutePanel({
                 )}
                 <span className="day-overnight">
                   <Icon name={isFinalDay ? "flag" : "bed"} size={13} />
-                  {placeName(overnight)}
+                  {shortName(overnight)}
                 </span>
               </button>
               {open && (
@@ -270,7 +315,7 @@ export default function RoutePanel({
                   <input
                     className="day-name-input"
                     type="text"
-                    placeholder={`Etappenname (z. B. Tag ${span.day})`}
+                    placeholder={`Tagesname (z. B. Tag ${span.day})`}
                     value={overnight.dayName ?? ""}
                     onChange={(e) => onSetDayMeta(overnight.id, { dayName: e.target.value })}
                   />
@@ -320,10 +365,11 @@ export default function RoutePanel({
 
       {waypoints.length >= 2 && (
         <p className="edit-hint">
-          „+ Tag hinzufügen" beendet den Tag am letzten Punkt (Übernachtung).
-          Alternativ 🛏 an einem Stopp antippen. Streckenlinie ziehen fügt einen
-          Zwischenpunkt ein.
+          „Tag hinzufügen" beendet den Tag am letzten Punkt. Streckenlinie ziehen
+          fügt einen Zwischenpunkt ein.
         </p>
+      )}
+       </>
       )}
     </div>
   );

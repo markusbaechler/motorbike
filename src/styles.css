@@ -238,17 +238,46 @@ button {
   overflow-y: auto;
 }
 
-/* Grabber affordance at the top of the sheet */
-.panel::before {
-  content: "";
-  position: absolute;
-  top: 7px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 38px;
-  height: 4px;
+.panel.min {
+  max-height: none;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  gap: 0;
+}
+
+/* Tappable grabber/handle to minimise & expand the sheet */
+.panel-handle {
+  position: sticky;
+  top: -6px;
+  align-self: stretch;
+  display: flex;
+  justify-content: center;
+  padding: 4px 0 8px;
+  margin: -8px 0 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.panel-handle-bar {
+  width: 44px;
+  height: 5px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.panel-minbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  padding: 2px 2px 4px;
 }
 
 .panel-row {
@@ -1328,4 +1357,97 @@ button {
 
 .search-results li:hover {
   background: rgba(255, 138, 30, 0.18);
+}
+
+/* ------------------------------------------------------------------ */
+/* Responsive: phones                                                  */
+/* ------------------------------------------------------------------ */
+@media (max-width: 620px) {
+  .panel {
+    padding: 14px 12px;
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+    max-height: 64dvh;
+    border-radius: 24px 24px 0 0;
+  }
+
+  .panel-row.top {
+    gap: 8px;
+  }
+
+  /* Profile toggles fill the width with large, thumb-friendly segments */
+  .default-label {
+    flex: 1 1 100%;
+  }
+  .panel-row.top .toggle {
+    flex: 1 1 100%;
+  }
+  .panel-row.top .toggle-btn {
+    flex: 1 1 0;
+  }
+  .clear-btn {
+    margin-left: 0;
+  }
+
+  .toggle-btn {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+
+  /* Waypoint rows: name on top, actions wrap to a full-width second line */
+  .wp-row {
+    flex-wrap: wrap;
+  }
+  .wp-name {
+    flex: 1 1 60%;
+  }
+  .wp-actions {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+    margin-top: 2px;
+    gap: 6px;
+  }
+  .wp-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+  }
+
+  /* Segment: arrow on line 1, full-width toggle below, km after */
+  .segment {
+    flex-wrap: wrap;
+    gap: 6px 8px;
+  }
+  .segment-arrow {
+    flex: 1 1 auto;
+  }
+  .segment .toggle {
+    flex: 1 1 100%;
+    order: 3;
+  }
+  .segment .toggle-btn {
+    flex: 1 1 0;
+  }
+
+  .day-meta {
+    gap: 8px;
+  }
+  .day-name-input {
+    flex: 1 1 100%;
+  }
+
+  .modal-backdrop {
+    padding: 10px;
+    align-items: flex-end;
+  }
+  .modal {
+    max-height: 92dvh;
+    border-radius: 22px;
+  }
+  .qp-day .qp-row .place-input {
+    min-width: 0;
+  }
+
+  .booking-row {
+    flex-wrap: wrap;
+  }
 }

@@ -38,7 +38,8 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
 }
 
 function placeName(wp: Waypoint): string {
-  return wp.name ?? `${wp.lat.toFixed(3)}, ${wp.lng.toFixed(3)}`;
+  const n = wp.name ?? `${wp.lat.toFixed(3)}, ${wp.lng.toFixed(3)}`;
+  return n.split(",")[0].trim();
 }
 
 export default function RouteModal({ waypoints, route, onClose }: Props) {
