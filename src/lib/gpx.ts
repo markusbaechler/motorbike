@@ -41,6 +41,21 @@ function pt(tag: string, c: Coord): string {
   return `<${tag} lat="${c[1].toFixed(6)}" lon="${c[0].toFixed(6)}">${ele}</${tag}>`;
 }
 
+// Snap a waypoint to the nearest point on the routed (on-road) line, so nav
+// apps can map-match it reliably.
+function snapToRoute(lng: number, lat: number, coords: Coord[]): Coord {
+  let best = coords[0] ?? [lng, lat];
+  let bestD = Infinity;
+  for (const c of coords) {
+    const d = haversine([lng, lat], c);
+    if (d < bestD) {
+      bestD = d;
+      best = c;
+    }
+  }
+  return best;
+}
+
 export type GpxMode = "waypoints" | "route" | "track";
 
 /**
@@ -57,12 +72,15 @@ export function buildGpx(
   features: GeoJSON.Feature[],
   mode: GpxMode = "route",
 ): string {
-  const wpts = waypoints
-    .map((w, i) => {
-      const label = w.name?.split(",")[0].trim() ?? `Punkt ${i + 1}`;
-      return `  <wpt lat="${w.lat.toFixed(6)}" lon="${w.lng.toFixed(6)}"><name>${esc(label)}</name></wpt>`;
-    })
-    .join("\n");
+  const wpts =
+    mode === "waypoints"
+      ? "" // clean route only, no duplicate standalone pins
+      : waypoints
+          .map((w, i) => {
+            const label = w.name?.split(",")[0].trim() ?? `Punkt ${i + 1}`;
+            return `  <wpt lat="${w.lat.toFixed(6)}" lon="${w.lng.toFixed(6)}"><name>${esc(label)}</name></wpt>`;
+          })
+          .join("\n");
 
   const coords = collectCoords(features);
 
@@ -70,8 +88,9 @@ export function buildGpx(
   if (mode === "waypoints") {
     const pts = waypoints
       .map((w, i) => {
+        const c = snapToRoute(w.lng, w.lat, coords);
         const label = w.name?.split(",")[0].trim() ?? `Punkt ${i + 1}`;
-        return `    <rtept lat="${w.lat.toFixed(6)}" lon="${w.lng.toFixed(6)}"><name>${esc(label)}</name></rtept>`;
+        return `    <rtept lat="${c[1].toFixed(6)}" lon="${c[0].toFixed(6)}"><name>${esc(label)}</name></rtept>`;
       })
       .join("\n");
     body = `  <rte><name>${esc(name)}</name>\n${pts}\n  </rte>`;
