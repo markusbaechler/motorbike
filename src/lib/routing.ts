@@ -90,6 +90,59 @@ async function fetchLeg(
 }
 
 /**
+ * Route through several points in a single BRouter request (one combined
+ * track for the whole chain). Used by the Tour-Genius to evaluate candidate
+ * loops cheaply. Returns the combined feature plus distance & duration.
+ */
+export async function fetchMultiPoint(
+  points: { lat: number; lng: number }[],
+  profile: RouteProfile,
+  signal?: AbortSignal,
+): Promise<{ feature: GeoJSON.Feature; distanceKm: number; durationMin: number }> {
+  if (points.length < 2) throw new Error("Mindestens zwei Punkte nötig.");
+  const lonlats = points
+    .map((p) => `${p.lng.toFixed(6)},${p.lat.toFixed(6)}`)
+    .join("|");
+
+  let lastError = "unbekannter Fehler";
+  for (const brouterProfile of BROUTER_PROFILES[profile]) {
+    const url =
+      `${BROUTER}/brouter?lonlats=${lonlats}` +
+      `&profile=${brouterProfile}&alternativeidx=0&format=geojson`;
+
+    let res: Response;
+    try {
+      res = await fetch(url, { signal });
+    } catch (e) {
+      if ((e as Error).name === "AbortError") throw e;
+      lastError = (e as Error).message;
+      continue;
+    }
+    if (!res.ok) {
+      const body = (await res.text()).replace(/\s+/g, " ").trim();
+      lastError = `HTTP ${res.status} – ${body.slice(0, 160)}`;
+      continue;
+    }
+
+    const geojson = (await res.json()) as GeoJSON.FeatureCollection;
+    const feature = geojson.features?.[0];
+    if (!feature) {
+      lastError = "leere Antwort vom Routing-Dienst";
+      continue;
+    }
+    const props = (feature.properties ?? {}) as Record<string, string>;
+    feature.properties = { ...feature.properties, profile, legIndex: 0 };
+    const distanceKm = Number(props["track-length"] ?? 0) / 1000;
+    return {
+      feature,
+      distanceKm,
+      durationMin: (distanceKm / AVG_SPEED_KMH[profile]) * 60,
+    };
+  }
+  throw new Error(lastError);
+}
+
+/**
  * Route through all waypoints in order, computing each leg with that leg's
  * own profile, then combining them. Legs are fetched in parallel. Requires at
  * least two waypoints.

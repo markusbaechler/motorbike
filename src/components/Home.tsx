@@ -7,6 +7,7 @@ interface Props {
   iosInstall: boolean;
   onInstall: () => void;
   onPlan: () => void;
+  onGenius: () => void;
   onRoutes: () => void;
   onMap: () => void;
 }
@@ -17,6 +18,7 @@ export default function Home({
   iosInstall,
   onInstall,
   onPlan,
+  onGenius,
   onRoutes,
   onMap,
 }: Props) {
@@ -43,6 +45,10 @@ export default function Home({
         <div className="home-actions">
           <button className="home-cta primary" onClick={onPlan}>
             <Icon name="zap" size={20} /> Neue Tour planen
+          </button>
+          <button className="home-cta genius" onClick={onGenius}>
+            <Icon name="compass" size={20} /> Tour-Genius
+            <span className="home-cta-sub">Rundtour automatisch finden</span>
           </button>
           <button className="home-cta" onClick={onRoutes}>
             <Icon name="folder" size={19} /> Meine Routen

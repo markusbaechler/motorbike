@@ -3,6 +3,7 @@ import MapView from "./components/MapView";
 import RoutePanel from "./components/RoutePanel";
 import RouteModal from "./components/RouteModal";
 import QuickPlanModal, { type QuickStop } from "./components/QuickPlanModal";
+import TourGeniusModal from "./components/TourGeniusModal";
 import RoutesModal from "./components/RoutesModal";
 import BookingPrefsModal from "./components/BookingPrefsModal";
 import Home from "./components/Home";
@@ -36,6 +37,7 @@ export default function App() {
   const [focus, setFocus] = useState<FocusPoint | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [showQuickPlan, setShowQuickPlan] = useState(false);
+  const [showTourGenius, setShowTourGenius] = useState(false);
   const [showRoutes, setShowRoutes] = useState(false);
   const [showBookingPrefs, setShowBookingPrefs] = useState(false);
   // Inviting start screen, shown on launch.
@@ -223,6 +225,7 @@ export default function App() {
       })),
     );
     setShowQuickPlan(false);
+    setShowTourGenius(false);
     setFitSignal((n) => n + 1);
   };
 
@@ -303,6 +306,7 @@ export default function App() {
         onOpenDetails={() => setShowDetails(true)}
         onOpenShare={() => setShowShare(true)}
         onOpenQuickPlan={() => setShowQuickPlan(true)}
+        onOpenTourGenius={() => setShowTourGenius(true)}
         onOpenRoutes={() => setShowRoutes(true)}
         onOpenBookingPrefs={() => setShowBookingPrefs(true)}
         onOpenHotel={openHotel}
@@ -361,6 +365,14 @@ export default function App() {
         />
       )}
 
+      {showTourGenius && (
+        <TourGeniusModal
+          defaultProfile={defaultProfile}
+          onApply={applyQuickPlan}
+          onClose={() => setShowTourGenius(false)}
+        />
+      )}
+
       {showShare && waypoints.length >= 2 && (
         <ShareModal waypoints={waypoints} onClose={() => setShowShare(false)} />
       )}
@@ -374,6 +386,10 @@ export default function App() {
           onPlan={() => {
             setShowHome(false);
             setShowQuickPlan(true);
+          }}
+          onGenius={() => {
+            setShowHome(false);
+            setShowTourGenius(true);
           }}
           onRoutes={() => {
             setShowHome(false);

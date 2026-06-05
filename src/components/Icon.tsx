@@ -25,7 +25,9 @@ export type IconName =
   | "rain"
   | "snow"
   | "thunder"
-  | "fog";
+  | "fog"
+  | "compass"
+  | "loop";
 
 const PATHS: Record<IconName, ReactNode> = {
   search: (
@@ -160,6 +162,18 @@ const PATHS: Record<IconName, ReactNode> = {
     <>
       <path d="M17.5 13a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.6 1.5A4 4 0 0 0 6 13" />
       <path d="M5 17h14M7 21h12" />
+    </>
+  ),
+  compass: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <polygon points="16.2 7.8 13.4 13.4 7.8 16.2 10.6 10.6 16.2 7.8" />
+    </>
+  ),
+  loop: (
+    <>
+      <path d="M17 4a8 8 0 1 1-7 4" />
+      <polyline points="17 9 17 4 12 4" />
     </>
   ),
 };

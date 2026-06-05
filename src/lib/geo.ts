@@ -33,3 +33,24 @@ export function bearingDelta(b1: number, b2: number): number {
   const d = Math.abs(b1 - b2) % 360;
   return d > 180 ? 360 - d : d;
 }
+
+/**
+ * Point reached from `from` heading `bearingDeg` for `distanceM` metres,
+ * along a great circle. Returns [lng, lat].
+ */
+export function destination(from: Coord, bearingDeg: number, distanceM: number): Coord {
+  const ang = distanceM / R;
+  const th = toRad(bearingDeg);
+  const lat1 = toRad(from[1]);
+  const lon1 = toRad(from[0]);
+  const lat2 = Math.asin(
+    Math.sin(lat1) * Math.cos(ang) + Math.cos(lat1) * Math.sin(ang) * Math.cos(th),
+  );
+  const lon2 =
+    lon1 +
+    Math.atan2(
+      Math.sin(th) * Math.sin(ang) * Math.cos(lat1),
+      Math.cos(ang) - Math.sin(lat1) * Math.sin(lat2),
+    );
+  return [((toDeg(lon2) + 540) % 360) - 180, toDeg(lat2)];
+}
