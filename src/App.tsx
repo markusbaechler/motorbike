@@ -5,8 +5,9 @@ import RouteModal from "./components/RouteModal";
 import QuickPlanModal, { type QuickStop } from "./components/QuickPlanModal";
 import RoutesModal from "./components/RoutesModal";
 import BookingPrefsModal from "./components/BookingPrefsModal";
+import Home from "./components/Home";
 import SearchBox from "./components/SearchBox";
-import { getBookingPrefs, saveBookingPrefs, type BookingPrefs } from "./lib/storage";
+import { getBookingPrefs, saveBookingPrefs, listRoutes, type BookingPrefs } from "./lib/storage";
 import { addDays, buildBookingUrl } from "./lib/booking";
 import { fetchRoute } from "./lib/routing";
 import type { GeoResult } from "./lib/geocoding";
@@ -33,6 +34,8 @@ export default function App() {
   const [showQuickPlan, setShowQuickPlan] = useState(false);
   const [showRoutes, setShowRoutes] = useState(false);
   const [showBookingPrefs, setShowBookingPrefs] = useState(false);
+  // Inviting start screen, shown on launch.
+  const [showHome, setShowHome] = useState(true);
   const [bookingPrefs, setBookingPrefsState] = useState<BookingPrefs>(() => getBookingPrefs());
 
   const updateBookingPrefs = (p: BookingPrefs) => {
@@ -187,11 +190,13 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <img src="./icon.svg" alt="" />
-        <h1>
-          <span className="brand">Motorbike</span>{" "}
-          <span className="tag">Routenplaner</span>
-        </h1>
+        <button className="topbar-home" onClick={() => setShowHome(true)} aria-label="Startseite">
+          <img src="./icon.svg" alt="" />
+          <h1>
+            <span className="brand">Motorbike</span>{" "}
+            <span className="tag">Routenplaner</span>
+          </h1>
+        </button>
       </header>
 
       <SearchBox onSelect={onSearchSelect} />
@@ -269,6 +274,21 @@ export default function App() {
           }
           onApply={applyQuickPlan}
           onClose={() => setShowQuickPlan(false)}
+        />
+      )}
+
+      {showHome && (
+        <Home
+          savedCount={listRoutes().length}
+          onPlan={() => {
+            setShowHome(false);
+            setShowQuickPlan(true);
+          }}
+          onRoutes={() => {
+            setShowHome(false);
+            setShowRoutes(true);
+          }}
+          onMap={() => setShowHome(false)}
         />
       )}
     </div>
