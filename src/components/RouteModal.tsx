@@ -60,7 +60,7 @@ export default function RouteModal({ waypoints, route, onClose }: Props) {
     [days, route, waypoints],
   );
 
-  const exportWhole = (mode: "route" | "track") => {
+  const exportWhole = (mode: "waypoints" | "route" | "track") => {
     downloadGpx("motorradtour", buildGpx("Motorradtour", waypoints, route.geojson.features, mode));
   };
 
@@ -207,15 +207,22 @@ export default function RouteModal({ waypoints, route, onClose }: Props) {
           {/* Export */}
           <section className="modal-section">
             <h3>Export fürs Navi (GPX)</h3>
-            <button className="export-btn primary" onClick={() => exportWhole("route")}>
-              <Icon name="download" size={17} /> Route-GPX (Beeline / Navi)
+            <button className="export-btn primary" onClick={() => exportWhole("waypoints")}>
+              <Icon name="download" size={17} /> Beeline-Route (saubere Abbiegehinweise)
+            </button>
+            <button
+              className="export-btn"
+              style={{ width: "100%", marginTop: 8 }}
+              onClick={() => exportWhole("route")}
+            >
+              <Icon name="download" size={16} /> Detail-Route (folgt unserer Linie)
             </button>
             <button
               className="export-btn"
               style={{ width: "100%", marginTop: 8 }}
               onClick={() => exportWhole("track")}
             >
-              <Icon name="download" size={16} /> Track-GPX (exakte Linie)
+              <Icon name="download" size={16} /> Track (exakte Linie)
             </button>
             {days.length > 1 && (
               <div className="export-days">
@@ -231,8 +238,9 @@ export default function RouteModal({ waypoints, route, onClose }: Props) {
               </div>
             )}
             <p className="modal-note">
-              Für Abbiegehinweise in Beeline/Garmin die <strong>Route-GPX</strong> nutzen.
-              Die Track-GPX bildet die Linie exakt ab (ohne Abbiegehinweise).
+              <strong>Beeline-Route</strong>: nur die Stopps – Beeline navigiert selbst
+              (saubere Abbiegehinweise, eigener Weg). <strong>Detail-Route/Track</strong>:
+              folgen unserer exakten Linie – Beeline zeigt dann ggf. die Hinweis-Warnung.
             </p>
           </section>
         </div>

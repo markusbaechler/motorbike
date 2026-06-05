@@ -41,14 +41,15 @@ function pt(tag: string, c: Coord): string {
   return `<${tag} lat="${c[1].toFixed(6)}" lon="${c[0].toFixed(6)}">${ele}</${tag}>`;
 }
 
-export type GpxMode = "track" | "route";
+export type GpxMode = "waypoints" | "route" | "track";
 
 /**
  * Build a GPX 1.1 document.
- * - "track": the exact line as a <trk> (precise, but some nav apps can't
- *   derive turn instructions from it).
- * - "route": a <rte> of shaping points (~250 m apart) that navigation apps
- *   (Beeline, Garmin …) snap to roads and turn into turn-by-turn directions.
+ * - "waypoints": a <rte> of only the stops — the nav app (Beeline) routes
+ *   between them on its own network → clean turn-by-turn, no match warnings,
+ *   but the nav app picks its own path.
+ * - "route": a <rte> of shaping points (~250 m) following our exact path.
+ * - "track": the exact line as a <trk>.
  */
 export function buildGpx(
   name: string,
@@ -66,7 +67,15 @@ export function buildGpx(
   const coords = collectCoords(features);
 
   let body: string;
-  if (mode === "route") {
+  if (mode === "waypoints") {
+    const pts = waypoints
+      .map((w, i) => {
+        const label = w.name?.split(",")[0].trim() ?? `Punkt ${i + 1}`;
+        return `    <rtept lat="${w.lat.toFixed(6)}" lon="${w.lng.toFixed(6)}"><name>${esc(label)}</name></rtept>`;
+      })
+      .join("\n");
+    body = `  <rte><name>${esc(name)}</name>\n${pts}\n  </rte>`;
+  } else if (mode === "route") {
     const pts = thin(coords, 250)
       .map((c) => "    " + pt("rtept", c))
       .join("\n");
