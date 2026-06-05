@@ -23,6 +23,7 @@ export default function TourGeniusModal({ defaultProfile, onResults, onClose }: 
   const [profile, setProfile] = useState<RouteProfile>(
     defaultProfile === "schnell" ? "kurvig" : defaultProfile,
   );
+  const [noBackAndForth, setNoBackAndForth] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,6 +44,7 @@ export default function TourGeniusModal({ defaultProfile, onResults, onClose }: 
         { lat: start.lat, lng: start.lng, name: start.name },
         duration,
         profile,
+        noBackAndForth,
       );
       onResults(cands, profile);
     } catch (e) {
@@ -116,6 +118,19 @@ export default function TourGeniusModal({ defaultProfile, onResults, onClose }: 
               </button>
             ))}
           </span>
+
+          <button
+            type="button"
+            className={`tg-switch ${noBackAndForth ? "on" : ""}`}
+            onClick={() => setNoBackAndForth((v) => !v)}
+            aria-pressed={noBackAndForth}
+          >
+            <span className="tg-switch-track"><span className="tg-switch-knob" /></span>
+            <span className="tg-switch-text">
+              <strong>Hin- und Rückwege ausschliessen</strong>
+              <span>Nur echte Rundtouren ohne doppelt befahrene Strecken</span>
+            </span>
+          </button>
 
           {error && <p className="error">⚠ {error}</p>}
 
