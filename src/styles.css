@@ -1490,4 +1490,19 @@ button {
   .booking-row {
     flex-wrap: wrap;
   }
+
+  /* Quick-plan profile toggle: full width, equal segments */
+  .qp-profile {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .qp-profile .default-label {
+    flex: 1 1 100%;
+  }
+  .qp-profile .toggle {
+    flex: 1 1 100%;
+  }
+  .qp-profile .toggle-btn {
+    flex: 1 1 0;
+  }
 }
