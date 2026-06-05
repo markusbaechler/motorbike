@@ -36,6 +36,37 @@ export default function App() {
   const [showBookingPrefs, setShowBookingPrefs] = useState(false);
   // Inviting start screen, shown on launch.
   const [showHome, setShowHome] = useState(true);
+
+  // PWA install handling (Android/Chrome native prompt; iOS shows a hint).
+  type InstallPrompt = { prompt: () => void; userChoice: Promise<unknown> };
+  const [installEvt, setInstallEvt] = useState<InstallPrompt | null>(null);
+  useEffect(() => {
+    const onBip = (e: Event) => {
+      e.preventDefault();
+      setInstallEvt(e as unknown as InstallPrompt);
+    };
+    const onInstalled = () => setInstallEvt(null);
+    window.addEventListener("beforeinstallprompt", onBip);
+    window.addEventListener("appinstalled", onInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBip);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
+  }, []);
+  const isStandalone =
+    window.matchMedia?.("(display-mode: standalone)").matches ||
+    (navigator as unknown as { standalone?: boolean }).standalone === true;
+  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const doInstall = async () => {
+    if (!installEvt) return;
+    installEvt.prompt();
+    try {
+      await installEvt.userChoice;
+    } catch {
+      /* ignore */
+    }
+    setInstallEvt(null);
+  };
   const [bookingPrefs, setBookingPrefsState] = useState<BookingPrefs>(() => getBookingPrefs());
 
   const updateBookingPrefs = (p: BookingPrefs) => {
@@ -280,6 +311,9 @@ export default function App() {
       {showHome && (
         <Home
           savedCount={listRoutes().length}
+          canInstall={!!installEvt && !isStandalone}
+          iosInstall={isIos && !isStandalone && !installEvt}
+          onInstall={doInstall}
           onPlan={() => {
             setShowHome(false);
             setShowQuickPlan(true);

@@ -1,13 +1,26 @@
+import { useState } from "react";
 import Icon from "./Icon";
 
 interface Props {
   savedCount: number;
+  canInstall: boolean;
+  iosInstall: boolean;
+  onInstall: () => void;
   onPlan: () => void;
   onRoutes: () => void;
   onMap: () => void;
 }
 
-export default function Home({ savedCount, onPlan, onRoutes, onMap }: Props) {
+export default function Home({
+  savedCount,
+  canInstall,
+  iosInstall,
+  onInstall,
+  onPlan,
+  onRoutes,
+  onMap,
+}: Props) {
+  const [showIosHint, setShowIosHint] = useState(false);
   return (
     <div className="home">
       <img
@@ -35,9 +48,27 @@ export default function Home({ savedCount, onPlan, onRoutes, onMap }: Props) {
             <Icon name="folder" size={19} /> Meine Routen
             {savedCount > 0 ? ` (${savedCount})` : ""}
           </button>
+          {canInstall && (
+            <button className="home-cta install" onClick={onInstall}>
+              <Icon name="download" size={19} /> Als App installieren
+            </button>
+          )}
+          {iosInstall && (
+            <button className="home-cta install" onClick={() => setShowIosHint((v) => !v)}>
+              <Icon name="download" size={19} /> Als App installieren
+            </button>
+          )}
+
           <button className="home-link" onClick={onMap}>
             Direkt zur Karte →
           </button>
+
+          {showIosHint && (
+            <p className="ios-hint">
+              In Safari: unten auf <strong>Teilen</strong> (Quadrat mit Pfeil) tippen →
+              <strong> „Zum Home-Bildschirm"</strong>. Dann startet Motorbike wie eine App.
+            </p>
+          )}
         </div>
 
         <div className="home-features">

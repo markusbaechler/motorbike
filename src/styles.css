@@ -1813,3 +1813,19 @@ button {
 .home-feat-icon.kurvig { background: var(--kurvig); }
 .home-feat-icon.bed { background: #a855f7; }
 .home-feat-icon.gpx { background: var(--schnell); }
+
+.home-cta.install {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--border-strong);
+}
+.ios-hint {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #e8e4de;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 12px 14px;
+  text-shadow: none;
+}
