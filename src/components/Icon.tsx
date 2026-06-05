@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-type IconName =
+export type IconName =
   | "search"
   | "zap"
   | "folder"
@@ -18,7 +18,14 @@ type IconName =
   | "save"
   | "trash"
   | "users"
-  | "info";
+  | "info"
+  | "sun"
+  | "cloudSun"
+  | "cloud"
+  | "rain"
+  | "snow"
+  | "thunder"
+  | "fog";
 
 const PATHS: Record<IconName, ReactNode> = {
   search: (
@@ -115,6 +122,44 @@ const PATHS: Record<IconName, ReactNode> = {
       <circle cx="12" cy="12" r="9" />
       <line x1="12" y1="11" x2="12" y2="16" />
       <line x1="12" y1="8" x2="12" y2="8" />
+    </>
+  ),
+  sun: (
+    <>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+    </>
+  ),
+  cloudSun: (
+    <>
+      <path d="M7 5V3M3.6 6.6 2.5 5.5M5 10H3M10.6 6.6l1.1-1.1" />
+      <circle cx="7" cy="9.5" r="2.4" />
+      <path d="M15.5 19a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.6 1.3A3.3 3.3 0 0 0 6.5 19z" />
+    </>
+  ),
+  cloud: <path d="M17.5 19a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.6 1.5A4 4 0 0 0 6 19z" />,
+  rain: (
+    <>
+      <path d="M17.5 15a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.6 1.5A4 4 0 0 0 6 15" />
+      <path d="M8 18l-1 2M12 18l-1 2M16 18l-1 2" />
+    </>
+  ),
+  snow: (
+    <>
+      <path d="M17.5 15a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.6 1.5A4 4 0 0 0 6 15" />
+      <path d="M8 19h.01M12 19h.01M16 19h.01M10 21h.01M14 21h.01" />
+    </>
+  ),
+  thunder: (
+    <>
+      <path d="M17.5 14a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.6 1.5A4 4 0 0 0 6 14" />
+      <path d="M12 13l-2 4h3l-2 4" />
+    </>
+  ),
+  fog: (
+    <>
+      <path d="M17.5 13a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.6 1.5A4 4 0 0 0 6 13" />
+      <path d="M5 17h14M7 21h12" />
     </>
   ),
 };

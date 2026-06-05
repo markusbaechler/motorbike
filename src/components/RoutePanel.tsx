@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import Icon from "./Icon";
+import Icon, { type IconName } from "./Icon";
 import { computeDays, dayStats, dayNumbers } from "../lib/days";
 import type { BookingPrefs } from "../lib/storage";
 import { isFair, type WeatherDay } from "../lib/weather";
@@ -50,6 +50,16 @@ function placeName(wp: Waypoint): string {
 function shortName(wp: Waypoint): string {
   const n = placeName(wp);
   return n.split(",")[0].trim();
+}
+
+function weatherIcon(code: number): IconName {
+  if (code === 0) return "sun";
+  if (code <= 2) return "cloudSun";
+  if (code === 3) return "cloud";
+  if (code === 45 || code === 48) return "fog";
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return "snow";
+  if (code >= 95) return "thunder";
+  return "rain"; // 51–67 drizzle/rain, 80–82 showers
 }
 
 function formatDate(iso?: string): string {
@@ -179,7 +189,7 @@ export default function RoutePanel({
               className={`wp-weather ${isFair(wx.code) ? "fair" : "wet"}`}
               title={`${wx.label} · ${wx.tMax}°/${wx.tMin}° · ${wx.precipProb}% Regen · Wind ${wx.windMax} km/h`}
             >
-              {wx.tMax}° · {wx.precipProb}%
+              <Icon name={weatherIcon(wx.code)} size={14} /> {wx.tMax}° · {wx.precipProb}%
             </span>
           )}
           <span className="wp-actions">
