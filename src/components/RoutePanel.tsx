@@ -176,22 +176,24 @@ export default function RoutePanel({
           >
             {nums[i]}
           </span>
-          <span className="wp-name">
-            {shortName(wp)}
-            {wp.dayEnd && (
-              <span className="bed-tag" title="Übernachtung">
-                <Icon name="bed" size={13} />
+          <div className="wp-main">
+            <span className="wp-name">
+              {shortName(wp)}
+              {wp.dayEnd && (
+                <span className="bed-tag" title="Übernachtung">
+                  <Icon name="bed" size={13} />
+                </span>
+              )}
+            </span>
+            {wx && (
+              <span
+                className={`wp-weather ${isFair(wx.code) ? "fair" : "wet"}`}
+                title={`${wx.label} · Wind ${wx.windMax} km/h`}
+              >
+                <Icon name={weatherIcon(wx.code)} size={14} /> {wx.tMax}° / {wx.tMin}° · {wx.precipProb}% Regen
               </span>
             )}
-          </span>
-          {wx && (
-            <span
-              className={`wp-weather ${isFair(wx.code) ? "fair" : "wet"}`}
-              title={`${wx.label} · ${wx.tMax}°/${wx.tMin}° · ${wx.precipProb}% Regen · Wind ${wx.windMax} km/h`}
-            >
-              <Icon name={weatherIcon(wx.code)} size={14} /> {wx.tMax}° · {wx.precipProb}%
-            </span>
-          )}
+          </div>
           <span className="wp-actions">
             {i > 0 && !isLast && (
               <button

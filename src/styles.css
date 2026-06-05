@@ -496,8 +496,16 @@ button {
   background: var(--danger);
 }
 
-.wp-name {
+.wp-main {
   flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wp-name {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1437,7 +1445,7 @@ button {
   .wp-row {
     flex-wrap: wrap;
   }
-  .wp-name {
+  .wp-main {
     flex: 1 1 60%;
   }
   .wp-actions {
@@ -1864,6 +1872,8 @@ button {
 
 .wp-weather {
   flex: 0 0 auto;
+  align-self: flex-start;
+  max-width: 100%;
   display: inline-flex;
   align-items: center;
   gap: 4px;
