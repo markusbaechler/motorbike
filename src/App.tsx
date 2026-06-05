@@ -8,8 +8,6 @@ import BookingPrefsModal from "./components/BookingPrefsModal";
 import SearchBox from "./components/SearchBox";
 import { getBookingPrefs, saveBookingPrefs, type BookingPrefs } from "./lib/storage";
 import { addDays, buildBookingUrl } from "./lib/booking";
-import { fetchPois, type Poi, type PoiCategory } from "./lib/pois";
-import { haversine } from "./lib/geo";
 import { fetchRoute } from "./lib/routing";
 import type { GeoResult } from "./lib/geocoding";
 import type { RouteProfile, RouteResult, Waypoint } from "./types";
@@ -40,75 +38,6 @@ export default function App() {
   const updateBookingPrefs = (p: BookingPrefs) => {
     saveBookingPrefs(p);
     setBookingPrefsState(p);
-  };
-
-  // --- Sehenswürdigkeiten / POIs ---
-  const [poiCats, setPoiCats] = useState<PoiCategory[]>([]);
-  const [pois, setPois] = useState<Poi[]>([]);
-  const [poiLoading, setPoiLoading] = useState(false);
-  const [poiError, setPoiError] = useState<string | null>(null);
-  const [poiMeta, setPoiMeta] = useState<{ points: number; raw: number } | null>(null);
-
-  const togglePoiCat = (c: PoiCategory) =>
-    setPoiCats((cs) => (cs.includes(c) ? cs.filter((x) => x !== c) : [...cs, c]));
-
-  const poiDebounce = useRef<ReturnType<typeof setTimeout>>();
-  useEffect(() => {
-    if (!route || poiCats.length === 0) {
-      setPois([]);
-      setPoiError(null);
-      setPoiMeta(null);
-      setPoiLoading(false);
-      return;
-    }
-    const coords: number[][] = [];
-    for (const f of route.geojson.features) {
-      if (f.geometry.type === "LineString") {
-        for (const c of f.geometry.coordinates) coords.push(c);
-      }
-    }
-    const controller = new AbortController();
-    clearTimeout(poiDebounce.current);
-    poiDebounce.current = setTimeout(async () => {
-      setPoiLoading(true);
-      setPoiError(null);
-      try {
-        const r = await fetchPois(coords, poiCats, controller.signal);
-        setPois(r.pois);
-        setPoiMeta({ points: r.points, raw: r.raw });
-      } catch (e) {
-        if ((e as Error).name !== "AbortError") {
-          setPois([]);
-          setPoiMeta(null);
-          setPoiError((e as Error).message);
-        }
-      } finally {
-        setPoiLoading(false);
-      }
-    }, 400);
-    return () => {
-      controller.abort();
-      clearTimeout(poiDebounce.current);
-    };
-  }, [route, poiCats]);
-
-  // Add a POI as a stop, inserted into the nearest leg of the route.
-  const addPoiStop = (poi: Poi) => {
-    if (!route) return;
-    let bestLeg = 0;
-    let bestDist = Infinity;
-    for (const f of route.geojson.features) {
-      if (f.geometry.type !== "LineString") continue;
-      const legIdx = (f.properties?.legIndex ?? 0) as number;
-      for (const c of f.geometry.coordinates) {
-        const d = haversine([poi.lng, poi.lat], c);
-        if (d < bestDist) {
-          bestDist = d;
-          bestLeg = legIdx;
-        }
-      }
-    }
-    insertWaypoint(bestLeg, poi.lng, poi.lat, poi.name);
   };
 
   const openHotel = (place: string, checkin?: string) => {
@@ -272,11 +201,9 @@ export default function App() {
         route={route}
         focus={focus}
         fitSignal={fitSignal}
-        pois={pois}
         onAddWaypoint={addWaypoint}
         onMoveWaypoint={moveWaypoint}
         onInsertWaypoint={insertWaypoint}
-        onAddPoiStop={addPoiStop}
       />
 
       <RoutePanel
@@ -292,12 +219,6 @@ export default function App() {
         onOpenRoutes={() => setShowRoutes(true)}
         onOpenBookingPrefs={() => setShowBookingPrefs(true)}
         onOpenHotel={openHotel}
-        poiCats={poiCats}
-        poiLoading={poiLoading}
-        poiError={poiError}
-        poiCount={pois.length}
-        poiMeta={poiMeta}
-        onTogglePoiCat={togglePoiCat}
         onDefaultProfileChange={setDefaultProfile}
         onSetLegProfile={setLegProfile}
         onToggleDayEnd={toggleDayEnd}

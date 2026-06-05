@@ -2,7 +2,6 @@ import { useRef, useState } from "react";
 import Icon from "./Icon";
 import { computeDays, dayStats, dayNumbers } from "../lib/days";
 import type { BookingPrefs } from "../lib/storage";
-import type { PoiCategory } from "../lib/pois";
 import type { RouteProfile, RouteResult, Waypoint } from "../types";
 
 interface Props {
@@ -18,12 +17,6 @@ interface Props {
   onOpenRoutes: () => void;
   onOpenBookingPrefs: () => void;
   onOpenHotel: (place: string, checkin?: string) => void;
-  poiCats: PoiCategory[];
-  poiLoading: boolean;
-  poiError: string | null;
-  poiCount: number;
-  poiMeta: { points: number; raw: number } | null;
-  onTogglePoiCat: (c: PoiCategory) => void;
   onDefaultProfileChange: (p: RouteProfile) => void;
   onSetLegProfile: (waypointId: string, p: RouteProfile) => void;
   onToggleDayEnd: (id: string) => void;
@@ -98,12 +91,6 @@ export default function RoutePanel({
   onOpenRoutes,
   onOpenBookingPrefs,
   onOpenHotel,
-  poiCats,
-  poiLoading,
-  poiError,
-  poiCount,
-  poiMeta,
-  onTogglePoiCat,
   onDefaultProfileChange,
   onSetLegProfile,
   onToggleDayEnd,
@@ -309,38 +296,6 @@ export default function RoutePanel({
           <button className="booking-edit" onClick={onOpenBookingPrefs}>
             ändern
           </button>
-        </div>
-      )}
-
-      {days.length > 0 && (
-        <div className="poi-row">
-          <span className="poi-label">Entdecken:</span>
-          {([
-            ["natur", "Natur & Pässe"],
-            ["motorrad", "Motorrad"],
-            ["gastro", "Gastro"],
-          ] as [PoiCategory, string][]).map(([cat, label]) => (
-            <button
-              key={cat}
-              className={`poi-chip ${cat} ${poiCats.includes(cat) ? "active" : ""}`}
-              onClick={() => onTogglePoiCat(cat)}
-            >
-              {label}
-            </button>
-          ))}
-          {poiLoading && <span className="poi-status">lädt …</span>}
-          {!poiLoading && poiError && (
-            <span className="poi-status error">⚠ {poiError}</span>
-          )}
-          {!poiLoading && !poiError && poiCats.length > 0 && (
-            <span className="poi-status">
-              {poiCount > 0
-                ? `${poiCount} gefunden`
-                : poiMeta
-                  ? `keine (${poiMeta.points} Pkt · ${poiMeta.raw} roh)`
-                  : "keine gefunden"}
-            </span>
-          )}
         </div>
       )}
 
