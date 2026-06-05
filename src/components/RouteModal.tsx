@@ -4,6 +4,8 @@ import ElevationChart from "./ElevationChart";
 import { analyse, type RouteAnalysis } from "../lib/analysis";
 import { buildGpx, downloadGpx } from "../lib/gpx";
 import { openRoadbook } from "../lib/roadbook";
+import { prefetchRouteTiles } from "../lib/offline";
+import { MAP_STYLE_URL } from "../config";
 import { computeDays, dayStats } from "../lib/days";
 import type { WeatherDay } from "../lib/weather";
 import type { RouteResult, Waypoint } from "../types";
@@ -89,6 +91,33 @@ export default function RouteModal({ waypoints, route, weather, onClose }: Props
   const multiDay = days.length > 1;
   const [showWhole, setShowWhole] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+  const [offline, setOffline] = useState<{ running: boolean; done: number; total: number; msg: string }>({
+    running: false,
+    done: 0,
+    total: 0,
+    msg: "",
+  });
+
+  const runPrefetch = async () => {
+    const coords: number[][] = [];
+    for (const f of route.geojson.features) {
+      if (f.geometry.type === "LineString") for (const c of f.geometry.coordinates) coords.push(c);
+    }
+    setOffline({ running: true, done: 0, total: 0, msg: "Bereite vor …" });
+    try {
+      const r = await prefetchRouteTiles(MAP_STYLE_URL, coords, (p) =>
+        setOffline({ running: true, done: p.done, total: p.total, msg: "" }),
+      );
+      setOffline({
+        running: false,
+        done: r.cached,
+        total: r.cached,
+        msg: `${r.cached} Kacheln offline gespeichert${r.capped ? " (Limit erreicht – Detailzoom teils gekürzt)" : ""}.`,
+      });
+    } catch (e) {
+      setOffline({ running: false, done: 0, total: 0, msg: "Fehler: " + (e as Error).message });
+    }
+  };
 
   const dayAnalyses = useMemo(
     () =>
@@ -240,6 +269,27 @@ export default function RouteModal({ waypoints, route, weather, onClose }: Props
             <p className="modal-note">
               Druckfertige Tagesübersicht (Etappen, Zeiten, Übernachtung, Wetter). Im
               Druckdialog „Als PDF speichern" wählen.
+            </p>
+          </section>
+
+          {/* Offline maps */}
+          <section className="modal-section">
+            <h3>Offline-Karten</h3>
+            <button
+              className="export-btn"
+              style={{ width: "100%" }}
+              disabled={offline.running}
+              onClick={runPrefetch}
+            >
+              <Icon name="download" size={16} />{" "}
+              {offline.running
+                ? `Lädt … ${offline.done}/${offline.total || "…"}`
+                : "Karten dieser Route offline laden"}
+            </button>
+            {offline.msg && <p className="modal-note">{offline.msg}</p>}
+            <p className="modal-note">
+              Lädt die Kacheln entlang der Strecke in den Cache – danach ist die Route
+              auch ohne Empfang sichtbar. (Routing/Wetter brauchen weiterhin Internet.)
             </p>
           </section>
 

@@ -33,6 +33,29 @@ export default defineConfig({
         // Precache app shell + icons; map tiles / APIs stay network.
         globPatterns: ["**/*.{js,css,html,svg,woff2,png}"],
         globIgnores: ["**/hero.jpg"],
+        // Map data you have viewed stays available offline (cache-first).
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }: { url: URL }) => url.hostname.endsWith("openfreemap.org"),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "map-openfreemap",
+              expiration: { maxEntries: 4000, maxAgeSeconds: 60 * 60 * 24 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: ({ url }: { url: URL }) =>
+              url.hostname.includes("fonts.googleapis.com") ||
+              url.hostname.includes("fonts.gstatic.com"),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-fonts",
+              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
     }),
   ],
