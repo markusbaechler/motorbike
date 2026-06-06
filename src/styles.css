@@ -2170,8 +2170,33 @@ button {
 }
 
 @media (max-width: 480px) {
-  .pass-select { flex-direction: column; align-items: stretch; }
-  .pass-select-actions { justify-content: space-between; }
+  /* Slim card pinned to the top: title + counts on one line, a short hint, and
+     two full-width thumb-friendly buttons — keeps the map area as large as
+     possible while staying easy to operate one-handed. */
+  .pass-select {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 9px;
+    padding: 11px 13px;
+    width: calc(100vw - 16px);
+    max-width: none;
+    border-radius: 18px;
+  }
+  .pass-select-info {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+  }
+  .pass-select-hint { flex: 1 1 100%; font-size: 0.74rem; }
+  .pass-select-counts { margin-left: auto; }
+  .pass-select-actions { gap: 10px; }
+  .pass-select-actions .quickplan-btn,
+  .pass-select-actions .export-btn {
+    flex: 1 1 0;
+    min-height: 46px;
+    justify-content: center;
+  }
 }
 
 /* Modal: round-trip checkbox row */
@@ -2189,36 +2214,41 @@ button {
 .pass-popup .maplibregl-popup-content {
   background: #16151a;
   color: #f6f5f3;
-  padding: 10px 12px;
-  border-radius: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
   border: 1px solid var(--border-strong);
   box-shadow: var(--shadow);
+  min-width: 220px;
 }
 .pass-popup .maplibregl-popup-close-button {
   color: var(--muted);
-  font-size: 18px;
-  padding: 0 6px;
+  font-size: 22px;
+  width: 34px;
+  height: 34px;
+  line-height: 34px;
+  padding: 0;
 }
 .pass-pop-name {
   font-weight: 700;
-  font-size: 0.92rem;
-  margin-bottom: 8px;
-  padding-right: 14px;
+  font-size: 0.98rem;
+  margin-bottom: 11px;
+  padding-right: 22px;
 }
 .pass-pop-btns {
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
 .pp-btn {
   flex: 1 1 auto;
   white-space: nowrap;
-  padding: 7px 10px;
-  border-radius: 9px;
+  min-height: 44px;
+  padding: 11px 12px;
+  border-radius: 11px;
   border: 1px solid var(--border-strong);
   background: rgba(255, 255, 255, 0.06);
   color: var(--text);
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   cursor: pointer;
 }
 .pp-need { border-color: rgba(251, 81, 101, 0.6); }
@@ -2229,26 +2259,35 @@ button {
 
 /* Pässeplaner: pass dots as DOM markers (robust against style errors) */
 .pass-marker {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: #3aa0ff;
   border: 2px solid #ffffff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
   cursor: pointer;
+  position: relative;
   transition: transform 0.1s ease;
 }
-.pass-marker:hover { transform: scale(1.25); }
+/* Finger-sized invisible hit area around the small visual dot so passes are
+   easy to tap on a phone without enlarging the dot itself. */
+.pass-marker::before {
+  content: "";
+  position: absolute;
+  inset: -14px;
+  border-radius: 50%;
+}
+.pass-marker:hover { transform: scale(1.2); }
 .pass-marker--need {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   background: #fb5165;
   border-width: 3px;
   box-shadow: 0 0 0 2px rgba(251, 81, 101, 0.35), 0 1px 5px rgba(0, 0, 0, 0.5);
 }
 .pass-marker--nice {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   background: #f59e0b;
   border-width: 3px;
   box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.35), 0 1px 5px rgba(0, 0, 0, 0.5);
