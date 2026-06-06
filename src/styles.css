@@ -2059,3 +2059,93 @@ button {
   .tg-preview { top: 64px; }
   .tg-pv-btn { padding: 11px 6px; font-size: 0.8rem; }
 }
+
+/* ── Pässeplaner ─────────────────────────────────────────────────────── */
+.home-cta.passes {
+  /* slightly different accent so it reads as its own feature */
+  border-color: rgba(168, 139, 250, 0.5);
+}
+.quickplan-btn.passes {
+  border-color: rgba(168, 139, 250, 0.5);
+}
+
+/* Floating pass-selection bar (top, does not cover the map) */
+.pass-select {
+  position: absolute;
+  top: max(64px, calc(env(safe-area-inset-top) + 56px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  width: min(560px, calc(100vw - 20px));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--panel);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.pass-select-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.pass-select-hint {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.pass-select-hint b.need { color: #fb7185; }
+.pass-select-hint b.nice { color: #f59e0b; }
+
+.pass-select-counts {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.pass-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-left: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+.pass-dot.need { background: #fb7185; }
+.pass-dot.nice { background: #f59e0b; }
+
+.pass-select-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pass-select-actions .export-btn {
+  width: auto;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .pass-select { flex-direction: column; align-items: stretch; }
+  .pass-select-actions { justify-content: space-between; }
+}
+
+/* Modal: round-trip checkbox row */
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 4px 0 2px;
+  cursor: pointer;
+  font-size: 0.92rem;
+}
+.check-row input { width: 17px; height: 17px; accent-color: var(--accent); }
