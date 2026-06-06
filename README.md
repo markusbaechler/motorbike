@@ -35,9 +35,41 @@ npm run preview  # Produktions-Build lokal ansehen
 React + TypeScript + Vite, MapLibre GL JS für die Karte, `vite-plugin-pwa`
 für die Installierbarkeit.
 
+## Pässeplaner
+
+Die App enthält einen **Pässeplaner**, der die *Passliste Europa*
+(1063 Pässe, Quelle: [moto-pass.eu](https://moto-pass.eu/)) auf der Karte
+nutzbar macht. Ablauf im linken Panel:
+
+1. **Startort** eingeben.
+2. **Rundtour** (ja/nein) wählen – falls nein, **Zielort** eingeben.
+3. **Belag** wählen: *Nur Asphalt* oder *Inkl. Unbefestigt*.
+4. **Pässe einblenden**: Pässe im Korridor zwischen Start und Ziel
+   (bzw. im Umkreis bei Rundtour) werden auf der Karte angezeigt.
+5. **Markieren**: Pässe per Klick auf der Karte oder in der Liste als
+   **Need-to** (rot) oder **Nice-to** (gelb) markieren – markierte Pässe
+   werden hervorgehoben und beschriftet.
+6. **Route planen**: BRouter verbindet Start → markierte Pässe → Ziel zu
+   einer Route; die Wegpunkte werden mit den Passnamen aufgelistet.
+
+### Datenquelle & Geokodierung
+
+Die Tabelle enthält **keine Koordinaten**, daher werden Pässe beim ersten
+Einblenden im Browser über **Nominatim (OpenStreetMap)** geokodiert und in
+`localStorage` zwischengespeichert (max. ~1 Anfrage/Sekunde gemäss
+Nominatim-Richtlinie). Der erste Durchlauf einer Region dauert daher etwas;
+danach sind die Koordinaten sofort verfügbar. Nicht jeder Passname lässt
+sich eindeutig auflösen.
+
+> **Hinweis zur Wintersperre:** Die Angabe in den Daten ist eine reine
+> Höhen-Heuristik (≥2000 m = wahrscheinlich gesperrt) und **nicht
+> verifiziert**. Für verbindliche Öffnungszeiten offizielle Strasseninfos
+> bzw. den TCS konsultieren.
+
 ## Meilensteine
 
 - [x] **M1 – Grundgerüst**: PWA-Setup, Karte, Standort.
+- [x] **Pässeplaner**: Passliste Europa, Korridor-Filter, Markierung, Routing.
 - [ ] **M2 – Routing-Kern**: Start/Ziel/Stopps, Motorrad-Routing (BRouter), Kurven-Regler.
 - [ ] **M3 – Route bearbeiten**: Wegpunkte verschieben, Distanz/Zeit/Höhenprofil.
 - [ ] **M4 – Sehenswürdigkeiten**: POIs entlang der Route, Filter.

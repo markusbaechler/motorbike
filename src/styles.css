@@ -70,3 +70,299 @@ body,
 .maplibregl-ctrl-bottom-right {
   margin-bottom: max(8px, env(safe-area-inset-bottom));
 }
+
+/* ── Pässeplaner panel ──────────────────────────────────────────────── */
+.planner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-start;
+  max-height: 100dvh;
+  font-size: 0.85rem;
+}
+
+.planner__toggle {
+  margin: 56px 0 0 8px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #04293a;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.planner__body {
+  width: min(340px, calc(100vw - 24px));
+  margin: 52px 0 8px 8px;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--panel);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  max-height: calc(100dvh - 64px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+.field > span,
+fieldset.field > span {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  opacity: 0.7;
+}
+
+.field input[type="text"],
+.field input[type="range"] {
+  width: 100%;
+}
+
+.field input[type="text"] {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+.check,
+.radio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+fieldset.field .radio {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.85rem;
+  opacity: 1;
+}
+
+.advanced summary {
+  cursor: pointer;
+  opacity: 0.8;
+  font-size: 0.78rem;
+}
+
+.advanced {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.advanced[open] {
+  gap: 10px;
+  padding-bottom: 4px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.planner button.primary,
+.planner button {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.planner button.primary {
+  background: var(--accent);
+  color: #04293a;
+  border: none;
+}
+
+.planner button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.progress {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.progress__bar {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.2s ease;
+}
+
+.status {
+  margin: 0;
+  font-size: 0.78rem;
+  opacity: 0.85;
+  line-height: 1.35;
+}
+
+.passlist {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding-top: 10px;
+}
+
+.passlist__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+.dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-left: 6px;
+}
+
+.dot--need {
+  background: #ef4444;
+}
+
+.dot--nice {
+  background: #f59e0b;
+}
+
+.passlist ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 38vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.passitem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+
+.passitem--need {
+  background: rgba(239, 68, 68, 0.16);
+}
+
+.passitem--nice {
+  background: rgba(245, 158, 11, 0.16);
+}
+
+.passitem__name {
+  flex: 1;
+  text-align: left;
+  background: none !important;
+  border: none !important;
+  padding: 2px 0 !important;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  cursor: pointer;
+}
+
+.passitem__title {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.passitem__meta {
+  font-size: 0.7rem;
+  opacity: 0.65;
+}
+
+.passitem__marks {
+  display: flex;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
+.passitem__marks button {
+  flex: 0 0 auto;
+  width: 26px;
+  padding: 4px 0;
+  font-size: 0.8rem;
+  line-height: 1;
+  opacity: 0.35;
+}
+
+.passitem__marks button.need {
+  color: #ef4444;
+}
+
+.passitem__marks button.nice {
+  color: #f59e0b;
+}
+
+.passitem__marks button.on {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.routeresult {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding-top: 10px;
+}
+
+.routeresult ol {
+  margin: 8px 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.wp em {
+  opacity: 0.6;
+  font-style: normal;
+  font-size: 0.72rem;
+}
+
+.wp--start::marker,
+.wp--end::marker {
+  color: var(--accent);
+}
+
+.wp--need {
+  color: #fca5a5;
+}
+
+.wp--nice {
+  color: #fcd34d;
+}
