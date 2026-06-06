@@ -9,6 +9,7 @@ import type { TourCandidate } from "./lib/tourgen";
 import RoutesModal from "./components/RoutesModal";
 import BookingPrefsModal from "./components/BookingPrefsModal";
 import Home from "./components/Home";
+import AdminPasses from "./components/AdminPasses";
 import ShareModal from "./components/ShareModal";
 import SearchBox from "./components/SearchBox";
 import { readSharedRoute } from "./lib/share";
@@ -51,6 +52,18 @@ export default function App() {
   // Inviting start screen, shown on launch.
   const [showHome, setShowHome] = useState(true);
   const [showShare, setShowShare] = useState(false);
+
+  // Hidden admin screen for managing the curated pass list (URL hash #admin).
+  const [admin, setAdmin] = useState(() => window.location.hash.replace("#", "") === "admin");
+  useEffect(() => {
+    const onHash = () => setAdmin(window.location.hash.replace("#", "") === "admin");
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+  const closeAdmin = () => {
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+    setAdmin(false);
+  };
 
   // Load a route shared via URL hash (#r=…) on first launch.
   useEffect(() => {
@@ -453,8 +466,13 @@ export default function App() {
             setShowRoutes(true);
           }}
           onMap={() => setShowHome(false)}
+          onAdmin={() => {
+            window.location.hash = "admin";
+          }}
         />
       )}
+
+      {admin && <AdminPasses onClose={closeAdmin} />}
     </div>
   );
 }

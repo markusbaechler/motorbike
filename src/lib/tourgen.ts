@@ -1,7 +1,7 @@
 import { bearing, bearingDelta, destination, haversine, type Coord } from "./geo";
 import { fetchMultiPoint } from "./routing";
 import { analyse, type RouteAnalysis } from "./analysis";
-import { PASSES, type NamedPlace } from "./passes";
+import { ensurePasses, type NamedPlace } from "./passes";
 import type { RouteProfile } from "../types";
 
 // The Tour-Genius generates real round trips (start = finish) and ranks them by
@@ -247,7 +247,9 @@ export async function findTours(
   // actively ride over them (instead of relying on the geometric circle alone).
   const startCoord: Coord = [start.lng, start.lat];
   const named = (p: NamedPlace): TourStop => ({ name: p.name, lat: p.lat, lng: p.lng });
-  const inRange = PASSES.map((p) => ({
+  const passes = await ensurePasses();
+  const inRange = passes
+    .map((p) => ({
     p,
     d: haversine(startCoord, [p.lng, p.lat]) / 1000,
     b: bearing(startCoord, [p.lng, p.lat]),

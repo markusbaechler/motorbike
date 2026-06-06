@@ -10,7 +10,10 @@ export interface NamedPlace {
   lng: number;
 }
 
-export const PASSES: NamedPlace[] = [
+// The live list is served as a static file (public/passes.json) so it can be
+// edited/managed server-side via the admin screen without a code change. This
+// bundled copy is the fallback if that file can't be loaded.
+export const DEFAULT_PASSES: NamedPlace[] = [
   // --- Ticino & around ---
   { name: "Alpe di Neggia", lat: 46.110, lng: 8.8095 },
   { name: "Indemini", lat: 46.097, lng: 8.7952 },
@@ -68,3 +71,55 @@ export const PASSES: NamedPlace[] = [
   { name: "Silvretta Hochalpenstrasse", lat: 46.918, lng: 10.090 },
   { name: "Hochtannbergpass", lat: 47.270, lng: 10.130 },
 ];
+
+// Path to the editable list (relative, resolves under the Pages subpath too).
+export const PASSES_URL = "./passes.json";
+
+function valid(p: unknown): p is NamedPlace {
+  const o = p as NamedPlace;
+  return (
+    !!o &&
+    typeof o.name === "string" &&
+    o.name.trim().length > 0 &&
+    Number.isFinite(o.lat) &&
+    Number.isFinite(o.lng)
+  );
+}
+
+let cache: NamedPlace[] | null = null;
+let inflight: Promise<NamedPlace[]> | null = null;
+
+/** Load the managed pass list (cached). Falls back to the bundled default. */
+export async function ensurePasses(): Promise<NamedPlace[]> {
+  if (cache) return cache;
+  if (!inflight) {
+    inflight = (async () => {
+      try {
+        const res = await fetch(PASSES_URL, { cache: "no-cache" });
+        if (res.ok) {
+          const data = (await res.json()) as unknown;
+          if (Array.isArray(data) && data.every(valid) && data.length > 0) {
+            cache = data as NamedPlace[];
+            return cache;
+          }
+        }
+      } catch {
+        /* offline / not found → fall back */
+      }
+      cache = DEFAULT_PASSES;
+      return cache;
+    })();
+  }
+  return inflight;
+}
+
+/** Fetch the current list bypassing the cache (used by the admin editor). */
+export async function fetchPassesFresh(): Promise<NamedPlace[]> {
+  const res = await fetch(`${PASSES_URL}?t=${Date.now()}`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Konnte passes.json nicht laden (HTTP ${res.status}).`);
+  const data = (await res.json()) as unknown;
+  if (!Array.isArray(data) || !data.every(valid)) {
+    throw new Error("passes.json hat ein ungültiges Format.");
+  }
+  return data as NamedPlace[];
+}
