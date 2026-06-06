@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import MapView, { type PassPoint } from "./components/MapView";
 import PassPlannerModal, { type PassSession } from "./components/PassPlannerModal";
 import PassSelectPanel from "./components/PassSelectPanel";
-import { orderByNearestNeighbour, type PassMark } from "./lib/passplanner";
+import { orderByNearestNeighbour, orderForLoop, type PassMark } from "./lib/passplanner";
 import RoutePanel from "./components/RoutePanel";
 import RouteModal from "./components/RouteModal";
 import QuickPlanModal, { type QuickStop } from "./components/QuickPlanModal";
@@ -344,7 +344,12 @@ export default function App() {
     setPassBusy(true);
     const { start, end } = passSession;
     const picked = passSession.passes.filter((p) => passMarks[p.key]);
-    const ordered = orderByNearestNeighbour({ lat: start.lat, lng: start.lng }, picked);
+    const startPt = { lat: start.lat, lng: start.lng };
+    // Round trips: order around the centroid for a clean loop. Point-to-point:
+    // nearest-neighbour from start toward the destination.
+    const ordered = end
+      ? orderByNearestNeighbour(startPt, picked)
+      : orderForLoop(startPt, picked);
     const last = end ?? start; // round trip ends at the start
     const stops = [
       { name: start.name, lat: start.lat, lng: start.lng },
