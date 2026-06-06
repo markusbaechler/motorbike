@@ -2,7 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import MapView, { type PassPoint } from "./components/MapView";
 import PassPlannerModal, { type PassSession } from "./components/PassPlannerModal";
 import PassSelectPanel from "./components/PassSelectPanel";
-import { orderByNearestNeighbour, orderForLoop, type PassMark } from "./lib/passplanner";
+import {
+  orderByNearestNeighbour,
+  orderForLoop,
+  throughPassesAlong,
+  type KeyedPass,
+  type PassMark,
+} from "./lib/passplanner";
 import RoutePanel from "./components/RoutePanel";
 import RouteModal from "./components/RouteModal";
 import QuickPlanModal, { type QuickStop } from "./components/QuickPlanModal";
@@ -351,11 +357,35 @@ export default function App() {
       ? orderByNearestNeighbour(startPt, picked)
       : orderForLoop(startPt, picked);
     const last = end ?? start; // round trip ends at the start
-    const stops = [
+
+    // Required anchors in visiting order (start → marked passes → end/back).
+    const anchors: Array<{ name: string; lat: number; lng: number; key?: string }> = [
       { name: start.name, lat: start.lat, lng: start.lng },
-      ...ordered.map((p) => ({ name: p.name, lat: p.lat, lng: p.lng })),
+      ...ordered.map((p) => ({ name: p.name, lat: p.lat, lng: p.lng, key: p.key })),
       { name: last.name, lat: last.lat, lng: last.lng },
     ];
+
+    // Best-effort: between each pair of anchors, auto-insert through-passes that
+    // lie along the leg (within a corridor), so the route rides passes on the
+    // way without the user marking every single one. Spur/dead-end roads are
+    // excluded (kind !== "pass"); already-used passes are skipped.
+    const used = new Set<string>(ordered.map((p) => p.key));
+    const stops: Array<{ name: string; lat: number; lng: number }> = [anchors[0]];
+    for (let i = 1; i < anchors.length; i++) {
+      const a = anchors[i - 1];
+      const b = anchors[i];
+      if (passSession.autoFill) {
+        const candidates = passSession.passes.filter(
+          (p: KeyedPass) => !used.has(p.key) && !passMarks[p.key],
+        );
+        for (const p of throughPassesAlong(a, b, candidates)) {
+          if (used.has(p.key)) continue;
+          used.add(p.key);
+          stops.push({ name: p.name, lat: p.lat, lng: p.lng });
+        }
+      }
+      stops.push({ name: b.name, lat: b.lat, lng: b.lng });
+    }
     setPendingDay(false);
     setWaypoints(
       stops.map((s) => ({
