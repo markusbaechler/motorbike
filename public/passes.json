@@ -223,5 +223,4415 @@
     "name": "Hochtannbergpass",
     "lat": 47.27,
     "lng": 10.13
+  },
+  {
+    "name": "L'Acciola (Bocca à Zora)",
+    "lat": 42.25058,
+    "lng": 8.81691
+  },
+  {
+    "name": "Achenpass",
+    "lat": 47.60452,
+    "lng": 11.63589
+  },
+  {
+    "name": "Ächerlipass",
+    "lat": 46.90433,
+    "lng": 8.33488
+  },
+  {
+    "name": "Les Agites (Hongrin)",
+    "lat": 46.36938,
+    "lng": 6.96525
+  },
+  {
+    "name": "Albispass",
+    "lat": 47.27604,
+    "lng": 8.52112
+  },
+  {
+    "name": "Älggi-Alp",
+    "lat": 46.79992,
+    "lng": 8.23564
+  },
+  {
+    "name": "Allenwinden",
+    "lat": 47.38391,
+    "lng": 8.94996
+  },
+  {
+    "name": "Alpe Colle",
+    "lat": 46.02452,
+    "lng": 8.62594
+  },
+  {
+    "name": "Alpe d'Huez",
+    "lat": 45.09709,
+    "lng": 6.06991
+  },
+  {
+    "name": "Alto de Espinho",
+    "lat": 41.55451,
+    "lng": -8.3545
+  },
+  {
+    "name": "Alto de Velefique",
+    "lat": 37.22573,
+    "lng": -2.41136
+  },
+  {
+    "name": "Ammersattel",
+    "lat": 47.53448,
+    "lng": 10.88624
+  },
+  {
+    "name": "Ampfernhöhe",
+    "lat": 47.51812,
+    "lng": 8.12387
+  },
+  {
+    "name": "Arlbergpass",
+    "lat": 47.12992,
+    "lng": 10.21061
+  },
+  {
+    "name": "Arolla (Val d'Hérens, Eringertal)",
+    "lat": 46.02601,
+    "lng": 7.47897
+  },
+  {
+    "name": "Arosio",
+    "lat": 46.04809,
+    "lng": 8.89742
+  },
+  {
+    "name": "Äulemer Kreuz",
+    "lat": 47.82706,
+    "lng": 8.08768
+  },
+  {
+    "name": "Balmberg",
+    "lat": 47.26614,
+    "lng": 7.53953
+  },
+  {
+    "name": "Bänkelloch",
+    "lat": 47.28146,
+    "lng": 8.08761
+  },
+  {
+    "name": "Bärenwil",
+    "lat": 47.33929,
+    "lng": 7.78847
+  },
+  {
+    "name": "Baros Pass",
+    "lat": 39.6152,
+    "lng": 21.17382
+  },
+  {
+    "name": "Bättlerchuchi",
+    "lat": 47.27481,
+    "lng": 7.60006
+  },
+  {
+    "name": "Bay of Kotor",
+    "lat": 42.45425,
+    "lng": 18.67203
+  },
+  {
+    "name": "Beatenberg",
+    "lat": 46.70381,
+    "lng": 7.80968
+  },
+  {
+    "name": "Benkerjoch",
+    "lat": 47.43543,
+    "lng": 8.03011
+  },
+  {
+    "name": "Bernerhöchi",
+    "lat": 47.04109,
+    "lng": 8.55677
+  },
+  {
+    "name": "Bielmonte",
+    "lat": 45.66274,
+    "lng": 8.0868
+  },
+  {
+    "name": "Bocca Albitrina",
+    "lat": 41.61548,
+    "lng": 8.95027
+  },
+  {
+    "name": "Bocca d'Arbia",
+    "lat": 41.41253,
+    "lng": 9.12368
+  },
+  {
+    "name": "Bocca di Carbinica",
+    "lat": 41.99351,
+    "lng": 8.72697
+  },
+  {
+    "name": "Bocca del Creer",
+    "lat": 45.79865,
+    "lng": 10.89362
+  },
+  {
+    "name": "Bocca di Roccapina",
+    "lat": 41.49781,
+    "lng": 8.94913
+  },
+  {
+    "name": "Bocca Trabaria",
+    "lat": 43.59512,
+    "lng": 12.23559
+  },
+  {
+    "name": "Bödele Losenpass",
+    "lat": 47.42294,
+    "lng": 9.80915
+  },
+  {
+    "name": "Bodenberg",
+    "lat": 47.15126,
+    "lng": 7.92964
+  },
+  {
+    "name": "Böhler Passhöchi",
+    "lat": 47.30734,
+    "lng": 8.08417
+  },
+  {
+    "name": "Le Borbieu",
+    "lat": 46.20013,
+    "lng": 6.46786
+  },
+  {
+    "name": "Botevgradski / Arabakonak Pass",
+    "lat": 42.7679,
+    "lng": 23.84712
+  },
+  {
+    "name": "Bözberg",
+    "lat": 47.48095,
+    "lng": 8.13876
+  },
+  {
+    "name": "Brämenhöchi",
+    "lat": 47.15733,
+    "lng": 8.58678
+  },
+  {
+    "name": "Breitehöchi (Breitenhöhe)",
+    "lat": 47.34997,
+    "lng": 7.74176
+  },
+  {
+    "name": "Brennerpass, Passo del Brennero",
+    "lat": 47.00641,
+    "lng": 11.50592
+  },
+  {
+    "name": "Buchenegg",
+    "lat": 47.29616,
+    "lng": 8.50779
+  },
+  {
+    "name": "Bucher Höhe",
+    "lat": 47.33405,
+    "lng": 11.11484
+  },
+  {
+    "name": "Bürersteig",
+    "lat": 47.52825,
+    "lng": 8.15929
+  },
+  {
+    "name": "Bürgenstock",
+    "lat": 46.99701,
+    "lng": 8.38175
+  },
+  {
+    "name": "Buuseregg",
+    "lat": 47.49524,
+    "lng": 7.85582
+  },
+  {
+    "name": "La Caquerelle",
+    "lat": 47.37871,
+    "lng": 7.21125
+  },
+  {
+    "name": "Carrera-Höhe",
+    "lat": 46.79272,
+    "lng": 9.31339
+  },
+  {
+    "name": "Čertovica Pass",
+    "lat": 48.90552,
+    "lng": 19.73597
+  },
+  {
+    "name": "Červenohorské sedlo",
+    "lat": 50.12498,
+    "lng": 17.15467
+  },
+  {
+    "name": "Chälen",
+    "lat": 47.10968,
+    "lng": 8.75096
+  },
+  {
+    "name": "Challhöchi",
+    "lat": 47.45011,
+    "lng": 7.45882
+  },
+  {
+    "name": "Chätzigerhöchi",
+    "lat": 47.19134,
+    "lng": 8.01829
+  },
+  {
+    "name": "Chellen",
+    "lat": 47.27733,
+    "lng": 9.16498
+  },
+  {
+    "name": "Chilchzimmersattel (Belchen, Bölchen)",
+    "lat": 47.36541,
+    "lng": 7.80217
+  },
+  {
+    "name": "Chuderhüsi",
+    "lat": 46.87031,
+    "lng": 7.72658
+  },
+  {
+    "name": "Cima Colletta",
+    "lat": 43.82946,
+    "lng": 11.76339
+  },
+  {
+    "name": "Cima di Sappada",
+    "lat": 46.56623,
+    "lng": 12.72012
+  },
+  {
+    "name": "Cime de la Bonette (Col de la Bonette)",
+    "lat": 44.32047,
+    "lng": 6.80733
+  },
+  {
+    "name": "Cocca di Lodrino",
+    "lat": 45.71231,
+    "lng": 10.28597
+  },
+  {
+    "name": "Col d'Agnel, Colle dell'Agnello",
+    "lat": 44.68401,
+    "lng": 6.97967
+  },
+  {
+    "name": "Col d'Agnès",
+    "lat": 42.79406,
+    "lng": 1.37397
+  },
+  {
+    "name": "Col de l'Aiguillon",
+    "lat": 46.78945,
+    "lng": 6.45944
+  },
+  {
+    "name": "Col de l'Allimas",
+    "lat": 44.88207,
+    "lng": 5.56688
+  },
+  {
+    "name": "Col d'Allos",
+    "lat": 44.29726,
+    "lng": 6.59422
+  },
+  {
+    "name": "Col Amic",
+    "lat": 47.87581,
+    "lng": 7.12831
+  },
+  {
+    "name": "Col de l'Ancrenaz",
+    "lat": 46.17269,
+    "lng": 6.63366
+  },
+  {
+    "name": "Col des Aravis",
+    "lat": 45.87229,
+    "lng": 6.46488
+  },
+  {
+    "name": "Col des Arces",
+    "lat": 46.26851,
+    "lng": 6.49213
+  },
+  {
+    "name": "Col des Ares",
+    "lat": 42.99092,
+    "lng": 0.69377
+  },
+  {
+    "name": "Col de l'Arpettaz",
+    "lat": 45.79691,
+    "lng": 6.43368
+  },
+  {
+    "name": "Col de l'Arzelier",
+    "lat": 44.99103,
+    "lng": 5.59551
+  },
+  {
+    "name": "Col d'Aspin",
+    "lat": 42.94236,
+    "lng": 0.32734
+  },
+  {
+    "name": "Col d'Aspremont",
+    "lat": 43.78428,
+    "lng": 7.24347
+  },
+  {
+    "name": "Col d'Aubisque",
+    "lat": 42.9772,
+    "lng": -0.3389
+  },
+  {
+    "name": "Col d'Avaye",
+    "lat": 43.66671,
+    "lng": 6.68299
+  },
+  {
+    "name": "Col de l'Avernaz",
+    "lat": 46.18566,
+    "lng": 6.46988
+  },
+  {
+    "name": "Col d'Ayen",
+    "lat": 43.76979,
+    "lng": 6.31664
+  },
+  {
+    "name": "Col des Ayes",
+    "lat": 45.27412,
+    "lng": 5.98797
+  },
+  {
+    "name": "Col d'Azet",
+    "lat": 42.79188,
+    "lng": 0.38095
+  },
+  {
+    "name": "Col des Bagenelles",
+    "lat": 48.19255,
+    "lng": 7.11387
+  },
+  {
+    "name": "Col de Balès/Port de Balès",
+    "lat": 42.87417,
+    "lng": 0.50063
+  },
+  {
+    "name": "Col du Ballon d'Alsace",
+    "lat": 47.82058,
+    "lng": 6.83469
+  },
+  {
+    "name": "Col du Barrioz",
+    "lat": 45.33131,
+    "lng": 6.02695
+  },
+  {
+    "name": "Col Bas",
+    "lat": 43.78736,
+    "lng": 6.73427
+  },
+  {
+    "name": "Col de Bassachaux",
+    "lat": 46.22253,
+    "lng": 6.77223
+  },
+  {
+    "name": "Col de la Bataille",
+    "lat": 44.89919,
+    "lng": 5.22961
+  },
+  {
+    "name": "Col de Bavella, Bocca di Bavedda",
+    "lat": 41.79585,
+    "lng": 9.22489
+  },
+  {
+    "name": "Col Bayard",
+    "lat": 44.61429,
+    "lng": 6.08121
+  },
+  {
+    "name": "Col de Belleroche",
+    "lat": 46.11099,
+    "lng": 5.64685
+  },
+  {
+    "name": "Col de la Berche",
+    "lat": 45.99458,
+    "lng": 5.55106
+  },
+  {
+    "name": "Col de la Biche",
+    "lat": 45.95246,
+    "lng": 5.74886
+  },
+  {
+    "name": "Col de Bleine",
+    "lat": 43.81448,
+    "lng": 6.80329
+  },
+  {
+    "name": "Col du Bonhomme",
+    "lat": 48.16496,
+    "lng": 7.07951
+  },
+  {
+    "name": "Col du Bramont",
+    "lat": 48.00045,
+    "lng": 6.94545
+  },
+  {
+    "name": "Col de Braus",
+    "lat": 43.87257,
+    "lng": 7.39919
+  },
+  {
+    "name": "Col de Brouis",
+    "lat": 43.92426,
+    "lng": 7.47645
+  },
+  {
+    "name": "Col de Bussang",
+    "lat": 47.88954,
+    "lng": 6.89723
+  },
+  {
+    "name": "Col du Calvaire",
+    "lat": 48.13643,
+    "lng": 7.08851
+  },
+  {
+    "name": "Col de Carri",
+    "lat": 44.94419,
+    "lng": 5.36243
+  },
+  {
+    "name": "Col du Castellaras",
+    "lat": 43.78763,
+    "lng": 6.84641
+  },
+  {
+    "name": "Col de Castillon",
+    "lat": 43.83951,
+    "lng": 7.46014
+  },
+  {
+    "name": "Col de la Cayolle",
+    "lat": 44.25919,
+    "lng": 6.74397
+  },
+  {
+    "name": "Col de Celaccia, Bocca di Cilaccia",
+    "lat": 41.74349,
+    "lng": 8.93004
+  },
+  {
+    "name": "Col du Cendrier",
+    "lat": 46.02071,
+    "lng": 5.48254
+  },
+  {
+    "name": "Col du Châlet-à-Gobet",
+    "lat": 46.56651,
+    "lng": 6.69668
+  },
+  {
+    "name": "Col de Champex",
+    "lat": 46.03178,
+    "lng": 7.10682
+  },
+  {
+    "name": "Col de Champlaurent",
+    "lat": 45.50519,
+    "lng": 6.21899
+  },
+  {
+    "name": "Col des Champs",
+    "lat": 44.17491,
+    "lng": 6.69797
+  },
+  {
+    "name": "Col Charamel",
+    "lat": 44.43156,
+    "lng": 6.29887
+  },
+  {
+    "name": "Col de la Charbonnière",
+    "lat": 48.38352,
+    "lng": 7.25747
+  },
+  {
+    "name": "Col du Chasseral",
+    "lat": 47.11942,
+    "lng": 7.03217
+  },
+  {
+    "name": "Col du Châtillon-sur-Cluses",
+    "lat": 46.08792,
+    "lng": 6.58311
+  },
+  {
+    "name": "Col de la Chau",
+    "lat": 44.90729,
+    "lng": 5.35661
+  },
+  {
+    "name": "Col du Chaussy",
+    "lat": 45.34436,
+    "lng": 6.35632
+  },
+  {
+    "name": "Col de Cheiron",
+    "lat": 43.87074,
+    "lng": 6.51192
+  },
+  {
+    "name": "Col des Chevrères",
+    "lat": 47.79129,
+    "lng": 6.74233
+  },
+  {
+    "name": "Col de Clavel",
+    "lat": 43.74981,
+    "lng": 6.62988
+  },
+  {
+    "name": "Col de Colliard",
+    "lat": 46.12761,
+    "lng": 5.63808
+  },
+  {
+    "name": "Col de la Colombière",
+    "lat": 45.99224,
+    "lng": 6.47574
+  },
+  {
+    "name": "Col du Corbier",
+    "lat": 46.28379,
+    "lng": 6.64451
+  },
+  {
+    "name": "Col de la Core",
+    "lat": 42.85895,
+    "lng": 1.10496
+  },
+  {
+    "name": "Col du Corobin",
+    "lat": 44.00822,
+    "lng": 6.32031
+  },
+  {
+    "name": "Col de Cou",
+    "lat": 46.26241,
+    "lng": 6.45404
+  },
+  {
+    "name": "Col de la Couillole",
+    "lat": 44.10024,
+    "lng": 7.02303
+  },
+  {
+    "name": "Col de Couraduque",
+    "lat": 42.99128,
+    "lng": -0.20307
+  },
+  {
+    "name": "Col des Creys (Pas de Laffrey)",
+    "lat": 44.99483,
+    "lng": 5.76311
+  },
+  {
+    "name": "Col de la Croisette",
+    "lat": 46.11951,
+    "lng": 6.17159
+  },
+  {
+    "name": "Col de la Croix de Bouvante",
+    "lat": 44.94881,
+    "lng": 5.26927
+  },
+  {
+    "name": "Col de la Croix",
+    "lat": 46.32464,
+    "lng": 7.12666
+  },
+  {
+    "name": "Col de la Croix de Fer",
+    "lat": 45.22751,
+    "lng": 6.20333
+  },
+  {
+    "name": "Col des Croix",
+    "lat": 47.85985,
+    "lng": 6.74709
+  },
+  {
+    "name": "Col de la Croix, Bocca à Croce",
+    "lat": 42.32681,
+    "lng": 8.63238
+  },
+  {
+    "name": "Col de la Croix Fry",
+    "lat": 45.87687,
+    "lng": 6.40479
+  },
+  {
+    "name": "Col de la Croix des Moinats",
+    "lat": 47.98747,
+    "lng": 6.81691
+  },
+  {
+    "name": "Col de la Croix des Morts",
+    "lat": 42.87685,
+    "lng": 1.97152
+  },
+  {
+    "name": "Col de la Croix-Perrin",
+    "lat": 45.13038,
+    "lng": 5.55976
+  },
+  {
+    "name": "Col de la Croix-Rouge",
+    "lat": 44.33036,
+    "lng": 5.16831
+  },
+  {
+    "name": "Col de la Croix de la Serra",
+    "lat": 46.28836,
+    "lng": 5.79909
+  },
+  {
+    "name": "Col de la Crouzette",
+    "lat": 42.9328,
+    "lng": 1.32505
+  },
+  {
+    "name": "Col du Cruchon",
+    "lat": 46.02471,
+    "lng": 5.56223
+  },
+  {
+    "name": "Col du Cucheron",
+    "lat": 45.36544,
+    "lng": 5.83411
+  },
+  {
+    "name": "Col de Cuvéry",
+    "lat": 46.11221,
+    "lng": 5.73062
+  },
+  {
+    "name": "Col de Cuvillat",
+    "lat": 46.03216,
+    "lng": 5.62201
+  },
+  {
+    "name": "Col des Deux",
+    "lat": 44.91014,
+    "lng": 5.55185
+  },
+  {
+    "name": "Col du Donon",
+    "lat": 48.50634,
+    "lng": 7.14389
+  },
+  {
+    "name": "Col de l'Écharasson",
+    "lat": 44.97948,
+    "lng": 5.32561
+  },
+  {
+    "name": "Col de l'Echelle, Colle della Scala",
+    "lat": 45.02635,
+    "lng": 6.65702
+  },
+  {
+    "name": "Col de l'Épine",
+    "lat": 45.77931,
+    "lng": 6.34896
+  },
+  {
+    "name": "Col des Etroits",
+    "lat": 46.82995,
+    "lng": 6.49492
+  },
+  {
+    "name": "Col d'Évires",
+    "lat": 46.04502,
+    "lng": 6.25605
+  },
+  {
+    "name": "Col des Eygaux",
+    "lat": 44.53662,
+    "lng": 5.79541
+  },
+  {
+    "name": "Col d'Èze",
+    "lat": 43.73433,
+    "lng": 7.34657
+  },
+  {
+    "name": "Col de la Faucille",
+    "lat": 46.37025,
+    "lng": 6.01866
+  },
+  {
+    "name": "Col de la Faye",
+    "lat": 43.71119,
+    "lng": 6.83683
+  },
+  {
+    "name": "Col des Feignes sous Vologne",
+    "lat": 48.04764,
+    "lng": 6.97583
+  },
+  {
+    "name": "Col du Ferrier",
+    "lat": 43.71157,
+    "lng": 6.86526
+  },
+  {
+    "name": "Col du Feu",
+    "lat": 46.29444,
+    "lng": 6.50927
+  },
+  {
+    "name": "Col des Fillys",
+    "lat": 44.40951,
+    "lng": 6.29211
+  },
+  {
+    "name": "Col du Firstplan",
+    "lat": 47.99927,
+    "lng": 7.18514
+  },
+  {
+    "name": "Col des Fleuries",
+    "lat": 46.02517,
+    "lng": 6.28755
+  },
+  {
+    "name": "Col Fontbelle",
+    "lat": 44.21535,
+    "lng": 6.14702
+  },
+  {
+    "name": "Col des Fourches",
+    "lat": 44.83914,
+    "lng": 4.37427
+  },
+  {
+    "name": "Col de Fréland",
+    "lat": 48.19295,
+    "lng": 7.21531
+  },
+  {
+    "name": "Col du Frêne",
+    "lat": 45.58233,
+    "lng": 6.13551
+  },
+  {
+    "name": "Col de la Frétallaz",
+    "lat": 45.96538,
+    "lng": 6.14629
+  },
+  {
+    "name": "Col de Frissonnet",
+    "lat": 45.8374,
+    "lng": 3.63571
+  },
+  {
+    "name": "Col du Galibier",
+    "lat": 45.06412,
+    "lng": 6.40785
+  },
+  {
+    "name": "Col Gallina (Strada Passo Falzarego)",
+    "lat": 46.51984,
+    "lng": 12.01922
+  },
+  {
+    "name": "Col des Gets",
+    "lat": 46.16033,
+    "lng": 6.66907
+  },
+  {
+    "name": "Col de la Givrine",
+    "lat": 46.45568,
+    "lng": 6.09026
+  },
+  {
+    "name": "Col du Glandon",
+    "lat": 45.23961,
+    "lng": 6.17556
+  },
+  {
+    "name": "Col du Grand Ballon, Grosser Belchen",
+    "lat": 47.90471,
+    "lng": 7.10331
+  },
+  {
+    "name": "Col du Grand Colombier",
+    "lat": 45.90345,
+    "lng": 5.76111
+  },
+  {
+    "name": "Col du Grand Cucheron",
+    "lat": 45.48985,
+    "lng": 6.24832
+  },
+  {
+    "name": "Col du Grand Taillet",
+    "lat": 46.32652,
+    "lng": 6.61759
+  },
+  {
+    "name": "Col de Grandegorge",
+    "lat": 46.13433,
+    "lng": 6.18237
+  },
+  {
+    "name": "Col du Granier",
+    "lat": 45.48045,
+    "lng": 5.91499
+  },
+  {
+    "name": "Col de Grimone",
+    "lat": 44.69148,
+    "lng": 5.65391
+  },
+  {
+    "name": "Col de Grosse Pierre",
+    "lat": 48.02675,
+    "lng": 6.88424
+  },
+  {
+    "name": "Col du Hantz",
+    "lat": 48.40248,
+    "lng": 7.08985
+  },
+  {
+    "name": "Col Haut de Ribeauvillé",
+    "lat": 48.22667,
+    "lng": 7.22812
+  },
+  {
+    "name": "Col de Herrenfluh",
+    "lat": 47.84551,
+    "lng": 7.14332
+  },
+  {
+    "name": "Col de l'Holme",
+    "lat": 44.85544,
+    "lng": 5.90462
+  },
+  {
+    "name": "Col des Hôpitaux",
+    "lat": 46.77891,
+    "lng": 6.37648
+  },
+  {
+    "name": "Col du Hundsruck",
+    "lat": 47.80658,
+    "lng": 7.04269
+  },
+  {
+    "name": "Col d'Hysope",
+    "lat": 44.20126,
+    "lng": 6.15103
+  },
+  {
+    "name": "Col d'Ichère",
+    "lat": 43.04158,
+    "lng": -0.63652
+  },
+  {
+    "name": "Col Illarata, Bocca Illarata",
+    "lat": 41.70477,
+    "lng": 9.21137
+  },
+  {
+    "name": "Col de l'Iseran",
+    "lat": 45.41721,
+    "lng": 7.03067
+  },
+  {
+    "name": "Col d'Izoard",
+    "lat": 44.81974,
+    "lng": 6.73499
+  },
+  {
+    "name": "Col de Jambaz",
+    "lat": 46.23513,
+    "lng": 6.52004
+  },
+  {
+    "name": "Col de Jau",
+    "lat": 42.68791,
+    "lng": 2.25071
+  },
+  {
+    "name": "Col de Joux Plane",
+    "lat": 46.12965,
+    "lng": 6.71287
+  },
+  {
+    "name": "Col de la Joux Verte",
+    "lat": 46.19999,
+    "lng": 6.75926
+  },
+  {
+    "name": "Col du Kreuzweg",
+    "lat": 48.38696,
+    "lng": 7.29411
+  },
+  {
+    "name": "Col de Labays",
+    "lat": 43.00327,
+    "lng": -0.67497
+  },
+  {
+    "name": "Col du Labouret",
+    "lat": 44.24921,
+    "lng": 6.37053
+  },
+  {
+    "name": "Col de Landoz-Neuve",
+    "lat": 46.68048,
+    "lng": 6.25553
+  },
+  {
+    "name": "Col de Larche, Colle della Maddalena",
+    "lat": 44.42177,
+    "lng": 6.89852
+  },
+  {
+    "name": "Col de Larrau/Port de Larrau",
+    "lat": 42.97417,
+    "lng": -0.99361
+  },
+  {
+    "name": "Col du Lautaret",
+    "lat": 45.03542,
+    "lng": 6.40521
+  },
+  {
+    "name": "Col du Lautaret près Laval",
+    "lat": 45.25502,
+    "lng": 5.97052
+  },
+  {
+    "name": "Col de la Lèbe",
+    "lat": 45.91905,
+    "lng": 5.61952
+  },
+  {
+    "name": "Col Lebraut",
+    "lat": 44.50677,
+    "lng": 6.28388
+  },
+  {
+    "name": "Col de Lèques",
+    "lat": 43.86546,
+    "lng": 6.46396
+  },
+  {
+    "name": "Col de Leschaux",
+    "lat": 45.77188,
+    "lng": 6.13168
+  },
+  {
+    "name": "Col des Limouches",
+    "lat": 44.88679,
+    "lng": 5.15851
+  },
+  {
+    "name": "Col de Linstincone, Bocca di Linstincone",
+    "lat": 42.00126,
+    "lng": 8.75659
+  },
+  {
+    "name": "Col de la Lombarde, Colle della Lombarda",
+    "lat": 44.20257,
+    "lng": 7.15011
+  },
+  {
+    "name": "Col du Louchpach",
+    "lat": 48.13632,
+    "lng": 7.06133
+  },
+  {
+    "name": "Col de Luens",
+    "lat": 43.81866,
+    "lng": 6.58695
+  },
+  {
+    "name": "Col de la Machine (Route de Combe Laval)",
+    "lat": 44.97443,
+    "lng": 5.33471
+  },
+  {
+    "name": "Col de la Madeleine",
+    "lat": 45.43489,
+    "lng": 6.37547
+  },
+  {
+    "name": "Col de la Madeleine (Route de l'Iseran)",
+    "lat": 45.30065,
+    "lng": 6.94745
+  },
+  {
+    "name": "Col de Mandray",
+    "lat": 48.20149,
+    "lng": 7.01171
+  },
+  {
+    "name": "Col du Marais",
+    "lat": 45.82416,
+    "lng": 6.33423
+  },
+  {
+    "name": "Col du Marchairuz",
+    "lat": 46.55288,
+    "lng": 6.25028
+  },
+  {
+    "name": "Col de Marie-Blanque",
+    "lat": 43.07047,
+    "lng": -0.50743
+  },
+  {
+    "name": "Col de Marmare",
+    "lat": 42.76616,
+    "lng": 1.85107
+  },
+  {
+    "name": "Col du Marocaz",
+    "lat": 45.54992,
+    "lng": 6.07618
+  },
+  {
+    "name": "Col de Martimpré",
+    "lat": 48.09893,
+    "lng": 6.90524
+  },
+  {
+    "name": "Col de Maure",
+    "lat": 44.31935,
+    "lng": 6.40204
+  },
+  {
+    "name": "Col de Menée",
+    "lat": 44.75899,
+    "lng": 5.60483
+  },
+  {
+    "name": "Col du Ménil",
+    "lat": 47.92619,
+    "lng": 6.81707
+  },
+  {
+    "name": "Col de Menté",
+    "lat": 42.9194,
+    "lng": 0.76211
+  },
+  {
+    "name": "Col du Méraillet",
+    "lat": 45.69483,
+    "lng": 6.63346
+  },
+  {
+    "name": "Col de Mézien",
+    "lat": 44.20583,
+    "lng": 5.97571
+  },
+  {
+    "name": "Col de Mézilhac",
+    "lat": 44.80799,
+    "lng": 4.34625
+  },
+  {
+    "name": "Col des Moises",
+    "lat": 46.27877,
+    "lng": 6.46786
+  },
+  {
+    "name": "Col du Mollendruz",
+    "lat": 46.65054,
+    "lng": 6.36458
+  },
+  {
+    "name": "Col du Mont Cenis, Colle del Moncenisio",
+    "lat": 45.25989,
+    "lng": 6.90074
+  },
+  {
+    "name": "Col du Mont Crosin",
+    "lat": 47.19027,
+    "lng": 7.03969
+  },
+  {
+    "name": "Col du Mont d'Orzeires",
+    "lat": 46.68521,
+    "lng": 6.33694
+  },
+  {
+    "name": "Col du Mont Sion",
+    "lat": 46.07448,
+    "lng": 6.08575
+  },
+  {
+    "name": "Col des Montets",
+    "lat": 46.00395,
+    "lng": 6.92364
+  },
+  {
+    "name": "Col de Montgenèvre",
+    "lat": 44.93096,
+    "lng": 6.72331
+  },
+  {
+    "name": "Col de Montvoie",
+    "lat": 47.37019,
+    "lng": 7.05171
+  },
+  {
+    "name": "Col des Mouilles",
+    "lat": 45.23951,
+    "lng": 5.95142
+  },
+  {
+    "name": "Col de Nice",
+    "lat": 43.82658,
+    "lng": 7.35044
+  },
+  {
+    "name": "Col des Nonières",
+    "lat": 44.93282,
+    "lng": 4.48673
+  },
+  {
+    "name": "Col du Noyer",
+    "lat": 44.69245,
+    "lng": 5.98448
+  },
+  {
+    "name": "Col d'Oderen",
+    "lat": 47.92266,
+    "lng": 6.91742
+  },
+  {
+    "name": "Col de l'Orme",
+    "lat": 44.03269,
+    "lng": 6.20596
+  },
+  {
+    "name": "Col d'Ornon",
+    "lat": 45.00838,
+    "lng": 5.96745
+  },
+  {
+    "name": "Col de Pailhères",
+    "lat": 42.73365,
+    "lng": 1.9927
+  },
+  {
+    "name": "Col de Palaquit",
+    "lat": 45.27278,
+    "lng": 5.76554
+  },
+  {
+    "name": "Col de Palluel",
+    "lat": 44.40326,
+    "lng": 5.52567
+  },
+  {
+    "name": "Col de Palmarella, Bocca di Palmarella",
+    "lat": 42.36394,
+    "lng": 8.64839
+  },
+  {
+    "name": "Col des Pandours",
+    "lat": 48.58959,
+    "lng": 7.31646
+  },
+  {
+    "name": "Col de Parquetout",
+    "lat": 44.87612,
+    "lng": 5.92773
+  },
+  {
+    "name": "Col du Pas de Bonnet",
+    "lat": 44.11137,
+    "lng": 6.14634
+  },
+  {
+    "name": "Col du Petit Saint Bernard, Colle del Piccolo San Bernardo",
+    "lat": 45.67978,
+    "lng": 6.88338
+  },
+  {
+    "name": "Col de Peyresourde",
+    "lat": 42.80221,
+    "lng": 0.46193
+  },
+  {
+    "name": "Col de Pierre Basse",
+    "lat": 44.02932,
+    "lng": 6.29738
+  },
+  {
+    "name": "Col de Pierre-Pertuis",
+    "lat": 47.21005,
+    "lng": 7.19422
+  },
+  {
+    "name": "Col de la Pierre Saint-Martin",
+    "lat": 42.96895,
+    "lng": -0.76829
+  },
+  {
+    "name": "Col du Pilon",
+    "lat": 43.68503,
+    "lng": 6.88265
+  },
+  {
+    "name": "Col du Pionnier",
+    "lat": 44.95382,
+    "lng": 5.28406
+  },
+  {
+    "name": "Col de Pisseloup",
+    "lat": 46.04432,
+    "lng": 5.56882
+  },
+  {
+    "name": "Col des Pitons",
+    "lat": 46.09286,
+    "lng": 6.14246
+  },
+  {
+    "name": "Col du Plafond",
+    "lat": 48.16218,
+    "lng": 6.91731
+  },
+  {
+    "name": "Col de Plainpalais",
+    "lat": 45.64646,
+    "lng": 6.01741
+  },
+  {
+    "name": "Col du Plan",
+    "lat": 46.07925,
+    "lng": 6.12641
+  },
+  {
+    "name": "Col des Planches",
+    "lat": 46.09699,
+    "lng": 7.12424
+  },
+  {
+    "name": "Col du Platzerwasel",
+    "lat": 47.96946,
+    "lng": 7.04388
+  },
+  {
+    "name": "Col de Pontis",
+    "lat": 44.48804,
+    "lng": 6.34855
+  },
+  {
+    "name": "Col de Port",
+    "lat": 42.89885,
+    "lng": 1.45294
+  },
+  {
+    "name": "Col de Porte",
+    "lat": 45.28993,
+    "lng": 5.76699
+  },
+  {
+    "name": "Col de Portel",
+    "lat": 42.92989,
+    "lng": 1.35697
+  },
+  {
+    "name": "Col de Portet d'Aspet",
+    "lat": 42.94475,
+    "lng": 0.85371
+  },
+  {
+    "name": "Col de Portet",
+    "lat": 42.83311,
+    "lng": 0.2365
+  },
+  {
+    "name": "Col de la Portette",
+    "lat": 44.95666,
+    "lng": 5.29476
+  },
+  {
+    "name": "Col du Portillon",
+    "lat": 42.7691,
+    "lng": 0.6601
+  },
+  {
+    "name": "Col du Pourtalet",
+    "lat": 42.80591,
+    "lng": -0.41847
+  },
+  {
+    "name": "Col du Pradel",
+    "lat": 42.87041,
+    "lng": 2.09512
+  },
+  {
+    "name": "Col du Prayet",
+    "lat": 44.78522,
+    "lng": 5.59874
+  },
+  {
+    "name": "Col du Pré",
+    "lat": 45.69031,
+    "lng": 6.59799
+  },
+  {
+    "name": "Col des Prés",
+    "lat": 45.59568,
+    "lng": 6.05999
+  },
+  {
+    "name": "Col de Proncel",
+    "lat": 44.92791,
+    "lng": 5.38236
+  },
+  {
+    "name": "Col de Puymorens",
+    "lat": 42.55966,
+    "lng": 1.81137
+  },
+  {
+    "name": "Col des Quatre Chemins",
+    "lat": 43.71686,
+    "lng": 7.31231
+  },
+  {
+    "name": "Col de la Quillane",
+    "lat": 42.54877,
+    "lng": 2.1137
+  },
+  {
+    "name": "Col de la Ramaz",
+    "lat": 46.15965,
+    "lng": 6.58033
+  },
+  {
+    "name": "Col du Ranfolly",
+    "lat": 46.13934,
+    "lng": 6.69571
+  },
+  {
+    "name": "Col des Rangiers",
+    "lat": 47.38481,
+    "lng": 7.21911
+  },
+  {
+    "name": "Col de Raspaillon (Col de la Bonette)",
+    "lat": 44.33993,
+    "lng": 6.83141
+  },
+  {
+    "name": "Col de Restefond (Col de la Bonette)",
+    "lat": 44.33664,
+    "lng": 6.80547
+  },
+  {
+    "name": "Col de Richemont",
+    "lat": 46.00831,
+    "lng": 5.74823
+  },
+  {
+    "name": "Col des Robines",
+    "lat": 43.96143,
+    "lng": 6.49308
+  },
+  {
+    "name": "Col di Rocca",
+    "lat": 46.42874,
+    "lng": 11.96056
+  },
+  {
+    "name": "Col des Roches",
+    "lat": 47.05105,
+    "lng": 6.71998
+  },
+  {
+    "name": "Col La Rochette",
+    "lat": 45.98409,
+    "lng": 5.63954
+  },
+  {
+    "name": "Col de Romeyère",
+    "lat": 45.14371,
+    "lng": 5.47968
+  },
+  {
+    "name": "Col de Rousset",
+    "lat": 44.84041,
+    "lng": 5.40557
+  },
+  {
+    "name": "Col de Saales",
+    "lat": 48.34429,
+    "lng": 7.10755
+  },
+  {
+    "name": "Col de Saint-Alexis",
+    "lat": 44.87252,
+    "lng": 5.40702
+  },
+  {
+    "name": "Col Saint-Antoine (Vico)",
+    "lat": 42.16394,
+    "lng": 8.78769
+  },
+  {
+    "name": "Col de Saint Barnabé",
+    "lat": 43.86514,
+    "lng": 6.63179
+  },
+  {
+    "name": "Col de Saint-Eustache, Bocca di Sant'Ustasgiu",
+    "lat": 41.76112,
+    "lng": 9.03146
+  },
+  {
+    "name": "Col Saint Jean près Montclar",
+    "lat": 44.41506,
+    "lng": 6.35079
+  },
+  {
+    "name": "Col Saint-Jean près Sospel",
+    "lat": 43.86073,
+    "lng": 7.42807
+  },
+  {
+    "name": "Col de Saint-Jean-de-Sixt",
+    "lat": 45.92418,
+    "lng": 6.40961
+  },
+  {
+    "name": "Col Saint Martin",
+    "lat": 44.07093,
+    "lng": 7.22205
+  },
+  {
+    "name": "Col de Saint-Pancrace",
+    "lat": 43.79275,
+    "lng": 7.39994
+  },
+  {
+    "name": "Col Saint-Roch",
+    "lat": 43.89605,
+    "lng": 7.33861
+  },
+  {
+    "name": "Col de Sainte-Marie-aux-Mines",
+    "lat": 48.24335,
+    "lng": 7.13237
+  },
+  {
+    "name": "Col des Saisies",
+    "lat": 45.76165,
+    "lng": 6.53335
+  },
+  {
+    "name": "Col San Bastiano, Bocca di San Bastianu",
+    "lat": 42.02209,
+    "lng": 8.73434
+  },
+  {
+    "name": "Col Sant'Angelo",
+    "lat": 46.58583,
+    "lng": 12.25409
+  },
+  {
+    "name": "Col de la Saulce",
+    "lat": 44.41531,
+    "lng": 5.58276
+  },
+  {
+    "name": "Col de la Savine",
+    "lat": 46.56413,
+    "lng": 6.00289
+  },
+  {
+    "name": "Col de Saxel",
+    "lat": 46.24769,
+    "lng": 6.39778
+  },
+  {
+    "name": "Col de la Schlucht",
+    "lat": 48.06381,
+    "lng": 7.02282
+  },
+  {
+    "name": "Col de la Sentinelle",
+    "lat": 44.51234,
+    "lng": 6.10197
+  },
+  {
+    "name": "Col du Serre de Tourre",
+    "lat": 44.37393,
+    "lng": 4.43921
+  },
+  {
+    "name": "Col de Sevi, Bocca di Sevi",
+    "lat": 42.22337,
+    "lng": 8.82988
+  },
+  {
+    "name": "Col de la Sine",
+    "lat": 43.75945,
+    "lng": 6.86136
+  },
+  {
+    "name": "Col de la Sinne",
+    "lat": 44.02553,
+    "lng": 7.06847
+  },
+  {
+    "name": "Col de Siron",
+    "lat": 43.76686,
+    "lng": 6.56235
+  },
+  {
+    "name": "Col de Sorba, Bocca di Sorba",
+    "lat": 42.14419,
+    "lng": 9.19027
+  },
+  {
+    "name": "Col de Soubeyrand",
+    "lat": 44.37205,
+    "lng": 5.35411
+  },
+  {
+    "name": "Col du Soulor",
+    "lat": 42.96063,
+    "lng": -0.26124
+  },
+  {
+    "name": "Col du Surceneux",
+    "lat": 48.09578,
+    "lng": 6.95589
+  },
+  {
+    "name": "Col de Tamié",
+    "lat": 45.67083,
+    "lng": 6.30851
+  },
+  {
+    "name": "Col de Teghime, Bocca di Teghime",
+    "lat": 42.67694,
+    "lng": 9.38286
+  },
+  {
+    "name": "Col du Télégraphe",
+    "lat": 45.20272,
+    "lng": 6.44463
+  },
+  {
+    "name": "Col de Tentes",
+    "lat": 42.71377,
+    "lng": -0.05063
+  },
+  {
+    "name": "Col de Terramont",
+    "lat": 46.24581,
+    "lng": 6.48856
+  },
+  {
+    "name": "Col du Tounet",
+    "lat": 47.07787,
+    "lng": 6.49722
+  },
+  {
+    "name": "Col du Tourmalet",
+    "lat": 42.9089,
+    "lng": 0.1453
+  },
+  {
+    "name": "Col de la Tourne",
+    "lat": 46.98809,
+    "lng": 6.79217
+  },
+  {
+    "name": "Col de Tourniol",
+    "lat": 44.91851,
+    "lng": 5.18444
+  },
+  {
+    "name": "Col de Toutes Aures",
+    "lat": 45.07508,
+    "lng": 5.35409
+  },
+  {
+    "name": "Col de Turini",
+    "lat": 43.97758,
+    "lng": 7.39158
+  },
+  {
+    "name": "Col de la Vaccia",
+    "lat": 41.82278,
+    "lng": 9.08419
+  },
+  {
+    "name": "Col de Valberg",
+    "lat": 44.08957,
+    "lng": 6.91929
+  },
+  {
+    "name": "Col de Valferrière",
+    "lat": 43.75097,
+    "lng": 6.73031
+  },
+  {
+    "name": "Col de Vars",
+    "lat": 44.53886,
+    "lng": 6.70278
+  },
+  {
+    "name": "Col de Vence",
+    "lat": 43.76111,
+    "lng": 7.07473
+  },
+  {
+    "name": "Col de Verde, Bocca di Verde",
+    "lat": 42.02835,
+    "lng": 9.19488
+  },
+  {
+    "name": "Col de Vergio, Bocca di Verghju",
+    "lat": 42.29033,
+    "lng": 8.87851
+  },
+  {
+    "name": "Col de Vescavo",
+    "lat": 43.88466,
+    "lng": 7.50247
+  },
+  {
+    "name": "Col de la Vierge",
+    "lat": 47.23958,
+    "lng": 6.90772
+  },
+  {
+    "name": "Col de la Vue des Alpes",
+    "lat": 47.07274,
+    "lng": 6.86981
+  },
+  {
+    "name": "Col du Wettstein",
+    "lat": 48.08843,
+    "lng": 7.11721
+  },
+  {
+    "name": "Collada de Beixalis",
+    "lat": 42.52775,
+    "lng": 1.54791
+  },
+  {
+    "name": "Collada de Toses",
+    "lat": 42.33603,
+    "lng": 1.99112
+  },
+  {
+    "name": "Colle Balisio",
+    "lat": 45.92045,
+    "lng": 9.43849
+  },
+  {
+    "name": "Colle di Cadibona",
+    "lat": 44.33259,
+    "lng": 8.35071
+  },
+  {
+    "name": "Colle Caprauna",
+    "lat": 44.10812,
+    "lng": 7.92956
+  },
+  {
+    "name": "Colle di Casotto",
+    "lat": 44.21624,
+    "lng": 7.94531
+  },
+  {
+    "name": "Colle d'Esischie",
+    "lat": 44.39671,
+    "lng": 7.12389
+  },
+  {
+    "name": "Colle dei Giovetti",
+    "lat": 44.27941,
+    "lng": 8.09621
+  },
+  {
+    "name": "Colle del Giovo",
+    "lat": 44.43191,
+    "lng": 8.47916
+  },
+  {
+    "name": "Colle del Lys",
+    "lat": 45.17795,
+    "lng": 7.38264
+  },
+  {
+    "name": "Colle del Melogno",
+    "lat": 44.23079,
+    "lng": 8.19821
+  },
+  {
+    "name": "Colle dei Morti, Col di Morts Fauniera",
+    "lat": 44.38565,
+    "lng": 7.12179
+  },
+  {
+    "name": "Colle di Nava",
+    "lat": 44.08442,
+    "lng": 7.87279
+  },
+  {
+    "name": "Colle del Nivolet",
+    "lat": 45.47872,
+    "lng": 7.14221
+  },
+  {
+    "name": "Colle d'Oggia",
+    "lat": 43.98164,
+    "lng": 7.86783
+  },
+  {
+    "name": "Colle del Quazzo",
+    "lat": 44.20165,
+    "lng": 8.06776
+  },
+  {
+    "name": "Colle della Rionda",
+    "lat": 44.23453,
+    "lng": 8.05971
+  },
+  {
+    "name": "Colle di Sampeyre",
+    "lat": 44.55098,
+    "lng": 7.11959
+  },
+  {
+    "name": "Colle San Bartolomeo",
+    "lat": 44.01024,
+    "lng": 7.95199
+  },
+  {
+    "name": "Colle San Bernardo",
+    "lat": 44.17735,
+    "lng": 8.04729
+  },
+  {
+    "name": "Colle San Carlo",
+    "lat": 45.74282,
+    "lng": 6.98801
+  },
+  {
+    "name": "Colle Sant' Eusebio",
+    "lat": 45.60958,
+    "lng": 10.36155
+  },
+  {
+    "name": "Colle di Scravaion",
+    "lat": 44.15955,
+    "lng": 8.12051
+  },
+  {
+    "name": "Colle del Sestriere",
+    "lat": 44.95899,
+    "lng": 6.88243
+  },
+  {
+    "name": "Le Collet",
+    "lat": 48.05434,
+    "lng": 7.00451
+  },
+  {
+    "name": "Colli di San Fermo",
+    "lat": 45.73322,
+    "lng": 9.95541
+  },
+  {
+    "name": "Colma di Sormano",
+    "lat": 45.88296,
+    "lng": 9.22901
+  },
+  {
+    "name": "Cormet de Roselend",
+    "lat": 45.69132,
+    "lng": 6.69063
+  },
+  {
+    "name": "Cresta di Sopra",
+    "lat": 46.52221,
+    "lng": 8.68543
+  },
+  {
+    "name": "Coll de la Creueta",
+    "lat": 42.30138,
+    "lng": 1.99327
+  },
+  {
+    "name": "Crocetta d'Orero",
+    "lat": 44.52055,
+    "lng": 8.98872
+  },
+  {
+    "name": "Donovaly Pass",
+    "lat": 48.87816,
+    "lng": 19.22375
+  },
+  {
+    "name": "Drumul Babelor (Piatra Arsă)",
+    "lat": 45.38372,
+    "lng": 25.47479
+  },
+  {
+    "name": "Druogno",
+    "lat": 46.13485,
+    "lng": 8.43609
+  },
+  {
+    "name": "Eberten-Hütte",
+    "lat": 47.78596,
+    "lng": 7.72111
+  },
+  {
+    "name": "Eckhag",
+    "lat": 47.69858,
+    "lng": 7.89913
+  },
+  {
+    "name": "Egg",
+    "lat": 47.41531,
+    "lng": 7.73953
+  },
+  {
+    "name": "Egg Rotberg",
+    "lat": 47.54125,
+    "lng": 8.19062
+  },
+  {
+    "name": "Ehrsberg",
+    "lat": 47.74363,
+    "lng": 7.90527
+  },
+  {
+    "name": "Eichhöhe",
+    "lat": 47.39702,
+    "lng": 7.66296
+  },
+  {
+    "name": "Engstlenalp (Gental)",
+    "lat": 46.77506,
+    "lng": 8.34543
+  },
+  {
+    "name": "Erlosen Römerswil",
+    "lat": 47.16924,
+    "lng": 8.23633
+  },
+  {
+    "name": "Erlosen Waldhus",
+    "lat": 47.20322,
+    "lng": 8.22184
+  },
+  {
+    "name": "Ettaler Sattel",
+    "lat": 47.56185,
+    "lng": 11.10108
+  },
+  {
+    "name": "Etzelpass (Sankt Meinrad)",
+    "lat": 47.17344,
+    "lng": 8.77221
+  },
+  {
+    "name": "Fafleralp (Lötschental)",
+    "lat": 46.43442,
+    "lng": 7.86228
+  },
+  {
+    "name": "Faschinajoch",
+    "lat": 47.27177,
+    "lng": 9.90726
+  },
+  {
+    "name": "Felbertauern (Tunnel)",
+    "lat": 47.11804,
+    "lng": 12.50439
+  },
+  {
+    "name": "Feldbergpass",
+    "lat": 47.85648,
+    "lng": 8.02764
+  },
+  {
+    "name": "Ferenwaltsberg",
+    "lat": 47.32827,
+    "lng": 8.90088
+  },
+  {
+    "name": "Fernpass",
+    "lat": 47.36341,
+    "lng": 10.83302
+  },
+  {
+    "name": "Flexenpass",
+    "lat": 47.15798,
+    "lng": 10.16481
+  },
+  {
+    "name": "Focce di Vizzavona",
+    "lat": 42.11191,
+    "lng": 9.11228
+  },
+  {
+    "name": "Fóia",
+    "lat": 37.3156,
+    "lng": -8.59644
+  },
+  {
+    "name": "Forcella Aurine",
+    "lat": 46.23648,
+    "lng": 11.97579
+  },
+  {
+    "name": "Forcella di Brez, Brezer Joch",
+    "lat": 46.45137,
+    "lng": 11.08246
+  },
+  {
+    "name": "Forcella di Bura",
+    "lat": 45.86031,
+    "lng": 9.58418
+  },
+  {
+    "name": "Forcella Franche",
+    "lat": 46.23249,
+    "lng": 12.01229
+  },
+  {
+    "name": "Forcola di Livigno",
+    "lat": 46.44083,
+    "lng": 10.05613
+  },
+  {
+    "name": "Freiwaldkapelle",
+    "lat": 47.71939,
+    "lng": 8.01454
+  },
+  {
+    "name": "Fritzenfluh",
+    "lat": 47.05521,
+    "lng": 7.83598
+  },
+  {
+    "name": "Fuchsbüel (Eigental)",
+    "lat": 47.01024,
+    "lng": 8.21041
+  },
+  {
+    "name": "Furkajoch",
+    "lat": 47.26655,
+    "lng": 9.83288
+  },
+  {
+    "name": "Gaichtpass",
+    "lat": 47.45422,
+    "lng": 10.62367
+  },
+  {
+    "name": "Gantersei (Eigental)",
+    "lat": 46.99989,
+    "lng": 8.22485
+  },
+  {
+    "name": "Genna su Ludu",
+    "lat": 39.75573,
+    "lng": 9.49543
+  },
+  {
+    "name": "Gerlospass (Alpenstrasse Mautstelle Hochkrimml)",
+    "lat": 47.23697,
+    "lng": 12.15823
+  },
+  {
+    "name": "Gerlospass",
+    "lat": 47.24301,
+    "lng": 12.11065
+  },
+  {
+    "name": "Gersbach Ebnet",
+    "lat": 47.69914,
+    "lng": 7.92305
+  },
+  {
+    "name": "Am Giesshübel",
+    "lat": 47.90103,
+    "lng": 7.86675
+  },
+  {
+    "name": "Gilbach Adelboden (Engstligental)",
+    "lat": 46.47911,
+    "lng": 7.53873
+  },
+  {
+    "name": "Giogo del Maniva",
+    "lat": 45.82274,
+    "lng": 10.41013
+  },
+  {
+    "name": "Glaubenbergpass",
+    "lat": 46.89348,
+    "lng": 8.10805
+  },
+  {
+    "name": "Glaubenbielenpass (Glaubenbühlenpass)",
+    "lat": 46.81914,
+    "lng": 8.09339
+  },
+  {
+    "name": "Gletscherschlucht Grindelwald (Lütschinental)",
+    "lat": 46.61372,
+    "lng": 8.04644
+  },
+  {
+    "name": "Goletto Cadino (Passo Crocedomini)",
+    "lat": 45.90814,
+    "lng": 10.41727
+  },
+  {
+    "name": "Les Gorges du Nan",
+    "lat": 45.16604,
+    "lng": 5.42434
+  },
+  {
+    "name": "Göscheneralp",
+    "lat": 46.64922,
+    "lng": 8.49925
+  },
+  {
+    "name": "Gottschalkenberg",
+    "lat": 47.15511,
+    "lng": 8.65271
+  },
+  {
+    "name": "Grächen (Mattertal)",
+    "lat": 46.19551,
+    "lng": 7.83849
+  },
+  {
+    "name": "Grande Dixence Dam",
+    "lat": 46.08293,
+    "lng": 7.40387
+  },
+  {
+    "name": "Griessenpass",
+    "lat": 47.45633,
+    "lng": 12.64325
+  },
+  {
+    "name": "Gubrist",
+    "lat": 47.42527,
+    "lng": 8.45056
+  },
+  {
+    "name": "Habschwanden",
+    "lat": 46.98906,
+    "lng": 8.04383
+  },
+  {
+    "name": "Haggenegg",
+    "lat": 47.05151,
+    "lng": 8.68451
+  },
+  {
+    "name": "Hahntennjoch",
+    "lat": 47.28717,
+    "lng": 10.65479
+  },
+  {
+    "name": "Haldenhof",
+    "lat": 47.80331,
+    "lng": 7.79252
+  },
+  {
+    "name": "Hallthurmpass",
+    "lat": 47.70187,
+    "lng": 12.93347
+  },
+  {
+    "name": "Halsl (Kofeljoch, Passo di Eores)",
+    "lat": 46.66624,
+    "lng": 11.77395
+  },
+  {
+    "name": "Hartmannswillerkopf",
+    "lat": 47.85853,
+    "lng": 7.14863
+  },
+  {
+    "name": "Hau",
+    "lat": 47.79554,
+    "lng": 7.83662
+  },
+  {
+    "name": "Hauenstein",
+    "lat": 47.38123,
+    "lng": 7.86904
+  },
+  {
+    "name": "Heiligkreuz",
+    "lat": 46.94954,
+    "lng": 8.04944
+  },
+  {
+    "name": "Heitersberg",
+    "lat": 47.41523,
+    "lng": 8.34641
+  },
+  {
+    "name": "Hirzelpass",
+    "lat": 47.21481,
+    "lng": 8.61144
+  },
+  {
+    "name": "Hochblauen",
+    "lat": 47.77711,
+    "lng": 7.70088
+  },
+  {
+    "name": "Hochschwarzeck",
+    "lat": 47.62615,
+    "lng": 12.90437
+  },
+  {
+    "name": "Hochtor (Grossglockner Hochalpenstrasse)",
+    "lat": 47.08118,
+    "lng": 12.84262
+  },
+  {
+    "name": "Hohtannhütte Belchen",
+    "lat": 47.82948,
+    "lng": 7.85911
+  },
+  {
+    "name": "Holderchäppeli",
+    "lat": 47.02358,
+    "lng": 8.21989
+  },
+  {
+    "name": "Holzleitnersattel",
+    "lat": 47.30499,
+    "lng": 10.89519
+  },
+  {
+    "name": "Holzwegen",
+    "lat": 47.00786,
+    "lng": 7.99675
+  },
+  {
+    "name": "Horben",
+    "lat": 47.21671,
+    "lng": 8.32578
+  },
+  {
+    "name": "Hulftegg",
+    "lat": 47.36211,
+    "lng": 8.96669
+  },
+  {
+    "name": "Innerarosa (Schanfigg)",
+    "lat": 46.77255,
+    "lng": 9.65377
+  },
+  {
+    "name": "Iselsbergpass",
+    "lat": 46.85619,
+    "lng": 12.85897
+  },
+  {
+    "name": "Iskar gorge (Iskarsko defile)",
+    "lat": 43.0881,
+    "lng": 23.38445
+  },
+  {
+    "name": "Jadranska Magistrala (Rieka HR - Bar ME)",
+    "lat": 42.66834,
+    "lng": 18.07933
+  },
+  {
+    "name": "Coll de Jou",
+    "lat": 42.13861,
+    "lng": 1.5393
+  },
+  {
+    "name": "Juf (Averstal)",
+    "lat": 46.44536,
+    "lng": 9.58002
+  },
+  {
+    "name": "Kaiser-Franz-Josefs-Höhe (Grossglockner Hochalpenstrasse)",
+    "lat": 47.07451,
+    "lng": 12.75216
+  },
+  {
+    "name": "Kandel",
+    "lat": 48.06525,
+    "lng": 8.01622
+  },
+  {
+    "name": "Kandersteg Mautstelle Üschinen (Kandertal)",
+    "lat": 46.47457,
+    "lng": 7.66011
+  },
+  {
+    "name": "Kandersteg (Üschinental)",
+    "lat": 46.47301,
+    "lng": 7.63932
+  },
+  {
+    "name": "Kapela Pass",
+    "lat": 45.09748,
+    "lng": 15.20987
+  },
+  {
+    "name": "Kartitscher Sattel",
+    "lat": 46.71797,
+    "lng": 12.54098
+  },
+  {
+    "name": "Kastania Pass",
+    "lat": 40.3929,
+    "lng": 22.12593
+  },
+  {
+    "name": "Katara Pass",
+    "lat": 39.79664,
+    "lng": 21.22905
+  },
+  {
+    "name": "Kerenzerberg",
+    "lat": 47.12131,
+    "lng": 9.11811
+  },
+  {
+    "name": "Kesselbergpass",
+    "lat": 47.62184,
+    "lng": 11.34937
+  },
+  {
+    "name": "Kistenpass",
+    "lat": 47.14647,
+    "lng": 8.59985
+  },
+  {
+    "name": "Kopaonik (210, 211)",
+    "lat": 43.28569,
+    "lng": 20.81097
+  },
+  {
+    "name": "Kreuzstiegen-Egg",
+    "lat": 47.07736,
+    "lng": 7.93123
+  },
+  {
+    "name": "Kreuzweg",
+    "lat": 47.80035,
+    "lng": 7.77801
+  },
+  {
+    "name": "Kühtai",
+    "lat": 47.21362,
+    "lng": 11.02357
+  },
+  {
+    "name": "Lac de Mauvoisin (Val de Bagnes)",
+    "lat": 46.00256,
+    "lng": 7.34349
+  },
+  {
+    "name": "Lago di Cancano (Torri di Fraele)",
+    "lat": 46.51489,
+    "lng": 10.31603
+  },
+  {
+    "name": "Lago Naret (Valle Maggia, Maggiatal)",
+    "lat": 46.48288,
+    "lng": 8.57187
+  },
+  {
+    "name": "Lätten (Letten)",
+    "lat": 47.22959,
+    "lng": 8.03167
+  },
+  {
+    "name": "Lenzerheide (Parpan Höhe)",
+    "lat": 46.75414,
+    "lng": 9.55904
+  },
+  {
+    "name": "Linden",
+    "lat": 47.30315,
+    "lng": 7.98441
+  },
+  {
+    "name": "Lindenberg Brandholz",
+    "lat": 47.28666,
+    "lng": 8.27568
+  },
+  {
+    "name": "Lindenberg Schlatt",
+    "lat": 47.24321,
+    "lng": 8.30565
+  },
+  {
+    "name": "Lindenbückle",
+    "lat": 47.74401,
+    "lng": 7.69698
+  },
+  {
+    "name": "Lipple",
+    "lat": 47.76974,
+    "lng": 7.74611
+  },
+  {
+    "name": "Llogara Pass (SH8)",
+    "lat": 40.19819,
+    "lng": 19.59241
+  },
+  {
+    "name": "Loferer Alm Höhenstrasse",
+    "lat": 47.60739,
+    "lng": 12.64959
+  },
+  {
+    "name": "Lüderenalp",
+    "lat": 47.00262,
+    "lng": 7.82504
+  },
+  {
+    "name": "Marblinger Höhe",
+    "lat": 47.60026,
+    "lng": 12.14832
+  },
+  {
+    "name": "Le Markstein",
+    "lat": 47.92721,
+    "lng": 7.02906
+  },
+  {
+    "name": "Masererpass",
+    "lat": 47.69075,
+    "lng": 12.49661
+  },
+  {
+    "name": "Melchsee-Frutt (Melchtal)",
+    "lat": 46.77421,
+    "lng": 8.26651
+  },
+  {
+    "name": "Michaelskreuz",
+    "lat": 47.11302,
+    "lng": 8.41653
+  },
+  {
+    "name": "Möggers Rucksteig",
+    "lat": 47.57471,
+    "lng": 9.79891
+  },
+  {
+    "name": "Monte Beigua",
+    "lat": 44.43261,
+    "lng": 8.56642
+  },
+  {
+    "name": "Monte Bondone",
+    "lat": 46.03909,
+    "lng": 11.05775
+  },
+  {
+    "name": "Monte-Carlo Golf Club",
+    "lat": 43.76235,
+    "lng": 7.41421
+  },
+  {
+    "name": "Monte Grappa",
+    "lat": 45.87343,
+    "lng": 11.80161
+  },
+  {
+    "name": "Monument 'Septemvriytsi 1923'",
+    "lat": 43.69921,
+    "lng": 24.48181
+  },
+  {
+    "name": "Moosalp",
+    "lat": 46.25139,
+    "lng": 7.82938
+  },
+  {
+    "name": "Mörisegg",
+    "lat": 47.09309,
+    "lng": 7.97521
+  },
+  {
+    "name": "Les Moulins",
+    "lat": 45.61358,
+    "lng": 6.86444
+  },
+  {
+    "name": "Müseren Witikon",
+    "lat": 47.36244,
+    "lng": 8.61249
+  },
+  {
+    "name": "Mutschellen",
+    "lat": 47.36251,
+    "lng": 8.36742
+  },
+  {
+    "name": "Namlospass",
+    "lat": 47.37141,
+    "lng": 10.69308
+  },
+  {
+    "name": "Nigerpass Top (Tscheiner Hütte)",
+    "lat": 46.43291,
+    "lng": 11.58928
+  },
+  {
+    "name": "Nockalmstrasse",
+    "lat": 46.89341,
+    "lng": 13.82204
+  },
+  {
+    "name": "Norbertshöhe",
+    "lat": 46.89508,
+    "lng": 10.48489
+  },
+  {
+    "name": "Notschrei",
+    "lat": 47.87658,
+    "lng": 7.90924
+  },
+  {
+    "name": "Nunningerberg",
+    "lat": 47.38071,
+    "lng": 7.62441
+  },
+  {
+    "name": "Oberaarsee (Panoramastrasse Grimselpass)",
+    "lat": 46.54849,
+    "lng": 8.27612
+  },
+  {
+    "name": "Oberer Hauenstein",
+    "lat": 47.35173,
+    "lng": 7.76391
+  },
+  {
+    "name": "Obergrenchenberg",
+    "lat": 47.23084,
+    "lng": 7.39161
+  },
+  {
+    "name": "Oberjochpass",
+    "lat": 47.52676,
+    "lng": 10.43341
+  },
+  {
+    "name": "Oberrickenpass",
+    "lat": 47.27324,
+    "lng": 9.02764
+  },
+  {
+    "name": "Obzor Pass",
+    "lat": 42.75321,
+    "lng": 27.75502
+  },
+  {
+    "name": "Ostravice - Bílá",
+    "lat": 49.43198,
+    "lng": 18.42235
+  },
+  {
+    "name": "Ova Spin",
+    "lat": 46.67871,
+    "lng": 10.16052
+  },
+  {
+    "name": "Panagyurski kolonii",
+    "lat": 42.58455,
+    "lng": 24.19638
+  },
+  {
+    "name": "Parnassos",
+    "lat": 38.53486,
+    "lng": 22.62225
+  },
+  {
+    "name": "Pas de l'Abauc (Gorges du Verdon)",
+    "lat": 43.75612,
+    "lng": 6.36631
+  },
+  {
+    "name": "Pas de Morgins",
+    "lat": 46.24966,
+    "lng": 6.84587
+  },
+  {
+    "name": "Pass Thurn",
+    "lat": 47.30861,
+    "lng": 12.40846
+  },
+  {
+    "name": "Passe del Tonale",
+    "lat": 46.25787,
+    "lng": 10.58051
+  },
+  {
+    "name": "Passhöhe Rotes Kreuz",
+    "lat": 47.77188,
+    "lng": 8.01975
+  },
+  {
+    "name": "Passhöhe Wacht",
+    "lat": 47.80301,
+    "lng": 8.00407
+  },
+  {
+    "name": "Passo dell' Abetone",
+    "lat": 44.14564,
+    "lng": 10.66496
+  },
+  {
+    "name": "Passo di Agueglio",
+    "lat": 46.00594,
+    "lng": 9.32259
+  },
+  {
+    "name": "Passo Ampola",
+    "lat": 45.86446,
+    "lng": 10.64553
+  },
+  {
+    "name": "Passo Aprica",
+    "lat": 46.15439,
+    "lng": 10.15431
+  },
+  {
+    "name": "Passo s'Arcu",
+    "lat": 39.96654,
+    "lng": 9.16226
+  },
+  {
+    "name": "Passo del Ballino",
+    "lat": 45.97444,
+    "lng": 10.81987
+  },
+  {
+    "name": "Passo della Bocchetta",
+    "lat": 44.55071,
+    "lng": 8.88782
+  },
+  {
+    "name": "Passo del Bocco",
+    "lat": 44.41523,
+    "lng": 9.44337
+  },
+  {
+    "name": "Passo Borcola",
+    "lat": 45.82821,
+    "lng": 11.20639
+  },
+  {
+    "name": "Passo Bordala",
+    "lat": 45.90719,
+    "lng": 10.97725
+  },
+  {
+    "name": "Passo del Bracco",
+    "lat": 44.24967,
+    "lng": 9.56929
+  },
+  {
+    "name": "Passo del Brallo",
+    "lat": 44.73835,
+    "lng": 9.28088
+  },
+  {
+    "name": "Passo del Brattello",
+    "lat": 44.45826,
+    "lng": 9.82476
+  },
+  {
+    "name": "Passo Broncon",
+    "lat": 46.11865,
+    "lng": 11.68846
+  },
+  {
+    "name": "Passo Caldarola",
+    "lat": 43.11942,
+    "lng": 13.23951
+  },
+  {
+    "name": "Passo della Calla",
+    "lat": 43.85976,
+    "lng": 11.74441
+  },
+  {
+    "name": "Passo Campo Carlo Magno",
+    "lat": 46.24328,
+    "lng": 10.84043
+  },
+  {
+    "name": "Passo Campolongo",
+    "lat": 46.51378,
+    "lng": 11.87246
+  },
+  {
+    "name": "Passo di Caravai",
+    "lat": 40.09719,
+    "lng": 9.33518
+  },
+  {
+    "name": "Passo del Carmine",
+    "lat": 44.9143,
+    "lng": 9.26368
+  },
+  {
+    "name": "Passo Carnevale",
+    "lat": 44.09518,
+    "lng": 11.57808
+  },
+  {
+    "name": "Passo della Castagnola",
+    "lat": 44.59763,
+    "lng": 8.88781
+  },
+  {
+    "name": "Passo del Cavallino della Fobbia",
+    "lat": 45.72832,
+    "lng": 10.51832
+  },
+  {
+    "name": "Passo del Cavallo",
+    "lat": 45.64831,
+    "lng": 10.31785
+  },
+  {
+    "name": "Passo Cento Croci",
+    "lat": 44.4216,
+    "lng": 9.62334
+  },
+  {
+    "name": "Passo Cereda",
+    "lat": 46.19305,
+    "lng": 11.90541
+  },
+  {
+    "name": "Passo del Cerro",
+    "lat": 44.78707,
+    "lng": 9.55163
+  },
+  {
+    "name": "Passo del Chiodo",
+    "lat": 44.49687,
+    "lng": 9.49465
+  },
+  {
+    "name": "Passo Cibiana",
+    "lat": 46.37446,
+    "lng": 12.25989
+  },
+  {
+    "name": "Passo Cimabanche",
+    "lat": 46.61976,
+    "lng": 12.18221
+  },
+  {
+    "name": "Passo Cimirolo",
+    "lat": 46.06764,
+    "lng": 11.18469
+  },
+  {
+    "name": "Passo della Cisa",
+    "lat": 44.47158,
+    "lng": 9.9285
+  },
+  {
+    "name": "Passo Coe",
+    "lat": 45.87655,
+    "lng": 11.21532
+  },
+  {
+    "name": "Passo Colla",
+    "lat": 40.02703,
+    "lng": 15.73113
+  },
+  {
+    "name": "Passo del Colle Gallo",
+    "lat": 45.75349,
+    "lng": 9.87389
+  },
+  {
+    "name": "Passo della Colma",
+    "lat": 45.80914,
+    "lng": 8.32204
+  },
+  {
+    "name": "Passo della Consuma",
+    "lat": 43.78295,
+    "lng": 11.60165
+  },
+  {
+    "name": "Passo di Correboi",
+    "lat": 40.07521,
+    "lng": 9.35891
+  },
+  {
+    "name": "Passo di Costalunga, Karerpass",
+    "lat": 46.40415,
+    "lng": 11.61042
+  },
+  {
+    "name": "Passo Croce d'Aune",
+    "lat": 46.06207,
+    "lng": 11.82992
+  },
+  {
+    "name": "Passo della Crocetta (Bobbio)",
+    "lat": 44.82965,
+    "lng": 9.38207
+  },
+  {
+    "name": "Passo della Crocetta da Rossiglione",
+    "lat": 44.53628,
+    "lng": 8.61957
+  },
+  {
+    "name": "Passo Culmine San Pietro",
+    "lat": 45.90221,
+    "lng": 9.49391
+  },
+  {
+    "name": "Passo del Cuvignone",
+    "lat": 45.92704,
+    "lng": 8.67051
+  },
+  {
+    "name": "Passo Daone",
+    "lat": 46.07852,
+    "lng": 10.74548
+  },
+  {
+    "name": "Passo del Biscia",
+    "lat": 44.3655,
+    "lng": 9.49007
+  },
+  {
+    "name": "Passo del Cerreto",
+    "lat": 44.30409,
+    "lng": 10.21716
+  },
+  {
+    "name": "Passo Duran",
+    "lat": 46.32387,
+    "lng": 12.09541
+  },
+  {
+    "name": "Passo Duron",
+    "lat": 46.03693,
+    "lng": 10.79609
+  },
+  {
+    "name": "Passo Eira",
+    "lat": 46.53831,
+    "lng": 10.16626
+  },
+  {
+    "name": "Passo delle Erbe, Würzjoch, Ju de Börz",
+    "lat": 46.67508,
+    "lng": 11.81443
+  },
+  {
+    "name": "Passo dell' Eremo",
+    "lat": 44.03019,
+    "lng": 11.64124
+  },
+  {
+    "name": "Passo del Faiallo",
+    "lat": 44.46226,
+    "lng": 8.66771
+  },
+  {
+    "name": "Passo Fedaia",
+    "lat": 46.45397,
+    "lng": 11.88758
+  },
+  {
+    "name": "Passo Fittanze (della Sega)",
+    "lat": 45.68372,
+    "lng": 10.97917
+  },
+  {
+    "name": "Passo Flumendosa",
+    "lat": 39.77091,
+    "lng": 9.25121
+  },
+  {
+    "name": "Passo Fobbia",
+    "lat": 45.72682,
+    "lng": 10.50521
+  },
+  {
+    "name": "Passo Forcella",
+    "lat": 46.07081,
+    "lng": 11.59266
+  },
+  {
+    "name": "Passo di Forcora",
+    "lat": 46.07482,
+    "lng": 8.77761
+  },
+  {
+    "name": "Passo Foscagno",
+    "lat": 46.49642,
+    "lng": 10.20781
+  },
+  {
+    "name": "Passo Furcia, Furkelpass",
+    "lat": 46.72309,
+    "lng": 11.96929
+  },
+  {
+    "name": "Passo della Futa",
+    "lat": 44.09545,
+    "lng": 11.27531
+  },
+  {
+    "name": "Passo di Ganda",
+    "lat": 45.79341,
+    "lng": 9.79329
+  },
+  {
+    "name": "Passo Gardena, Grödner Joch",
+    "lat": 46.54981,
+    "lng": 11.80871
+  },
+  {
+    "name": "Passo Genna Silana",
+    "lat": 40.15862,
+    "lng": 9.50796
+  },
+  {
+    "name": "Passo del Ghiffi",
+    "lat": 44.43823,
+    "lng": 9.44579
+  },
+  {
+    "name": "Passo Giau",
+    "lat": 46.48258,
+    "lng": 12.05362
+  },
+  {
+    "name": "Passo del Giogo",
+    "lat": 44.0468,
+    "lng": 11.38803
+  },
+  {
+    "name": "Passo del Giová",
+    "lat": 44.68376,
+    "lng": 9.21694
+  },
+  {
+    "name": "Passo dei Giovi",
+    "lat": 44.55251,
+    "lng": 8.93703
+  },
+  {
+    "name": "Passo Giovo, Jaufenpass",
+    "lat": 46.83939,
+    "lng": 11.32109
+  },
+  {
+    "name": "Passo Giustizieri",
+    "lat": 40.09714,
+    "lng": 9.53018
+  },
+  {
+    "name": "Passo della Gobbera",
+    "lat": 46.14768,
+    "lng": 11.75818
+  },
+  {
+    "name": "Passo Lavazè",
+    "lat": 46.35699,
+    "lng": 11.49559
+  },
+  {
+    "name": "Passo del Limbara",
+    "lat": 40.84271,
+    "lng": 9.10311
+  },
+  {
+    "name": "Passo Manghen",
+    "lat": 46.17328,
+    "lng": 11.44138
+  },
+  {
+    "name": "Passo della Mauria",
+    "lat": 46.45444,
+    "lng": 12.51343
+  },
+  {
+    "name": "Passo della Mendola, Mendelpass",
+    "lat": 46.41708,
+    "lng": 11.20698
+  },
+  {
+    "name": "Passo del Mercatello",
+    "lat": 44.654,
+    "lng": 9.45103
+  },
+  {
+    "name": "Passo di Monte Agaro",
+    "lat": 46.10638,
+    "lng": 11.64459
+  },
+  {
+    "name": "Passo Monte Albo",
+    "lat": 40.54899,
+    "lng": 9.61342
+  },
+  {
+    "name": "Passo Monte Croce di Comelico, Kreuzbergpass",
+    "lat": 46.65573,
+    "lng": 12.42043
+  },
+  {
+    "name": "Passo Montevaccá",
+    "lat": 44.5352,
+    "lng": 9.60974
+  },
+  {
+    "name": "Passo Mortirolo, Passo della Foppa",
+    "lat": 46.24791,
+    "lng": 10.29837
+  },
+  {
+    "name": "Passo del Muraglione",
+    "lat": 43.93303,
+    "lng": 11.65675
+  },
+  {
+    "name": "Passo Nigra, Nigerpass",
+    "lat": 46.45546,
+    "lng": 11.58591
+  },
+  {
+    "name": "Passo Oclini (Jochgrimm)",
+    "lat": 46.34731,
+    "lng": 11.45159
+  },
+  {
+    "name": "Passo Palade, Gampenpass",
+    "lat": 46.52953,
+    "lng": 11.11185
+  },
+  {
+    "name": "Passo del Penice",
+    "lat": 44.79729,
+    "lng": 9.3283
+  },
+  {
+    "name": "Passo Pennes, Penserjoch",
+    "lat": 46.81887,
+    "lng": 11.44106
+  },
+  {
+    "name": "Passo della Peschiera",
+    "lat": 44.01725,
+    "lng": 11.65658
+  },
+  {
+    "name": "Passo Pian delle Fugazze",
+    "lat": 45.76001,
+    "lng": 11.17369
+  },
+  {
+    "name": "Passo Pianazze",
+    "lat": 44.63561,
+    "lng": 9.61941
+  },
+  {
+    "name": "Passo Pinei, Panidersattel",
+    "lat": 46.58021,
+    "lng": 11.62267
+  },
+  {
+    "name": "Passo Pordoi",
+    "lat": 46.48754,
+    "lng": 11.81226
+  },
+  {
+    "name": "Passo Pramadiccio",
+    "lat": 46.32258,
+    "lng": 11.48614
+  },
+  {
+    "name": "Passo Predaia",
+    "lat": 46.32643,
+    "lng": 11.14075
+  },
+  {
+    "name": "Passo della Presolana",
+    "lat": 45.92921,
+    "lng": 10.09664
+  },
+  {
+    "name": "Passo Pura / Perkh",
+    "lat": 46.42309,
+    "lng": 12.74354
+  },
+  {
+    "name": "Passo delle Radici",
+    "lat": 44.20927,
+    "lng": 10.4888
+  },
+  {
+    "name": "Passo della Raticosa",
+    "lat": 44.17284,
+    "lng": 11.33862
+  },
+  {
+    "name": "Passo Redebus",
+    "lat": 46.13549,
+    "lng": 11.32394
+  },
+  {
+    "name": "Passo Rolle",
+    "lat": 46.29627,
+    "lng": 11.78741
+  },
+  {
+    "name": "Passo della Sambuca",
+    "lat": 44.0724,
+    "lng": 11.48556
+  },
+  {
+    "name": "Passo San Antonio",
+    "lat": 46.57191,
+    "lng": 12.48265
+  },
+  {
+    "name": "Passo San Boldo, Passo Sant Ubaldo",
+    "lat": 46.00519,
+    "lng": 12.16973
+  },
+  {
+    "name": "Passo San Giovanni",
+    "lat": 45.87381,
+    "lng": 10.90669
+  },
+  {
+    "name": "Passo San Leonardo",
+    "lat": 42.07379,
+    "lng": 14.03037
+  },
+  {
+    "name": "Passo San Lugano",
+    "lat": 46.31095,
+    "lng": 11.39493
+  },
+  {
+    "name": "Passo San Pellegrino",
+    "lat": 46.37841,
+    "lng": 11.79164
+  },
+  {
+    "name": "Passo San Rocco",
+    "lat": 45.74901,
+    "lng": 10.53885
+  },
+  {
+    "name": "Passo San Udalrico",
+    "lat": 45.97521,
+    "lng": 10.97488
+  },
+  {
+    "name": "Passo Sant'Anna",
+    "lat": 40.58456,
+    "lng": 9.62962
+  },
+  {
+    "name": "Passo Santa Barbara",
+    "lat": 45.89629,
+    "lng": 10.94036
+  },
+  {
+    "name": "Passo Santa Donna",
+    "lat": 44.5452,
+    "lng": 9.73257
+  },
+  {
+    "name": "Passo Santèl",
+    "lat": 46.17679,
+    "lng": 11.05354
+  },
+  {
+    "name": "Passo Sarcerei",
+    "lat": 39.87195,
+    "lng": 9.51391
+  },
+  {
+    "name": "Passo della Scalucchia",
+    "lat": 44.35824,
+    "lng": 10.22783
+  },
+  {
+    "name": "Passo della Scoglina",
+    "lat": 44.47254,
+    "lng": 9.25001
+  },
+  {
+    "name": "Passo dello Scopello",
+    "lat": 46.11345,
+    "lng": 8.52806
+  },
+  {
+    "name": "Passo Sella, Sellajoch",
+    "lat": 46.50824,
+    "lng": 11.76719
+  },
+  {
+    "name": "Passo di Selvino",
+    "lat": 45.78553,
+    "lng": 9.75651
+  },
+  {
+    "name": "Passo Sommo",
+    "lat": 45.91961,
+    "lng": 11.20623
+  },
+  {
+    "name": "Passo Staulanza",
+    "lat": 46.42071,
+    "lng": 12.10451
+  },
+  {
+    "name": "Passo di Tascusì",
+    "lat": 40.03172,
+    "lng": 9.23078
+  },
+  {
+    "name": "Passo del Tomarlo",
+    "lat": 44.53641,
+    "lng": 9.50147
+  },
+  {
+    "name": "Passo Tre Croci",
+    "lat": 46.55729,
+    "lng": 12.20126
+  },
+  {
+    "name": "Passo dei Tre Termi, Pah dei Tre Termegn",
+    "lat": 45.66064,
+    "lng": 10.10592
+  },
+  {
+    "name": "Passo del Turchino",
+    "lat": 44.48538,
+    "lng": 8.73484
+  },
+  {
+    "name": "Passo di Valcava",
+    "lat": 45.78821,
+    "lng": 9.51418
+  },
+  {
+    "name": "Passo Valles",
+    "lat": 46.33863,
+    "lng": 11.80101
+  },
+  {
+    "name": "Passo Valparola",
+    "lat": 46.52511,
+    "lng": 11.99748
+  },
+  {
+    "name": "Passo Vezzena",
+    "lat": 45.95665,
+    "lng": 11.32884
+  },
+  {
+    "name": "Passo del Vivione",
+    "lat": 46.03661,
+    "lng": 10.19933
+  },
+  {
+    "name": "Passo Xomo",
+    "lat": 45.77701,
+    "lng": 11.23765
+  },
+  {
+    "name": "Passo di Zambla",
+    "lat": 45.88709,
+    "lng": 9.79776
+  },
+  {
+    "name": "Passo dello Zovallo",
+    "lat": 44.57362,
+    "lng": 9.52061
+  },
+  {
+    "name": "Passwang",
+    "lat": 47.35757,
+    "lng": 7.65626
+  },
+  {
+    "name": "Pasul Bratocea",
+    "lat": 45.48041,
+    "lng": 25.89661
+  },
+  {
+    "name": "Pasul Groapa Seaca",
+    "lat": 45.41324,
+    "lng": 23.5913
+  },
+  {
+    "name": "Pasul Prislop",
+    "lat": 47.60918,
+    "lng": 24.85591
+  },
+  {
+    "name": "Pasul Tihuța",
+    "lat": 47.26655,
+    "lng": 25.02016
+  },
+  {
+    "name": "Penhas da Saúde",
+    "lat": 40.30806,
+    "lng": -7.54877
+  },
+  {
+    "name": "Petrohan Pass",
+    "lat": 43.12147,
+    "lng": 23.12489
+  },
+  {
+    "name": "Pezinska Baba",
+    "lat": 48.35057,
+    "lng": 17.19021
+  },
+  {
+    "name": "Pfaffenberg",
+    "lat": 47.29177,
+    "lng": 8.10357
+  },
+  {
+    "name": "Picota",
+    "lat": 37.26402,
+    "lng": -8.18334
+  },
+  {
+    "name": "Pillerhöhe",
+    "lat": 47.11823,
+    "lng": 10.66684
+  },
+  {
+    "name": "Plöckenpass, Passo Monte Croce Carnico",
+    "lat": 46.60339,
+    "lng": 12.94503
+  },
+  {
+    "name": "Poklon Pass",
+    "lat": 45.30943,
+    "lng": 14.21329
+  },
+  {
+    "name": "Les Pontins",
+    "lat": 47.13164,
+    "lng": 6.99731
+  },
+  {
+    "name": "Port de la Bonaigua",
+    "lat": 42.66351,
+    "lng": 0.98245
+  },
+  {
+    "name": "Port de Cabus",
+    "lat": 42.54636,
+    "lng": 1.41974
+  },
+  {
+    "name": "Port d'Envalira",
+    "lat": 42.54018,
+    "lng": 1.71938
+  },
+  {
+    "name": "Portela do Homem",
+    "lat": 41.80879,
+    "lng": -8.13113
+  },
+  {
+    "name": "Portela de Leonte",
+    "lat": 41.76761,
+    "lng": -8.14674
+  },
+  {
+    "name": "Prelaz Vrsic, Vrsic-Pass",
+    "lat": 46.43481,
+    "lng": 13.74371
+  },
+  {
+    "name": "Prevoj Trešnjevik",
+    "lat": 42.73568,
+    "lng": 19.68494
+  },
+  {
+    "name": "Prezid Pass",
+    "lat": 44.24993,
+    "lng": 15.80785
+  },
+  {
+    "name": "Puerto de Ancares",
+    "lat": 42.86857,
+    "lng": -6.81803
+  },
+  {
+    "name": "Puerto de Belate",
+    "lat": 43.04907,
+    "lng": -1.61453
+  },
+  {
+    "name": "Puerto de Bielsa",
+    "lat": 42.72634,
+    "lng": 0.17559
+  },
+  {
+    "name": "Puerto del Boyar",
+    "lat": 36.75554,
+    "lng": -5.39463
+  },
+  {
+    "name": "Puerto de Calar Alto",
+    "lat": 37.22201,
+    "lng": -2.54677
+  },
+  {
+    "name": "Puerto de Canencia",
+    "lat": 40.86888,
+    "lng": -3.76379
+  },
+  {
+    "name": "Puerto de El Cardoso",
+    "lat": 41.16785,
+    "lng": -3.50821
+  },
+  {
+    "name": "Puerto de Carrales",
+    "lat": 42.93735,
+    "lng": -3.83
+  },
+  {
+    "name": "Puerto del Connio",
+    "lat": 43.04338,
+    "lng": -6.72022
+  },
+  {
+    "name": "Puerto de Cotefablo",
+    "lat": 42.61633,
+    "lng": -0.21004
+  },
+  {
+    "name": "Puerto de Cotos",
+    "lat": 40.82327,
+    "lng": -3.96243
+  },
+  {
+    "name": "Puerto de la Cruz Verde",
+    "lat": 40.55902,
+    "lng": -4.19682
+  },
+  {
+    "name": "Puerto de La Cubilla",
+    "lat": 42.99047,
+    "lng": -5.90541
+  },
+  {
+    "name": "Puerto de Escudo",
+    "lat": 40.555,
+    "lng": -3.96989
+  },
+  {
+    "name": "Puerto de Foncebadón (Cruz de Ferro)",
+    "lat": 40.39301,
+    "lng": -3.65756
+  },
+  {
+    "name": "Puerto de La Hiruela",
+    "lat": 41.06742,
+    "lng": -3.47434
+  },
+  {
+    "name": "Puerto de Honduras",
+    "lat": 40.22186,
+    "lng": -5.8718
+  },
+  {
+    "name": "Puerto de Leitariegos",
+    "lat": 42.99897,
+    "lng": -6.41854
+  },
+  {
+    "name": "Puerto de Lizarraga",
+    "lat": 42.87079,
+    "lng": -2.06479
+  },
+  {
+    "name": "Puerto de Lunada",
+    "lat": 43.17107,
+    "lng": -3.65904
+  },
+  {
+    "name": "Puerto de Mijares",
+    "lat": 40.33139,
+    "lng": -4.81387
+  },
+  {
+    "name": "Puerto de Monrepos",
+    "lat": 42.35404,
+    "lng": -0.39429
+  },
+  {
+    "name": "Puerto de Montejaque",
+    "lat": 36.78821,
+    "lng": -5.26356
+  },
+  {
+    "name": "Puerto de la Morcuera",
+    "lat": 40.82826,
+    "lng": -3.83192
+  },
+  {
+    "name": "Puerto de Navacerrada",
+    "lat": 40.78893,
+    "lng": -4.00359
+  },
+  {
+    "name": "Puerto de Navafría",
+    "lat": 40.98664,
+    "lng": -3.81406
+  },
+  {
+    "name": "Puerto de Opakua",
+    "lat": 42.81505,
+    "lng": -2.33181
+  },
+  {
+    "name": "Puerto de Orduña",
+    "lat": 42.949,
+    "lng": -3.0305
+  },
+  {
+    "name": "Puerto de Pajares",
+    "lat": 42.99267,
+    "lng": -5.7595
+  },
+  {
+    "name": "Puerto de las Palomas",
+    "lat": 36.7876,
+    "lng": -5.37668
+  },
+  {
+    "name": "Puerto de Palombera",
+    "lat": 43.06371,
+    "lng": -4.23246
+  },
+  {
+    "name": "Puerto de Panderrueda",
+    "lat": 43.12496,
+    "lng": -4.98194
+  },
+  {
+    "name": "Puerto de Pandetrave",
+    "lat": 43.1073,
+    "lng": -4.87646
+  },
+  {
+    "name": "Puerto del Pico",
+    "lat": 40.32278,
+    "lng": -5.01417
+  },
+  {
+    "name": "Puerto de Piedrafita",
+    "lat": 43.03456,
+    "lng": -5.61814
+  },
+  {
+    "name": "Puerto de Piedrasluengas",
+    "lat": 43.04114,
+    "lng": -4.45818
+  },
+  {
+    "name": "Puerto del Ponton",
+    "lat": 43.09993,
+    "lng": -5.01888
+  },
+  {
+    "name": "Puerto de La Quesera",
+    "lat": 41.21597,
+    "lng": -3.42051
+  },
+  {
+    "name": "Puerto de la Ragua",
+    "lat": 37.11336,
+    "lng": -3.02986
+  },
+  {
+    "name": "Puerto de San Glorio",
+    "lat": 43.06684,
+    "lng": -4.76653
+  },
+  {
+    "name": "Puerto de San Isidro",
+    "lat": 43.0654,
+    "lng": -5.38623
+  },
+  {
+    "name": "Puerto de San Lorenzo",
+    "lat": 43.14115,
+    "lng": -6.19504
+  },
+  {
+    "name": "Puerto de Serranillos",
+    "lat": 40.30745,
+    "lng": -4.94779
+  },
+  {
+    "name": "Puerto de Somiedo",
+    "lat": 43.03035,
+    "lng": -6.23124
+  },
+  {
+    "name": "Puerto de Tarna",
+    "lat": 43.08463,
+    "lng": -5.21791
+  },
+  {
+    "name": "Puerto de Ventana",
+    "lat": 43.05829,
+    "lng": -6.00431
+  },
+  {
+    "name": "Punta Nura",
+    "lat": 40.53903,
+    "lng": 9.33878
+  },
+  {
+    "name": "Ramlinsburg",
+    "lat": 47.45119,
+    "lng": 7.76975
+  },
+  {
+    "name": "Ratenpass",
+    "lat": 47.14182,
+    "lng": 8.66371
+  },
+  {
+    "name": "Re (Centovalli)",
+    "lat": 46.13225,
+    "lng": 8.54678
+  },
+  {
+    "name": "Recketschwandhöchi (Linden)",
+    "lat": 47.09293,
+    "lng": 8.15712
+  },
+  {
+    "name": "Rengg (Lobenalp)",
+    "lat": 47.00355,
+    "lng": 8.09108
+  },
+  {
+    "name": "Renggloch",
+    "lat": 47.03743,
+    "lng": 8.24125
+  },
+  {
+    "name": "Reschenpass, Passo Resia",
+    "lat": 46.84777,
+    "lng": 10.50543
+  },
+  {
+    "name": "Rettenbachferner (Ötztaler Gletscherstrasse)",
+    "lat": 46.94347,
+    "lng": 10.92628
+  },
+  {
+    "name": "Rickenpass",
+    "lat": 47.26155,
+    "lng": 9.03958
+  },
+  {
+    "name": "Riedbergpass",
+    "lat": 47.43707,
+    "lng": 10.17711
+  },
+  {
+    "name": "Rifugio Savoia (Colle del Nivolet)",
+    "lat": 45.48624,
+    "lng": 7.14397
+  },
+  {
+    "name": "Rila - Padala",
+    "lat": 42.14366,
+    "lng": 23.19207
+  },
+  {
+    "name": "La Ronde Noire",
+    "lat": 46.88561,
+    "lng": 6.63514
+  },
+  {
+    "name": "Rosi-Mittermaier-Tunnel (Ötztaler Gletscherstrasse)",
+    "lat": 46.92435,
+    "lng": 10.94457
+  },
+  {
+    "name": "Rossalmig (Cholerhöchi)",
+    "lat": 47.10976,
+    "lng": 8.60311
+  },
+  {
+    "name": "Rossfeld-Panoramastrasse",
+    "lat": 47.62611,
+    "lng": 13.09213
+  },
+  {
+    "name": "Rufiberg",
+    "lat": 47.08816,
+    "lng": 8.55001
+  },
+  {
+    "name": "Ruppenpass",
+    "lat": 47.39551,
+    "lng": 9.50969
+  },
+  {
+    "name": "Saalhöhe",
+    "lat": 47.42868,
+    "lng": 7.98686
+  },
+  {
+    "name": "Saanenmöser",
+    "lat": 46.51411,
+    "lng": 7.30428
+  },
+  {
+    "name": "Saas Fee (Saastal)",
+    "lat": 46.11129,
+    "lng": 7.93298
+  },
+  {
+    "name": "Sabugueiro",
+    "lat": 40.40234,
+    "lng": -7.64091
+  },
+  {
+    "name": "Samnaun (Samnauntal)",
+    "lat": 46.94178,
+    "lng": 10.35645
+  },
+  {
+    "name": "San Carlo (Val Bavona, Bavonatal)",
+    "lat": 46.41026,
+    "lng": 8.53071
+  },
+  {
+    "name": "Sankt Anton",
+    "lat": 47.40994,
+    "lng": 9.53505
+  },
+  {
+    "name": "Sankt-Antoni-Pass",
+    "lat": 47.74489,
+    "lng": 7.97537
+  },
+  {
+    "name": "Sankt Luzisteig",
+    "lat": 47.02861,
+    "lng": 9.52917
+  },
+  {
+    "name": "Santelhöchi",
+    "lat": 47.33903,
+    "lng": 7.80521
+  },
+  {
+    "name": "Sattel (Biberegg)",
+    "lat": 47.09311,
+    "lng": 8.66911
+  },
+  {
+    "name": "Sattel Morgarten",
+    "lat": 47.08669,
+    "lng": 8.63023
+  },
+  {
+    "name": "Sattele (Haimingjoch)",
+    "lat": 47.23131,
+    "lng": 10.92775
+  },
+  {
+    "name": "Sattelegg",
+    "lat": 47.12734,
+    "lng": 8.84682
+  },
+  {
+    "name": "Scharnitzpass",
+    "lat": 47.39781,
+    "lng": 11.26745
+  },
+  {
+    "name": "Schauinsland",
+    "lat": 47.90851,
+    "lng": 7.89219
+  },
+  {
+    "name": "Scheideck",
+    "lat": 47.70176,
+    "lng": 7.70524
+  },
+  {
+    "name": "Scheltenpass",
+    "lat": 47.33582,
+    "lng": 7.58181
+  },
+  {
+    "name": "Schönbüchpass",
+    "lat": 48.59923,
+    "lng": 8.15482
+  },
+  {
+    "name": "Schufelberger Egg",
+    "lat": 47.30654,
+    "lng": 8.88701
+  },
+  {
+    "name": "Schüpferegg",
+    "lat": 46.97101,
+    "lng": 8.00791
+  },
+  {
+    "name": "Schwägalppass",
+    "lat": 47.25338,
+    "lng": 9.30329
+  },
+  {
+    "name": "Schwammhöhe (Schwammhöchi)",
+    "lat": 47.03088,
+    "lng": 9.01817
+  },
+  {
+    "name": "Schwarzbachwacht-Sattel",
+    "lat": 47.63593,
+    "lng": 12.85767
+  },
+  {
+    "name": "Schwarzenbach",
+    "lat": 47.23186,
+    "lng": 8.21156
+  },
+  {
+    "name": "Schwarzenbühl",
+    "lat": 46.74725,
+    "lng": 7.38588
+  },
+  {
+    "name": "Schwarzwaldalp",
+    "lat": 46.67579,
+    "lng": 8.13398
+  },
+  {
+    "name": "Schwyzerhöhe",
+    "lat": 46.98929,
+    "lng": 8.63009
+  },
+  {
+    "name": "Sedlo Besník",
+    "lat": 48.86187,
+    "lng": 20.22658
+  },
+  {
+    "name": "Sedlo Pass",
+    "lat": 43.09862,
+    "lng": 19.05067
+  },
+  {
+    "name": "Seebodenalp (Rigi)",
+    "lat": 47.06918,
+    "lng": 8.46605
+  },
+  {
+    "name": "Seefelder Sattel",
+    "lat": 47.33119,
+    "lng": 11.19897
+  },
+  {
+    "name": "Seegatterl",
+    "lat": 47.66281,
+    "lng": 12.54284
+  },
+  {
+    "name": "Seelisberg",
+    "lat": 46.96848,
+    "lng": 8.58578
+  },
+  {
+    "name": "Sella di Andalo",
+    "lat": 46.16365,
+    "lng": 11.00151
+  },
+  {
+    "name": "Sella di Bondo",
+    "lat": 45.99525,
+    "lng": 10.69028
+  },
+  {
+    "name": "Sella Ciampigotto, Zima Cianpigoto",
+    "lat": 46.48736,
+    "lng": 12.58278
+  },
+  {
+    "name": "Sella di Dobbiaco, Toblacher Sattel",
+    "lat": 46.73094,
+    "lng": 12.22777
+  },
+  {
+    "name": "Sella dei Generali",
+    "lat": 44.71995,
+    "lng": 9.4595
+  },
+  {
+    "name": "Sella della Malga Prà Alpesina",
+    "lat": 45.76311,
+    "lng": 10.87691
+  },
+  {
+    "name": "Sella Mandrazzi",
+    "lat": 37.97578,
+    "lng": 15.13801
+  },
+  {
+    "name": "Sella di Razzo",
+    "lat": 46.47847,
+    "lng": 12.60831
+  },
+  {
+    "name": "Sella Valcalda",
+    "lat": 46.52401,
+    "lng": 12.93106
+  },
+  {
+    "name": "Shipka Pass",
+    "lat": 42.75311,
+    "lng": 25.31958
+  },
+  {
+    "name": "Siviez (Val de Nendaz)",
+    "lat": 46.13524,
+    "lng": 7.31625
+  },
+  {
+    "name": "Sixfeld",
+    "lat": 47.39101,
+    "lng": 7.71367
+  },
+  {
+    "name": "Skywalk Biokovo",
+    "lat": 43.28547,
+    "lng": 17.08477
+  },
+  {
+    "name": "Sljemenska cesta",
+    "lat": 45.89659,
+    "lng": 15.94348
+  },
+  {
+    "name": "Le Soliat",
+    "lat": 46.91543,
+    "lng": 6.70355
+  },
+  {
+    "name": "Spitzingsattel",
+    "lat": 47.67255,
+    "lng": 11.88676
+  },
+  {
+    "name": "Staffelegg",
+    "lat": 47.43381,
+    "lng": 8.06044
+  },
+  {
+    "name": "Staller Sattel, Passo Stalle",
+    "lat": 46.88769,
+    "lng": 12.19981
+  },
+  {
+    "name": "Stausee Mattmark (Saastal)",
+    "lat": 46.04795,
+    "lng": 7.95441
+  },
+  {
+    "name": "Stechelberg (Lauterbrunnental)",
+    "lat": 46.54538,
+    "lng": 7.90261
+  },
+  {
+    "name": "Steinbacher Sattel",
+    "lat": 47.49778,
+    "lng": 12.17685
+  },
+  {
+    "name": "Steinenbühlhöhe",
+    "lat": 47.39425,
+    "lng": 7.58321
+  },
+  {
+    "name": "Steingletscher (Sustenpass)",
+    "lat": 46.71321,
+    "lng": 8.41596
+  },
+  {
+    "name": "Steinhuserberg",
+    "lat": 47.04497,
+    "lng": 8.04236
+  },
+  {
+    "name": "Steinpass",
+    "lat": 47.67061,
+    "lng": 12.75655
+  },
+  {
+    "name": "Sternenberg",
+    "lat": 47.38476,
+    "lng": 8.91566
+  },
+  {
+    "name": "Stocki",
+    "lat": 47.12491,
+    "lng": 7.93642
+  },
+  {
+    "name": "Stoss",
+    "lat": 47.36089,
+    "lng": 9.49504
+  },
+  {
+    "name": "Strma Reber",
+    "lat": 45.55668,
+    "lng": 14.72731
+  },
+  {
+    "name": "Šturec",
+    "lat": 48.83855,
+    "lng": 18.99873
+  },
+  {
+    "name": "Su Ferru e Su Caddu (Alghero-Bosa)",
+    "lat": 40.36469,
+    "lng": 8.40251
+  },
+  {
+    "name": "Sudelfeldpass",
+    "lat": 47.67922,
+    "lng": 12.03502
+  },
+  {
+    "name": "Sulden, Solda (Suldental)",
+    "lat": 46.51598,
+    "lng": 10.59632
+  },
+  {
+    "name": "Talstation Belchen",
+    "lat": 47.82152,
+    "lng": 7.85063
+  },
+  {
+    "name": "Talstation Birg-Engstligenalp (Engstligental)",
+    "lat": 46.45926,
+    "lng": 7.56669
+  },
+  {
+    "name": "Talstation Fürenalp (Engelbergertal)",
+    "lat": 46.80177,
+    "lng": 8.44947
+  },
+  {
+    "name": "Talstation Obermatt (Maderanertal)",
+    "lat": 46.76655,
+    "lng": 8.71445
+  },
+  {
+    "name": "Talstation Stümpfing-Bergbahn Spitzingsee",
+    "lat": 47.66031,
+    "lng": 11.87799
+  },
+  {
+    "name": "Tänndlichrütz",
+    "lat": 47.11778,
+    "lng": 8.65661
+  },
+  {
+    "name": "Tannenboden",
+    "lat": 47.76316,
+    "lng": 7.87002
+  },
+  {
+    "name": "Tara Canyon",
+    "lat": 43.18574,
+    "lng": 19.23936
+  },
+  {
+    "name": "Täsch vor Zermatt (Mattertal)",
+    "lat": 46.06369,
+    "lng": 7.77788
+  },
+  {
+    "name": "Timmelsjoch, Passo Rombo",
+    "lat": 46.90529,
+    "lng": 11.09744
+  },
+  {
+    "name": "Torre (Serra da Estrela)",
+    "lat": 40.32183,
+    "lng": -7.61382
+  },
+  {
+    "name": "Torri di Fraele",
+    "lat": 46.50222,
+    "lng": 10.30951
+  },
+  {
+    "name": "Transalpina (Urdele Pass)",
+    "lat": 45.4449,
+    "lng": 23.62473
+  },
+  {
+    "name": "Transbucegi",
+    "lat": 45.37276,
+    "lng": 25.43381
+  },
+  {
+    "name": "Transfăgărășan (Bâlea Pass)",
+    "lat": 45.60248,
+    "lng": 24.61401
+  },
+  {
+    "name": "Tre Cime di Lavaredo",
+    "lat": 46.61359,
+    "lng": 12.29532
+  },
+  {
+    "name": "Treib (Seelisberg)",
+    "lat": 46.98713,
+    "lng": 8.58551
+  },
+  {
+    "name": "Trevnenski Pass",
+    "lat": 42.76541,
+    "lng": 25.50337
+  },
+  {
+    "name": "Tunnel Col de Tende, Tunnel Colle di Tenda",
+    "lat": 44.16784,
+    "lng": 7.57141
+  },
+  {
+    "name": "Tunnel du Pas de la Fosse",
+    "lat": 45.51272,
+    "lng": 5.92605
+  },
+  {
+    "name": "Twerenegg",
+    "lat": 47.06083,
+    "lng": 7.99946
+  },
+  {
+    "name": "Umbrailpass, Passo dell'Umbrail",
+    "lat": 46.54159,
+    "lng": 10.43315
+  },
+  {
+    "name": "Ursprungpass",
+    "lat": 47.61189,
+    "lng": 12.01981
+  },
+  {
+    "name": "Valico Arcu e Tidu",
+    "lat": 39.30557,
+    "lng": 9.39097
+  },
+  {
+    "name": "Valico Arcueri'",
+    "lat": 39.81328,
+    "lng": 9.36226
+  },
+  {
+    "name": "Valico di Bocca Seriola",
+    "lat": 43.5156,
+    "lng": 12.35669
+  },
+  {
+    "name": "Valico della Crocetta",
+    "lat": 42.24097,
+    "lng": 13.41459
+  },
+  {
+    "name": "Valico del Macerone",
+    "lat": 41.64491,
+    "lng": 14.21406
+  },
+  {
+    "name": "Valico della Fricca",
+    "lat": 45.94968,
+    "lng": 11.20733
+  },
+  {
+    "name": "Valico s'isca de sa Mela",
+    "lat": 40.03365,
+    "lng": 9.14239
+  },
+  {
+    "name": "Valico Ortuabis",
+    "lat": 39.89115,
+    "lng": 9.11886
+  },
+  {
+    "name": "Valico Sa Casa",
+    "lat": 39.91884,
+    "lng": 9.13452
+  },
+  {
+    "name": "Valico di San Fermo",
+    "lat": 44.6106,
+    "lng": 9.10352
+  },
+  {
+    "name": "Valico Sant' Antonio",
+    "lat": 41.74278,
+    "lng": 14.16308
+  },
+  {
+    "name": "Valico della Scheggia",
+    "lat": 43.41148,
+    "lng": 12.65867
+  },
+  {
+    "name": "Valico dello Spino",
+    "lat": 43.70155,
+    "lng": 11.96206
+  },
+  {
+    "name": "Valico di Valbona",
+    "lat": 45.86827,
+    "lng": 11.27188
+  },
+  {
+    "name": "Varbitsa Pass",
+    "lat": 42.93225,
+    "lng": 26.66563
+  },
+  {
+    "name": "Vernár",
+    "lat": 48.91787,
+    "lng": 20.27037
+  },
+  {
+    "name": "Vigla Pass",
+    "lat": 40.77146,
+    "lng": 21.26872
+  },
+  {
+    "name": "Vögelinsegg",
+    "lat": 47.41663,
+    "lng": 9.43863
+  },
+  {
+    "name": "Voras",
+    "lat": 40.90976,
+    "lng": 21.81352
+  },
+  {
+    "name": "Vratnik Pass",
+    "lat": 42.81724,
+    "lng": 26.21281
+  },
+  {
+    "name": "Waldegg Uitikon",
+    "lat": 47.36797,
+    "lng": 8.46294
+  },
+  {
+    "name": "Wampfle",
+    "lat": 47.30214,
+    "lng": 8.16588
+  },
+  {
+    "name": "Wasserfluh",
+    "lat": 47.32598,
+    "lng": 9.11417
+  },
+  {
+    "name": "Wasserscheide Rhein-Donau",
+    "lat": 48.12589,
+    "lng": 8.29347
+  },
+  {
+    "name": "Weienried",
+    "lat": 47.57264,
+    "lng": 9.81678
+  },
+  {
+    "name": "Weissenbachsattel (Hochkopfhaus)",
+    "lat": 47.76233,
+    "lng": 7.97597
+  },
+  {
+    "name": "Weissenstein",
+    "lat": 47.25514,
+    "lng": 7.50826
+  },
+  {
+    "name": "Weissseeferner (Kaunertaler Gletscherstrasse)",
+    "lat": 46.86387,
+    "lng": 10.71357
+  },
+  {
+    "name": "Whiskypass",
+    "lat": 47.34919,
+    "lng": 8.46025
+  },
+  {
+    "name": "Wichlen (Sernftal)",
+    "lat": 46.89206,
+    "lng": 9.12434
+  },
+  {
+    "name": "Wiedener Eck",
+    "lat": 47.84491,
+    "lng": 7.86693
+  },
+  {
+    "name": "Wildböllen-Höhe",
+    "lat": 47.79925,
+    "lng": 7.86861
+  },
+  {
+    "name": "Wildhaus",
+    "lat": 47.20341,
+    "lng": 9.35075
+  },
+  {
+    "name": "Wilhelmshöhe",
+    "lat": 48.14492,
+    "lng": 8.17317
+  },
+  {
+    "name": "Wintersingerhöchi",
+    "lat": 47.48611,
+    "lng": 7.81308
+  },
+  {
+    "name": "Wishöchi",
+    "lat": 47.32568,
+    "lng": 7.75491
+  },
+  {
+    "name": "Wissegg",
+    "lat": 47.39254,
+    "lng": 9.46099
+  },
+  {
+    "name": "Wisserlen",
+    "lat": 46.91673,
+    "lng": 8.29662
+  },
+  {
+    "name": "Wolfgangpass",
+    "lat": 46.83299,
+    "lng": 9.85385
+  },
+  {
+    "name": "Wurzenpass / Korensko Sedlo",
+    "lat": 46.52343,
+    "lng": 13.75152
+  },
+  {
+    "name": "Zervreilasee (Valsertal)",
+    "lat": 46.57681,
+    "lng": 9.12035
+  },
+  {
+    "name": "Zinal (Val d'Anniviers)",
+    "lat": 46.12571,
+    "lng": 7.63115
+  },
+  {
+    "name": "Zugerberg Früebüel",
+    "lat": 47.11431,
+    "lng": 8.53766
+  },
+  {
+    "name": "Zugerberg Hünggigütsch-Sätteli",
+    "lat": 47.14135,
+    "lng": 8.53847
+  },
+  {
+    "name": "Zurzacherberg Passhöhe",
+    "lat": 47.57581,
+    "lng": 8.27741
   }
 ]
