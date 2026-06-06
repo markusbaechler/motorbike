@@ -60,9 +60,14 @@ Die Tabelle enthält **keine Koordinaten**. Diese werden daher einmalig
 (Format `{ "<pass-id>": [lon, lat] }`). Die App liest diese Koordinaten beim
 Einblenden direkt – ohne Netzwerk.
 
-Eine Auswahl bekannter Alpenpässe ist bereits eingetragen. Um **alle ~1063
-Pässe** zu geokodieren, einmalig folgendes ausführen (in einer Umgebung mit
-Internetzugang – das CI-/Web-Sandbox blockiert Geocoder):
+Aktuell sind **~750 Pässe** mit Koordinaten hinterlegt – grösstenteils aus
+einer öffentlichen *Alpenpässe*-Karte (Pässe.Info, „Alpenpässe / Alpine
+passes", als KML exportiert und per Name+Höhe mit der Liste abgeglichen).
+Die übrigen Einträge (v. a. Pyrenäen, Apennin, Balkan, Spanien, Griechenland)
+sind dort nicht enthalten.
+
+Um **alle ~1063 Pässe** zu geokodieren, einmalig folgendes ausführen (in
+einer Umgebung mit Internetzugang – die CI-/Web-Sandbox blockiert Geocoder):
 
 ```bash
 npm run geocode                  # alle noch fehlenden Pässe geokodieren
