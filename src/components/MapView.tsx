@@ -37,23 +37,6 @@ interface Props {
   onSetPassMark?: (key: string, mark: "need" | "nice" | null) => void;
 }
 
-function passFeatures(points: PassPoint[]): GeoJSON.FeatureCollection {
-  return {
-    type: "FeatureCollection",
-    features: points.map((p) => ({
-      type: "Feature",
-      properties: {
-        key: p.key,
-        name: p.name,
-        surface: p.surface,
-        height: p.height,
-        mark: p.mark,
-      },
-      geometry: { type: "Point", coordinates: [p.lng, p.lat] },
-    })),
-  };
-}
-
 const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
 function markerColor(index: number, total: number): string {
@@ -84,6 +67,7 @@ export default function MapView({
   const passModeRef = useRef(false);
   const fitPassCountRef = useRef(0);
   const endpointMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const passMarkersRef = useRef<maplibregl.Marker[]>([]);
   const passPopupRef = useRef<maplibregl.Popup | null>(null);
 
   const addRef = useRef(onAddWaypoint);
@@ -165,114 +149,8 @@ export default function MapView({
         },
       });
 
-      // --- Pässeplaner pass dots (initially empty) ---
-      // Three separate layers (unmarked / nice / need), each with CONSTANT
-      // paint and only a filter — no data-driven paint expressions, so marking
-      // a pass can never make the layer fail to render.
-      map.addSource("passes", { type: "geojson", data: EMPTY });
-      map.addLayer({
-        id: "pass-base",
-        type: "circle",
-        source: "passes",
-        filter: ["==", ["get", "mark"], "none"],
-        paint: {
-          "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 5, 12, 7],
-          "circle-color": "#3aa0ff",
-          "circle-stroke-color": "#ffffff",
-          "circle-stroke-width": 1.5,
-        },
-      });
-      map.addLayer({
-        id: "pass-nice",
-        type: "circle",
-        source: "passes",
-        filter: ["==", ["get", "mark"], "nice"],
-        paint: {
-          "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 7, 12, 11],
-          "circle-color": "#f59e0b",
-          "circle-stroke-color": "#ffffff",
-          "circle-stroke-width": 3,
-        },
-      });
-      map.addLayer({
-        id: "pass-need",
-        type: "circle",
-        source: "passes",
-        filter: ["==", ["get", "mark"], "need"],
-        paint: {
-          "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 7, 12, 11],
-          "circle-color": "#fb5165",
-          "circle-stroke-color": "#ffffff",
-          "circle-stroke-width": 3,
-        },
-      });
-      // Marked passes carry a name label.
-      map.addLayer({
-        id: "pass-sel-labels",
-        type: "symbol",
-        source: "passes",
-        filter: ["!=", ["get", "mark"], "none"],
-        layout: {
-          "text-field": ["get", "name"],
-          "text-size": 12,
-          "text-offset": [0, 1.2],
-          "text-anchor": "top",
-          "text-max-width": 12,
-        },
-        paint: {
-          "text-color": "#ffffff",
-          "text-halo-color": "#100f12",
-          "text-halo-width": 1.6,
-        },
-      });
-
-      // Click a pass → popup with an explicit Need-to / Nice-to / Entfernen choice.
-      const actionPopup = new maplibregl.Popup({
-        closeButton: true,
-        closeOnClick: true,
-        offset: 14,
-        className: "pass-popup",
-      });
-      passPopupRef.current = actionPopup;
-      const esc = (s: string) =>
-        s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-      const openActionPopup = (e: maplibregl.MapLayerMouseEvent) => {
-        const f = e.features?.[0];
-        if (!f) return;
-        suppressClickRef.current = true; // don't also add a waypoint
-        const props = f.properties as {
-          key: string; name: string; height?: number; mark: string;
-        };
-        const coords = (f.geometry as GeoJSON.Point).coordinates as [number, number];
-        const h = props.height ? ` · ${props.height} m` : "";
-        actionPopup
-          .setLngLat(coords)
-          .setHTML(
-            `<div class="pass-pop">
-               <div class="pass-pop-name">${esc(props.name)}${h}</div>
-               <div class="pass-pop-btns">
-                 <button type="button" data-mark="need" class="pp-btn pp-need${props.mark === "need" ? " on" : ""}">Need-to</button>
-                 <button type="button" data-mark="nice" class="pp-btn pp-nice${props.mark === "nice" ? " on" : ""}">Nice-to</button>
-                 ${props.mark !== "none" ? '<button type="button" data-mark="none" class="pp-btn pp-rm">Entfernen</button>' : ""}
-               </div>
-             </div>`,
-          )
-          .addTo(map);
-        const el = actionPopup.getElement();
-        el?.querySelectorAll<HTMLButtonElement>("button[data-mark]").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            const m = btn.dataset.mark;
-            setPassMarkRef.current?.(props.key, m === "none" ? null : (m as "need" | "nice"));
-            actionPopup.remove();
-          });
-        });
-      };
-      for (const lid of ["pass-base", "pass-nice", "pass-need"]) {
-        map.on("click", lid, openActionPopup);
-        map.on("mouseenter", lid, () => { map.getCanvas().style.cursor = "pointer"; });
-        map.on("mouseleave", lid, () => { map.getCanvas().style.cursor = ""; });
-      }
+      // Pässeplaner pass dots are rendered as DOM markers (see effect below),
+      // not as style layers — robust against any base-style expression issues.
 
       setupLineDrag(map);
       addPassLabels(map);
@@ -409,30 +287,87 @@ export default function MapView({
     else map.once("load", apply);
   }, [route]);
 
-  // --- Sync Pässeplaner pass dots ---
+  // --- Sync Pässeplaner pass dots (as DOM markers) ---
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const apply = () => {
-      const src = map.getSource("passes") as maplibregl.GeoJSONSource | undefined;
-      const pts = passPoints ?? [];
-      src?.setData(pts.length ? passFeatures(pts) : EMPTY);
-      passModeRef.current = pts.length > 0;
-      // Fit to the passes only when they first appear (not on every mark).
-      if (pts.length > 0 && fitPassCountRef.current === 0) {
-        const b = new maplibregl.LngLatBounds();
-        pts.forEach((p) => b.extend([p.lng, p.lat]));
-        if (passEndpoints) {
-          b.extend([passEndpoints.start.lng, passEndpoints.start.lat]);
-          if (passEndpoints.end) b.extend([passEndpoints.end.lng, passEndpoints.end.lat]);
-        }
-        map.fitBounds(b, { padding: { top: 120, bottom: 160, left: 50, right: 50 }, maxZoom: 11 });
-      }
-      fitPassCountRef.current = pts.length;
+
+    for (const m of passMarkersRef.current) m.remove();
+    passMarkersRef.current = [];
+
+    const pts = passPoints ?? [];
+    passModeRef.current = pts.length > 0;
+    if (pts.length === 0) {
+      fitPassCountRef.current = 0;
+      passPopupRef.current?.remove();
+      return;
+    }
+
+    const esc = (s: string) =>
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    if (!passPopupRef.current) {
+      passPopupRef.current = new maplibregl.Popup({
+        closeButton: true,
+        closeOnClick: true,
+        offset: 16,
+        className: "pass-popup",
+      });
+    }
+    const popup = passPopupRef.current;
+
+    const openPopup = (p: PassPoint) => {
+      const h = p.height ? ` · ${p.height} m` : "";
+      const cur = p.mark;
+      popup
+        .setLngLat([p.lng, p.lat])
+        .setHTML(
+          `<div class="pass-pop">
+             <div class="pass-pop-name">${esc(p.name)}${h}</div>
+             <div class="pass-pop-btns">
+               <button type="button" data-mark="need" class="pp-btn pp-need${cur === "need" ? " on" : ""}">Need-to</button>
+               <button type="button" data-mark="nice" class="pp-btn pp-nice${cur === "nice" ? " on" : ""}">Nice-to</button>
+               ${cur !== "none" ? '<button type="button" data-mark="none" class="pp-btn pp-rm">Entfernen</button>' : ""}
+             </div>
+           </div>`,
+        )
+        .addTo(map);
+      popup.getElement()
+        ?.querySelectorAll<HTMLButtonElement>("button[data-mark]")
+        .forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const m = btn.dataset.mark;
+            setPassMarkRef.current?.(p.key, m === "none" ? null : (m as "need" | "nice"));
+            popup.remove();
+          });
+        });
     };
-    if (loadedRef.current) apply();
-    else map.once("load", apply);
-  }, [passPoints]);
+
+    for (const p of pts) {
+      const el = document.createElement("div");
+      el.className = `pass-marker pass-marker--${p.mark}`;
+      el.title = p.name;
+      el.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        openPopup(p);
+      });
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat([p.lng, p.lat])
+        .addTo(map);
+      passMarkersRef.current.push(marker);
+    }
+
+    // Fit to the passes only when they first appear (not on every mark).
+    if (fitPassCountRef.current === 0) {
+      const b = new maplibregl.LngLatBounds();
+      pts.forEach((p) => b.extend([p.lng, p.lat]));
+      if (passEndpoints) {
+        b.extend([passEndpoints.start.lng, passEndpoints.start.lat]);
+        if (passEndpoints.end) b.extend([passEndpoints.end.lng, passEndpoints.end.lat]);
+      }
+      map.fitBounds(b, { padding: { top: 120, bottom: 160, left: 50, right: 50 }, maxZoom: 11 });
+    }
+    fitPassCountRef.current = pts.length;
+  }, [passPoints, passEndpoints]);
 
   // --- Pässeplaner start/end markers ---
   useEffect(() => {
