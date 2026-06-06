@@ -89,16 +89,12 @@ export default function PassPlannerModal({ onReady, onClose }: Props) {
           </p>
 
           <label className="tg-label">Startort</label>
-          <div className="qp-row">
-            <span className="wp-dot" data-role="start"><Icon name="flag" size={14} /></span>
-            <PlaceInput
-              value={startVal}
-              placeholder="z. B. Chur"
-              onChange={(v) => { setStartVal(v); setStartPick(undefined); }}
-              onPick={(r) => { setStartVal(r.name); setStartPick(r); }}
-            />
-            <span className="qp-actions" />
-          </div>
+          <PlaceInput
+            value={startVal}
+            placeholder="z. B. Wassen, Uri"
+            onChange={(v) => { setStartVal(v); setStartPick(undefined); }}
+            onPick={(r) => { setStartVal(r.name); setStartPick(r); }}
+          />
 
           <label className="check-row">
             <input
@@ -112,17 +108,13 @@ export default function PassPlannerModal({ onReady, onClose }: Props) {
           {!roundTrip && (
             <>
               <label className="tg-label">Zielort</label>
-              <div className="qp-row">
-                <span className="wp-dot" data-role="end"><Icon name="flag" size={14} /></span>
-                <PlaceInput
-                  value={destVal}
-                  placeholder="z. B. Bozen"
-                  bias={startPick ? { lat: startPick.lat, lng: startPick.lng } : undefined}
-                  onChange={(v) => { setDestVal(v); setDestPick(undefined); }}
-                  onPick={(r) => { setDestVal(r.name); setDestPick(r); }}
-                />
-                <span className="qp-actions" />
-              </div>
+              <PlaceInput
+                value={destVal}
+                placeholder="z. B. Bozen"
+                bias={startPick ? { lat: startPick.lat, lng: startPick.lng } : undefined}
+                onChange={(v) => { setDestVal(v); setDestPick(undefined); }}
+                onPick={(r) => { setDestVal(r.name); setDestPick(r); }}
+              />
             </>
           )}
 

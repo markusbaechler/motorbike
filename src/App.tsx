@@ -310,8 +310,26 @@ export default function App() {
         lat: p.lat,
         lng: p.lng,
         surface: p.surface,
+        height: p.height,
         mark: passMarks[p.key] ?? "none",
       }))
+    : null;
+
+  const passEndpoints = passSession
+    ? {
+        start: {
+          lat: passSession.start.lat,
+          lng: passSession.start.lng,
+          name: passSession.start.name,
+        },
+        end: passSession.end
+          ? {
+              lat: passSession.end.lat,
+              lng: passSession.end.lng,
+              name: passSession.end.name,
+            }
+          : null,
+      }
     : null;
 
   const passNeedCount = Object.values(passMarks).filter((m) => m === "need").length;
@@ -404,7 +422,7 @@ export default function App() {
         </button>
       </header>
 
-      <SearchBox onSelect={onSearchSelect} />
+      {!passSession && <SearchBox onSelect={onSearchSelect} />}
 
       <MapView
         waypoints={waypoints}
@@ -415,6 +433,7 @@ export default function App() {
         onMoveWaypoint={moveWaypoint}
         onInsertWaypoint={insertWaypoint}
         passPoints={passPoints}
+        passEndpoints={passEndpoints}
         onTogglePass={togglePassMark}
       />
 
