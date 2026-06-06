@@ -1,4 +1,4 @@
-import MapView from "./components/MapView";
+import PassPlanner from "./components/PassPlanner";
 
 export default function App() {
   return (
@@ -6,10 +6,10 @@ export default function App() {
       <header className="topbar">
         <img src="./icon.svg" alt="" />
         <h1>
-          Motorbike <span className="tag">Routenplaner</span>
+          Motorbike <span className="tag">Pässeplaner</span>
         </h1>
       </header>
-      <MapView />
+      <PassPlanner />
     </div>
   );
 }
