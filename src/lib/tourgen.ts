@@ -39,8 +39,12 @@ const TARGET_KM: Record<TourDuration, number> = { half: 90, full: 190 };
 const DETOUR = 1.3;
 // Spacing between adjacent ring points on the first (rough) pass.
 const POINT_SPACING_M = 13000;
-// Rotate the loop around the start by these bearings (one candidate each).
-const BEARINGS = [0, 40, 80, 120, 160, 200, 240, 280, 320];
+// Rotate the loop around the start by these bearings. Combined with several
+// reach radii below, this gives a good spread of candidate loops.
+const BEARINGS = [0, 72, 144, 216, 288];
+// Reach factors on the base radius: a tight valley loop plus wider loops that
+// get out to the good mountain / pass roads further from the start.
+const RADIUS_FACTORS = [0.95, 1.25, 1.6];
 // Resampling step when analysing route geometry.
 const STEP_M = 120;
 // Grid cell for detecting retraced road.
@@ -156,16 +160,19 @@ export async function findTours(
   signal?: AbortSignal,
 ): Promise<TourCandidate[]> {
   const target = TARGET_KM[duration];
-  const radiusM = ((target / DETOUR) * 1000) / (2 * Math.PI);
-  const ring = clamp(
-    Math.round(Math.PI / Math.asin(clamp(POINT_SPACING_M / (2 * radiusM), 0.05, 0.99))),
-    5,
-    9,
-  );
+  const baseRadiusM = ((target / DETOUR) * 1000) / (2 * Math.PI);
   const origin: Coord = [start.lng, start.lat];
   const startStop: TourStop = { lat: start.lat, lng: start.lng, name: start.name };
 
-  const build = async (deg: number): Promise<TourCandidate> => {
+  const ringFor = (radiusM: number) =>
+    clamp(
+      Math.round(Math.PI / Math.asin(clamp(POINT_SPACING_M / (2 * radiusM), 0.05, 0.99))),
+      5,
+      10,
+    );
+
+  const build = async (deg: number, radiusM: number): Promise<TourCandidate> => {
+    const ring = ringFor(radiusM);
     // Pass 1 – rough loop through circle points.
     const center = destination(origin, deg, radiusM);
     const startAngle = (deg + 180) % 360;
@@ -187,9 +194,10 @@ export async function findTours(
       analysis: analyse([r1.feature]),
     };
 
-    // Pass 2 – place vias onto the through-roads of pass 1 (skip stubs).
+    // Pass 2 – only worth a second request when pass 1 retraces noticeably:
+    // place vias onto pass 1's through-roads (skipping stubs) and re-route.
     const vias = cleanVias(s1, ring - 1);
-    if (vias.length < 3) return cand1;
+    if (cand1.doubled <= 0.15 || vias.length < 3) return cand1;
     const refined: TourStop[] = [startStop, ...vias, startStop];
     try {
       const r2 = await fetchMultiPoint(refined, profile, signal);
@@ -209,7 +217,11 @@ export async function findTours(
     }
   };
 
-  const settled = await Promise.allSettled(BEARINGS.map(build));
+  const jobs: Promise<TourCandidate>[] = [];
+  for (const rf of RADIUS_FACTORS) {
+    for (const deg of BEARINGS) jobs.push(build(deg, baseRadiusM * rf));
+  }
+  const settled = await Promise.allSettled(jobs);
   if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
   const ok = settled
     .filter((s): s is PromiseFulfilledResult<TourCandidate> => s.status === "fulfilled")
@@ -219,8 +231,11 @@ export async function findTours(
     throw new Error("Keine Tour gefunden. Anderen Start oder eine andere Dauer versuchen.");
   }
 
+  // Wider band than the requested length: in the mountains the standout loop
+  // (passes, side valleys) is often a bit longer, and we'd rather offer it than
+  // a tame valley lap. The preview shows the real distance anyway.
   const inBand = (c: TourCandidate) =>
-    c.distanceKm >= target * 0.65 && c.distanceKm <= target * 1.45;
+    c.distanceKm >= target * 0.6 && c.distanceKm <= target * 1.7;
 
   // What riders actually want: lots of climbing, passes, curves and small
   // back-roads. Score that explicitly and only lightly weigh distance, so a
@@ -248,12 +263,25 @@ export async function findTours(
     );
   };
 
-  // Drop only the clearly broken ones (heavy spurs / wildly wrong length),
-  // then keep several so the rider can browse mountain alternatives.
-  let pool = ok.filter((c) => c.doubled <= 0.2 && inBand(c));
-  if (pool.length === 0) pool = ok.filter((c) => c.doubled <= 0.3);
+  // Drop only the clearly broken ones (heavy spurs / wildly wrong length), but
+  // always keep enough to browse so the rider never gets just "1 / 1".
+  let pool = ok.filter((c) => c.doubled <= 0.22 && inBand(c));
+  if (pool.length < 3) pool = ok.filter((c) => c.doubled <= 0.32);
   if (pool.length === 0) pool = ok;
 
   pool.sort((a, b) => fun(b) - fun(a));
-  return pool.slice(0, 8);
+
+  // De-duplicate near-identical loops (same length & climb) so the variants the
+  // rider browses are genuinely different routes.
+  const variants: TourCandidate[] = [];
+  for (const c of pool) {
+    const dup = variants.some(
+      (v) =>
+        Math.abs(v.distanceKm - c.distanceKm) < 3 &&
+        Math.abs(v.analysis.ascentM - c.analysis.ascentM) < 150,
+    );
+    if (!dup) variants.push(c);
+    if (variants.length >= 6) break;
+  }
+  return variants.length > 0 ? variants : pool.slice(0, 6);
 }
