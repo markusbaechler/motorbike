@@ -17,6 +17,7 @@ export interface PassSession {
   start: GeoResult;
   end: GeoResult | null; // null → round trip
   passes: KeyedPass[];
+  autoFill: boolean; // auto-insert through-passes that lie along the route
 }
 
 interface Props {
@@ -31,6 +32,7 @@ export default function PassPlannerModal({ onReady, onClose }: Props) {
   const [destVal, setDestVal] = useState("");
   const [destPick, setDestPick] = useState<GeoResult | undefined>();
   const [surface, setSurface] = useState<SurfaceFilter>("asphalt");
+  const [autoFill, setAutoFill] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,7 +65,7 @@ export default function PassPlannerModal({ onReady, onClose }: Props) {
       if (passes.length === 0) {
         throw new Error("Keine Pässe im Korridor gefunden. Anderen Start/Ziel oder Belag inkl. Unbefestigt versuchen.");
       }
-      onReady({ start, end, passes });
+      onReady({ start, end, passes, autoFill });
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -133,6 +135,15 @@ export default function PassPlannerModal({ onReady, onClose }: Props) {
               Inkl. Unbefestigt
             </button>
           </span>
+
+          <label className="check-row" style={{ marginTop: 8 }}>
+            <input
+              type="checkbox"
+              checked={autoFill}
+              onChange={(e) => setAutoFill(e.target.checked)}
+            />
+            <span>Pässe auf dem Weg automatisch ergänzen</span>
+          </label>
 
           {error && <p className="error">⚠ {error}</p>}
 
