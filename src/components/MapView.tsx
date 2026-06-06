@@ -166,26 +166,44 @@ export default function MapView({
       });
 
       // --- Pässeplaner pass dots (initially empty) ---
+      // Three separate layers (unmarked / nice / need), each with CONSTANT
+      // paint and only a filter — no data-driven paint expressions, so marking
+      // a pass can never make the layer fail to render.
       map.addSource("passes", { type: "geojson", data: EMPTY });
       map.addLayer({
-        id: "pass-dots",
+        id: "pass-base",
         type: "circle",
         source: "passes",
+        filter: ["==", ["get", "mark"], "none"],
         paint: {
-          // Marked passes are clearly bigger so the selection is obvious.
-          "circle-radius": [
-            "interpolate", ["linear"], ["zoom"],
-            6, ["case", ["==", ["get", "mark"], "none"], 5, 7],
-            12, ["case", ["==", ["get", "mark"], "none"], 7, 11],
-          ],
-          "circle-color": [
-            "match", ["get", "mark"],
-            "need", "#fb5165",
-            "nice", "#f59e0b",
-            ["case", ["==", ["get", "surface"], "unpaved"], "#a78bfa", "#3aa0ff"],
-          ],
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 5, 12, 7],
+          "circle-color": "#3aa0ff",
           "circle-stroke-color": "#ffffff",
-          "circle-stroke-width": ["case", ["==", ["get", "mark"], "none"], 1.5, 3],
+          "circle-stroke-width": 1.5,
+        },
+      });
+      map.addLayer({
+        id: "pass-nice",
+        type: "circle",
+        source: "passes",
+        filter: ["==", ["get", "mark"], "nice"],
+        paint: {
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 7, 12, 11],
+          "circle-color": "#f59e0b",
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 3,
+        },
+      });
+      map.addLayer({
+        id: "pass-need",
+        type: "circle",
+        source: "passes",
+        filter: ["==", ["get", "mark"], "need"],
+        paint: {
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 7, 12, 11],
+          "circle-color": "#fb5165",
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 3,
         },
       });
       // Marked passes carry a name label.
@@ -250,9 +268,11 @@ export default function MapView({
           });
         });
       };
-      map.on("click", "pass-dots", openActionPopup);
-      map.on("mouseenter", "pass-dots", () => { map.getCanvas().style.cursor = "pointer"; });
-      map.on("mouseleave", "pass-dots", () => { map.getCanvas().style.cursor = ""; });
+      for (const lid of ["pass-base", "pass-nice", "pass-need"]) {
+        map.on("click", lid, openActionPopup);
+        map.on("mouseenter", lid, () => { map.getCanvas().style.cursor = "pointer"; });
+        map.on("mouseleave", lid, () => { map.getCanvas().style.cursor = ""; });
+      }
 
       setupLineDrag(map);
       addPassLabels(map);
