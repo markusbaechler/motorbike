@@ -10,8 +10,10 @@ import {
 } from "../lib/passplanner";
 
 // Half-width of the corridor between start and destination (and the radius
-// around the start for round trips).
-const CORRIDOR_KM = 60;
+// around the start for round trips). Generous on purpose so plenty of passes
+// show up to choose from; the router-scored optimiser only actually rides the
+// ones that fit the loop, so a wide search costs nothing in route quality.
+const CORRIDOR_KM = 100;
 
 export interface PassSession {
   start: GeoResult;
