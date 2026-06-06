@@ -5,7 +5,7 @@ name: Deploy PWA to GitHub Pages
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "claude/cool-lamport-et1MO"]
   workflow_dispatch:
 
 permissions:
@@ -28,6 +28,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      # Stellt sicher, dass GitHub Pages aktiviert und auf "GitHub Actions"
+      # als Quelle gesetzt ist (verhindert das Scheitern des Deploy-Jobs).
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
