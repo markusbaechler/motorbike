@@ -39,7 +39,7 @@ assign turnInstructionMode  = 1
 ---context:way
 
 assign turncost = if junction=roundabout then 0
-                  else 40
+                  else 30
 
 assign initialclassifier =
      if route=ferry then 1
@@ -98,19 +98,19 @@ assign costfactor
  add max onewaypenalty accesspenalty
  add switch islinktype 0.05 0
  switch and highway= not route=ferry  10000
- switch or highway=trunk highway=trunk_link          8
- switch or highway=primary highway=primary_link      3
- switch or highway=secondary highway=secondary_link  1.6
- switch or highway=tertiary highway=tertiary_link    1.05
+ switch or highway=trunk highway=trunk_link          11
+ switch or highway=primary highway=primary_link      4.5
+ switch or highway=secondary highway=secondary_link  2.1
+ switch or highway=tertiary highway=tertiary_link    1.0
  switch    highway=unclassified                      1.0
  switch    route=ferry                               5.67
  switch    highway=bridleway                         5
- switch    isresidentialorliving                     1.4
- switch    highway=service                           3
+ switch    isresidentialorliving                     1.5
+ switch    highway=service                           3.5
  switch or highway=track or highway=road highway=path
-  switch tracktype=grade1 3
-  switch ispaved 3
-  30
+  switch tracktype=grade1 2.8
+  switch ispaved 2.8
+  28
  10000
 
 assign dummyUsage = smoothness=

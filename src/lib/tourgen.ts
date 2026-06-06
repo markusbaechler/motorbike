@@ -1,6 +1,7 @@
-import { destination, type Coord } from "./geo";
+import { bearing, bearingDelta, destination, haversine, type Coord } from "./geo";
 import { fetchMultiPoint } from "./routing";
 import { analyse, type RouteAnalysis } from "./analysis";
+import { PASSES, type NamedPlace } from "./passes";
 import type { RouteProfile } from "../types";
 
 // The Tour-Genius generates real round trips (start = finish) and ranks them by
@@ -29,6 +30,7 @@ export interface TourCandidate {
   durationMin: number;
   roundness: number; // 0 (line) … 1 (perfect circle)
   doubled: number; // 0 (no overlap) … 1 (mostly retraced)
+  passBonus: number; // count of curated passes this loop deliberately rides
   analysis: RouteAnalysis;
 }
 
@@ -191,6 +193,7 @@ export async function findTours(
       durationMin: r1.durationMin,
       roundness: roundnessOf(r1.feature, r1.distanceKm * 1000),
       doubled: doubledOf(s1),
+      passBonus: 0,
       analysis: analyse([r1.feature]),
     };
 
@@ -208,6 +211,7 @@ export async function findTours(
         durationMin: r2.durationMin,
         roundness: roundnessOf(r2.feature, r2.distanceKm * 1000),
         doubled: doubledOf(s2),
+        passBonus: 0,
         analysis: analyse([r2.feature]),
       };
       // Keep pass 2 unless it actually got worse (more retracing).
@@ -217,10 +221,63 @@ export async function findTours(
     }
   };
 
+  // Route a fixed set of stops once (no refinement) — used for the curated
+  // pass loops, whose waypoints already sit on great roads.
+  const buildStops = async (stops: TourStop[], passBonus: number): Promise<TourCandidate> => {
+    const r = await fetchMultiPoint(stops, profile, signal);
+    const s = resample(r.feature);
+    return {
+      stops,
+      distanceKm: r.distanceKm,
+      durationMin: r.durationMin,
+      roundness: roundnessOf(r.feature, r.distanceKm * 1000),
+      doubled: doubledOf(s),
+      passBonus,
+      analysis: analyse([r.feature]),
+    };
+  };
+
   const jobs: Promise<TourCandidate>[] = [];
   for (const rf of RADIUS_FACTORS) {
     for (const deg of BEARINGS) jobs.push(build(deg, baseRadiusM * rf));
   }
+
+  // --- Curated pass/road loops ---
+  // Famous motorcycle roads within reach of the start, turned into loops that
+  // actively ride over them (instead of relying on the geometric circle alone).
+  const startCoord: Coord = [start.lng, start.lat];
+  const named = (p: NamedPlace): TourStop => ({ name: p.name, lat: p.lat, lng: p.lng });
+  const inRange = PASSES.map((p) => ({
+    p,
+    d: haversine(startCoord, [p.lng, p.lat]) / 1000,
+    b: bearing(startCoord, [p.lng, p.lat]),
+  }))
+    .filter((x) => x.d >= target * 0.06 && x.d <= target * 0.5)
+    .sort((a, b) => a.d - b.d)
+    .slice(0, 9);
+
+  const passSets: { stops: TourStop[]; passes: number }[] = [];
+  // Pairs of passes on different sides of the start → a triangle loop over both.
+  for (let i = 0; i < inRange.length && passSets.length < 9; i++) {
+    for (let j = i + 1; j < inRange.length && passSets.length < 9; j++) {
+      if (bearingDelta(inRange[i].b, inRange[j].b) < 55) continue;
+      passSets.push({
+        stops: [startStop, named(inRange[i].p), named(inRange[j].p), startStop],
+        passes: 2,
+      });
+    }
+  }
+  // Single nearby pass + a balancing point on the opposite side (forces a loop
+  // rather than out-and-back) for the closest few passes.
+  for (const x of inRange.slice(0, 4)) {
+    const opp = destination(startCoord, (x.b + 180) % 360, x.d * 1000);
+    passSets.push({
+      stops: [startStop, named(x.p), { lng: opp[0], lat: opp[1] }, startStop],
+      passes: 1,
+    });
+  }
+  for (const ps of passSets) jobs.push(buildStops(ps.stops, ps.passes));
+
   const settled = await Promise.allSettled(jobs);
   if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
   const ok = settled
@@ -256,7 +313,8 @@ export async function findTours(
       s.mountains * 1.4 + // altitude + passes + climb
       Math.min(c.analysis.passes, 8) * 0.9 + // explicit pass bonus
       Math.min(ascentPerKm(c), 18) * 0.18 + // climbing density (hm/km)
-      smallShare * 6 - // reward small Landstrassen
+      smallShare * 6 + // reward small Landstrassen
+      c.passBonus * 2.5 - // deliberately rides a famous curated pass/road
       bigShare * 10 - // strongly punish Haupt-/Schnellstr./Autobahn
       c.doubled * 6 - // dead-end / there-and-back stubs
       (Math.abs(c.distanceKm - target) / target) * 2
