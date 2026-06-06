@@ -60,12 +60,13 @@ Die Tabelle enthält **keine Koordinaten**. Diese werden daher einmalig
 (Format `{ "<pass-id>": [lon, lat] }`). Die App liest diese Koordinaten beim
 Einblenden direkt – ohne Netzwerk.
 
-Aktuell sind **~796 Pässe** mit Koordinaten hinterlegt – zusammengeführt aus
-zwei öffentlichen Quellen (Pässe.Info „Alpenpässe" als KML sowie ein
-POI-Export von alpenpaesse.de), jeweils per **Name + Höhe** mit der Liste
-abgeglichen und gegen grobe Länder-Bounding-Boxes plausibilisiert. Die
-übrigen Einträge (v. a. Apennin, Balkan, Spanien, Griechenland, Bulgarien)
-sind in diesen Quellen nicht enthalten.
+Aktuell sind **~798 Pässe** mit Koordinaten hinterlegt – zusammengeführt aus
+mehreren öffentlichen Quellen (Pässe.Info „Alpenpässe" als KML, ein
+POI-Export von alpenpaesse.de sowie eine KML „Berg- und Passstrassen
+Italien"), jeweils per **Name + Höhe** mit der Liste abgeglichen und gegen
+grobe Länder-Bounding-Boxes plausibilisiert. Die übrigen Einträge (v. a.
+Apennin, Balkan, Spanien, Griechenland, Bulgarien) sind in diesen Quellen
+nicht enthalten.
 
 Um **alle ~1063 Pässe** zu geokodieren, einmalig folgendes ausführen (in
 einer Umgebung mit Internetzugang – die CI-/Web-Sandbox blockiert Geocoder):
