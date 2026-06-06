@@ -10,7 +10,6 @@ interface Props {
   onGenius: () => void;
   onRoutes: () => void;
   onMap: () => void;
-  onAdmin: () => void;
 }
 
 export default function Home({
@@ -22,7 +21,6 @@ export default function Home({
   onGenius,
   onRoutes,
   onMap,
-  onAdmin,
 }: Props) {
   const [showIosHint, setShowIosHint] = useState(false);
   return (
@@ -69,9 +67,6 @@ export default function Home({
 
           <button className="home-link" onClick={onMap}>
             Direkt zur Karte →
-          </button>
-          <button className="home-admin-link" onClick={onAdmin}>
-            Pässe verwalten
           </button>
 
           {showIosHint && (
