@@ -358,7 +358,9 @@ export default function App() {
         lng: s.lng,
         lat: s.lat,
         name: s.name,
-        legProfile: defaultProfile,
+        // Pässeplaner routes default to the twistiest style so the legs between
+        // passes favour small scenic pass roads over the main valley axes.
+        legProfile: "kurvig_plus",
       })),
     );
     cancelPassSession();
