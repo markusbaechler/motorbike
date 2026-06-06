@@ -3,6 +3,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { DEFAULT_CENTER, DEFAULT_ZOOM, MAP_STYLE_URL } from "../config";
 import rawPasses from "../data/passes.json";
+import rawCoords from "../data/pass-coords.json";
 import type {
   GeoPass,
   LngLat,
@@ -34,6 +35,15 @@ import {
 } from "../lib/passLayers";
 
 const PASSES = rawPasses as Pass[];
+
+// Coordinates baked in at build time by scripts/geocode-passes.mjs:
+// { "<pass-id>": [lon, lat] }. null = looked up but not resolvable.
+const BAKED = rawCoords as unknown as Record<string, [number, number] | null>;
+
+function bakedCoord(pass: Pass): LngLat | undefined {
+  const c = BAKED[pass.id];
+  return c ? { lon: c[0], lat: c[1] } : undefined;
+}
 
 interface Endpoint {
   text: string;
@@ -258,13 +268,16 @@ export default function PassPlanner() {
           : distanceToSegment(c, startCoord, destCoord) <= m;
       };
 
-      // Geocode candidates progressively; show those that fall in the corridor.
+      // Resolve coordinates – baked-in first (instant, no network), then the
+      // localStorage cache, finally a throttled Nominatim lookup as fallback.
+      // Show passes that fall inside the corridor as they resolve.
       const found: GeoPass[] = [];
       setProgress({ done: 0, total: candidates.length });
       for (let i = 0; i < candidates.length; i++) {
         if (loadToken.current !== token) return; // a newer load superseded us
         const p = candidates[i];
-        const coord = cachedCoord(p) ?? (await geocodePass(p));
+        const coord =
+          bakedCoord(p) ?? cachedCoord(p) ?? (await geocodePass(p));
         setProgress({ done: i + 1, total: candidates.length });
         if (coord && inCorridor(coord)) {
           const gp: GeoPass = { ...p, lon: coord.lon, lat: coord.lat };

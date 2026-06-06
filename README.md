@@ -52,14 +52,32 @@ nutzbar macht. Ablauf im linken Panel:
 6. **Route planen**: BRouter verbindet Start → markierte Pässe → Ziel zu
    einer Route; die Wegpunkte werden mit den Passnamen aufgelistet.
 
-### Datenquelle & Geokodierung
+### Datenquelle & Koordinaten
 
-Die Tabelle enthält **keine Koordinaten**, daher werden Pässe beim ersten
-Einblenden im Browser über **Nominatim (OpenStreetMap)** geokodiert und in
-`localStorage` zwischengespeichert (max. ~1 Anfrage/Sekunde gemäss
-Nominatim-Richtlinie). Der erste Durchlauf einer Region dauert daher etwas;
-danach sind die Koordinaten sofort verfügbar. Nicht jeder Passname lässt
-sich eindeutig auflösen.
+Die Tabelle enthält **keine Koordinaten**. Diese werden daher einmalig
+**vorab geokodiert und fest in der App abgelegt** in
+[`src/data/pass-coords.json`](src/data/pass-coords.json)
+(Format `{ "<pass-id>": [lon, lat] }`). Die App liest diese Koordinaten beim
+Einblenden direkt – ohne Netzwerk.
+
+Eine Auswahl bekannter Alpenpässe ist bereits eingetragen. Um **alle ~1063
+Pässe** zu geokodieren, einmalig folgendes ausführen (in einer Umgebung mit
+Internetzugang – das CI-/Web-Sandbox blockiert Geocoder):
+
+```bash
+npm run geocode                  # alle noch fehlenden Pässe geokodieren
+RETRY_FAILED=1 npm run geocode   # zusätzlich frühere Fehlschläge erneut versuchen
+ONLY=Schweiz npm run geocode     # nur ein Land (zum Testen)
+```
+
+Das Skript ([`scripts/geocode-passes.mjs`](scripts/geocode-passes.mjs)) nutzt
+**Nominatim (OpenStreetMap)** richtlinienkonform (gültiger User-Agent,
+max. 1 Anfrage/Sekunde), ist **fortsetzbar** (speichert laufend) und
+schreibt das Ergebnis nach `src/data/pass-coords.json` – danach committen.
+
+Für Pässe, die (noch) nicht in `pass-coords.json` stehen, fällt die App auf
+eine **browserseitige Geokodierung** (Nominatim, in `localStorage`
+gecacht) zurück, sodass nichts fehlt.
 
 > **Hinweis zur Wintersperre:** Die Angabe in den Daten ist eine reine
 > Höhen-Heuristik (≥2000 m = wahrscheinlich gesperrt) und **nicht
