@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import MapView from "./components/MapView";
+import MapView, { type PassPoint } from "./components/MapView";
+import PassPlannerModal, { type PassSession } from "./components/PassPlannerModal";
+import PassSelectPanel from "./components/PassSelectPanel";
+import { orderByNearestNeighbour, type PassMark } from "./lib/passplanner";
 import RoutePanel from "./components/RoutePanel";
 import RouteModal from "./components/RouteModal";
 import QuickPlanModal, { type QuickStop } from "./components/QuickPlanModal";
@@ -48,6 +51,11 @@ export default function App() {
   const geniusProfile = useRef<RouteProfile>("kurvig");
   const [showRoutes, setShowRoutes] = useState(false);
   const [showBookingPrefs, setShowBookingPrefs] = useState(false);
+  // Pässeplaner: input dialog + active pass-picking session.
+  const [showPassPlanner, setShowPassPlanner] = useState(false);
+  const [passSession, setPassSession] = useState<PassSession | null>(null);
+  const [passMarks, setPassMarks] = useState<Record<string, PassMark>>({});
+  const [passBusy, setPassBusy] = useState(false);
   // Inviting start screen, shown on launch.
   const [showHome, setShowHome] = useState(true);
   const [showShare, setShowShare] = useState(false);
@@ -277,6 +285,71 @@ export default function App() {
     setFitSignal((n) => n + 1);
   };
 
+  // --- Pässeplaner ---
+  const startPassSession = (session: PassSession) => {
+    setPassSession(session);
+    setPassMarks({});
+    setShowPassPlanner(false);
+  };
+
+  const togglePassMark = (key: string) =>
+    setPassMarks((prev) => {
+      const cur = prev[key];
+      const next: Record<string, PassMark> = { ...prev };
+      if (cur === undefined) next[key] = "need";
+      else if (cur === "need") next[key] = "nice";
+      else delete next[key];
+      return next;
+    });
+
+  // Pass dots handed to the map (data + current mark per pass).
+  const passPoints: PassPoint[] | null = passSession
+    ? passSession.passes.map((p) => ({
+        key: p.key,
+        name: p.name,
+        lat: p.lat,
+        lng: p.lng,
+        surface: p.surface,
+        mark: passMarks[p.key] ?? "none",
+      }))
+    : null;
+
+  const passNeedCount = Object.values(passMarks).filter((m) => m === "need").length;
+  const passNiceCount = Object.values(passMarks).filter((m) => m === "nice").length;
+
+  const cancelPassSession = () => {
+    setPassSession(null);
+    setPassMarks({});
+  };
+
+  // Turn the marked passes into a normal route (start → passes → end/back).
+  const createPassRoute = () => {
+    if (!passSession) return;
+    setPassBusy(true);
+    const { start, end } = passSession;
+    const picked = passSession.passes.filter((p) => passMarks[p.key]);
+    const ordered = orderByNearestNeighbour({ lat: start.lat, lng: start.lng }, picked);
+    const last = end ?? start; // round trip ends at the start
+    const stops = [
+      { name: start.name, lat: start.lat, lng: start.lng },
+      ...ordered.map((p) => ({ name: p.name, lat: p.lat, lng: p.lng })),
+      { name: last.name, lat: last.lat, lng: last.lng },
+    ];
+    setPendingDay(false);
+    setWaypoints(
+      stops.map((s) => ({
+        id: makeId(),
+        lng: s.lng,
+        lat: s.lat,
+        name: s.name,
+        legProfile: defaultProfile,
+      })),
+    );
+    cancelPassSession();
+    setPassBusy(false);
+    setFitSignal((n) => n + 1);
+  };
+
   // Load a saved/imported route (fresh ids to avoid collisions).
   const loadRoute = (saved: Waypoint[]) => {
     setPendingDay(false);
@@ -341,6 +414,8 @@ export default function App() {
         onAddWaypoint={addWaypoint}
         onMoveWaypoint={moveWaypoint}
         onInsertWaypoint={insertWaypoint}
+        passPoints={passPoints}
+        onTogglePass={togglePassMark}
       />
 
       <RoutePanel
@@ -355,6 +430,7 @@ export default function App() {
         onOpenShare={() => setShowShare(true)}
         onOpenQuickPlan={() => setShowQuickPlan(true)}
         onOpenTourGenius={() => setShowTourGenius(true)}
+        onOpenPassPlanner={() => setShowPassPlanner(true)}
         onOpenRoutes={() => setShowRoutes(true)}
         onOpenBookingPrefs={() => setShowBookingPrefs(true)}
         onOpenHotel={openHotel}
@@ -420,6 +496,24 @@ export default function App() {
         />
       )}
 
+      {showPassPlanner && (
+        <PassPlannerModal
+          onReady={startPassSession}
+          onClose={() => setShowPassPlanner(false)}
+        />
+      )}
+
+      {passSession && (
+        <PassSelectPanel
+          total={passSession.passes.length}
+          needCount={passNeedCount}
+          niceCount={passNiceCount}
+          busy={passBusy}
+          onCreate={createPassRoute}
+          onCancel={cancelPassSession}
+        />
+      )}
+
       {geniusCands && (
         <TourGeniusPreview
           candidates={geniusCands}
@@ -447,6 +541,10 @@ export default function App() {
           onGenius={() => {
             setShowHome(false);
             setShowTourGenius(true);
+          }}
+          onPasses={() => {
+            setShowHome(false);
+            setShowPassPlanner(true);
           }}
           onRoutes={() => {
             setShowHome(false);

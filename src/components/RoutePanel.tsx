@@ -17,6 +17,7 @@ interface Props {
   onOpenShare: () => void;
   onOpenQuickPlan: () => void;
   onOpenTourGenius: () => void;
+  onOpenPassPlanner: () => void;
   onOpenRoutes: () => void;
   onOpenBookingPrefs: () => void;
   onOpenHotel: (place: string, checkin?: string) => void;
@@ -104,6 +105,7 @@ export default function RoutePanel({
   onOpenShare,
   onOpenQuickPlan,
   onOpenTourGenius,
+  onOpenPassPlanner,
   onOpenRoutes,
   onOpenBookingPrefs,
   onOpenHotel,
@@ -286,6 +288,9 @@ export default function RoutePanel({
         </button>
         <button className="quickplan-btn genius" onClick={onOpenTourGenius}>
           <Icon name="compass" size={16} /> Tour-Genius
+        </button>
+        <button className="quickplan-btn passes" onClick={onOpenPassPlanner}>
+          <Icon name="mountain" size={16} /> Pässeplaner
         </button>
         <button className="quickplan-btn secondary" onClick={onOpenRoutes}>
           <Icon name="folder" size={16} /> Routen

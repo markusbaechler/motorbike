@@ -6,6 +6,15 @@ import { computeDays, dayNumbers } from "../lib/days";
 import type { FocusPoint } from "../App";
 import type { RouteResult, Waypoint } from "../types";
 
+export interface PassPoint {
+  key: string;
+  name: string;
+  lat: number;
+  lng: number;
+  surface: string;
+  mark: "none" | "need" | "nice";
+}
+
 interface Props {
   waypoints: Waypoint[];
   route: RouteResult | null;
@@ -14,6 +23,21 @@ interface Props {
   onAddWaypoint: (lng: number, lat: number) => void;
   onMoveWaypoint: (id: string, lng: number, lat: number) => void;
   onInsertWaypoint: (legIndex: number, lng: number, lat: number) => void;
+  // Pässeplaner: when non-null the map shows clickable pass dots and the normal
+  // tap-to-add-waypoint behaviour is suppressed.
+  passPoints?: PassPoint[] | null;
+  onTogglePass?: (key: string) => void;
+}
+
+function passFeatures(points: PassPoint[]): GeoJSON.FeatureCollection {
+  return {
+    type: "FeatureCollection",
+    features: points.map((p) => ({
+      type: "Feature",
+      properties: { key: p.key, name: p.name, surface: p.surface, mark: p.mark },
+      geometry: { type: "Point", coordinates: [p.lng, p.lat] },
+    })),
+  };
 }
 
 const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
@@ -32,6 +56,8 @@ export default function MapView({
   onAddWaypoint,
   onMoveWaypoint,
   onInsertWaypoint,
+  passPoints = null,
+  onTogglePass,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -39,13 +65,18 @@ export default function MapView({
   const markersRef = useRef<maplibregl.Marker[]>([]);
   // Suppress the map "click" (append) that follows a line-drag insert.
   const suppressClickRef = useRef(false);
+  // True while the Pässeplaner pass layer is active (suppresses add-waypoint).
+  const passModeRef = useRef(false);
+  const fitPassCountRef = useRef(0);
 
   const addRef = useRef(onAddWaypoint);
   const moveRef = useRef(onMoveWaypoint);
   const insertRef = useRef(onInsertWaypoint);
+  const togglePassRef = useRef(onTogglePass);
   addRef.current = onAddWaypoint;
   moveRef.current = onMoveWaypoint;
   insertRef.current = onInsertWaypoint;
+  togglePassRef.current = onTogglePass;
 
   const waypointsRef = useRef(waypoints);
   waypointsRef.current = waypoints;
@@ -114,6 +145,56 @@ export default function MapView({
         },
       });
 
+      // --- Pässeplaner pass dots (initially empty) ---
+      map.addSource("passes", { type: "geojson", data: EMPTY });
+      map.addLayer({
+        id: "pass-dots",
+        type: "circle",
+        source: "passes",
+        paint: {
+          "circle-radius": [
+            "interpolate", ["linear"], ["zoom"],
+            5, ["case", ["==", ["get", "mark"], "none"], 3.5, 5.5],
+            11, ["case", ["==", ["get", "mark"], "none"], 5.5, 8.5],
+          ],
+          "circle-color": [
+            "match", ["get", "mark"],
+            "need", "#fb7185",
+            "nice", "#f59e0b",
+            ["case", ["==", ["get", "surface"], "unpaved"], "#a78bfa", "#38bdf8"],
+          ],
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": ["case", ["==", ["get", "mark"], "none"], 1, 2],
+        },
+      });
+      map.addLayer({
+        id: "pass-sel-labels",
+        type: "symbol",
+        source: "passes",
+        filter: ["!=", ["get", "mark"], "none"],
+        layout: {
+          "text-field": ["get", "name"],
+          "text-size": 11,
+          "text-offset": [0, 1.1],
+          "text-anchor": "top",
+          "text-max-width": 12,
+        },
+        paint: {
+          "text-color": "#f6f5f3",
+          "text-halo-color": "#100f12",
+          "text-halo-width": 1.4,
+        },
+      });
+      map.on("click", "pass-dots", (e) => {
+        const key = e.features?.[0]?.properties?.key as string | undefined;
+        if (key) {
+          suppressClickRef.current = true; // don't also add a waypoint
+          togglePassRef.current?.(key);
+        }
+      });
+      map.on("mouseenter", "pass-dots", () => { map.getCanvas().style.cursor = "pointer"; });
+      map.on("mouseleave", "pass-dots", () => { map.getCanvas().style.cursor = ""; });
+
       loadedRef.current = true;
       setupLineDrag(map);
       addPassLabels(map);
@@ -124,6 +205,8 @@ export default function MapView({
         suppressClickRef.current = false;
         return;
       }
+      // In Pässeplaner mode the map is for picking passes, not adding stops.
+      if (passModeRef.current) return;
       addRef.current(e.lngLat.lng, e.lngLat.lat);
     });
 
@@ -247,6 +330,27 @@ export default function MapView({
     if (loadedRef.current) apply();
     else map.once("load", apply);
   }, [route]);
+
+  // --- Sync Pässeplaner pass dots ---
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const apply = () => {
+      const src = map.getSource("passes") as maplibregl.GeoJSONSource | undefined;
+      const pts = passPoints ?? [];
+      src?.setData(pts.length ? passFeatures(pts) : EMPTY);
+      passModeRef.current = pts.length > 0;
+      // Fit to the passes only when they first appear (not on every mark).
+      if (pts.length > 0 && fitPassCountRef.current === 0) {
+        const b = new maplibregl.LngLatBounds();
+        pts.forEach((p) => b.extend([p.lng, p.lat]));
+        map.fitBounds(b, { padding: { top: 110, bottom: 160, left: 50, right: 50 }, maxZoom: 11 });
+      }
+      fitPassCountRef.current = pts.length;
+    };
+    if (loadedRef.current) apply();
+    else map.once("load", apply);
+  }, [passPoints]);
 
   // --- Fly to a searched location ---
   useEffect(() => {

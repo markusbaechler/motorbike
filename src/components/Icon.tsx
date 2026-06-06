@@ -27,6 +27,7 @@ export type IconName =
   | "thunder"
   | "fog"
   | "compass"
+  | "mountain"
   | "loop";
 
 const PATHS: Record<IconName, ReactNode> = {
@@ -174,6 +175,12 @@ const PATHS: Record<IconName, ReactNode> = {
     <>
       <path d="M17 4a8 8 0 1 1-7 4" />
       <polyline points="17 9 17 4 12 4" />
+    </>
+  ),
+  mountain: (
+    <>
+      <path d="m3 20 6-11 4 6 2-3 6 8z" />
+      <path d="m7.5 13 1.5-2.5" />
     </>
   ),
 };

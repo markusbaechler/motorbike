@@ -8,6 +8,7 @@ interface Props {
   onInstall: () => void;
   onPlan: () => void;
   onGenius: () => void;
+  onPasses: () => void;
   onRoutes: () => void;
   onMap: () => void;
 }
@@ -19,6 +20,7 @@ export default function Home({
   onInstall,
   onPlan,
   onGenius,
+  onPasses,
   onRoutes,
   onMap,
 }: Props) {
@@ -49,6 +51,10 @@ export default function Home({
           <button className="home-cta genius" onClick={onGenius}>
             <Icon name="compass" size={20} /> Tour-Genius
             <span className="home-cta-sub">Rundtour automatisch finden</span>
+          </button>
+          <button className="home-cta passes" onClick={onPasses}>
+            <Icon name="mountain" size={20} /> Pässeplaner
+            <span className="home-cta-sub">Route über ausgewählte Pässe</span>
           </button>
           <button className="home-cta" onClick={onRoutes}>
             <Icon name="folder" size={19} /> Meine Routen
