@@ -75,7 +75,7 @@ export default function PassPlannerModal({ onReady, onClose }: Props) {
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal modal-pass" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <h2><Icon name="mountain" size={20} /> Pässeplaner</h2>
           <button className="modal-close" onClick={onClose} aria-label="Schließen">
@@ -85,9 +85,8 @@ export default function PassPlannerModal({ onReady, onClose }: Props) {
 
         <div className="modal-body">
           <p className="modal-note" style={{ marginTop: 0 }}>
-            Start (und Ziel) wählen – danach erscheinen die Pässe im Korridor auf
-            der Karte. Markiere sie als Need-to / Nice-to und erstelle daraus eine
-            Route.
+            Start wählen → Pässe auf der Karte als Need / Nice markieren → Route
+            erstellen.
           </p>
 
           <label className="tg-label">Startort</label>
@@ -136,7 +135,7 @@ export default function PassPlannerModal({ onReady, onClose }: Props) {
             </button>
           </span>
 
-          <label className="check-row" style={{ marginTop: 8 }}>
+          <label className="check-row">
             <input
               type="checkbox"
               checked={autoFill}

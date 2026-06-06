@@ -1199,6 +1199,21 @@ button {
   line-height: 1.4;
 }
 
+/* Pässeplaner modal: roomier, flatter layout (generous vertical rhythm, a
+   full-width surface toggle) so the form breathes instead of feeling crammed. */
+.modal-pass .modal-body { padding: 24px; }
+.modal-pass .modal-note {
+  font-size: 0.84rem;
+  opacity: 0.72;
+  margin-bottom: 6px;
+}
+.modal-pass .tg-label { margin: 22px 0 9px; }
+.modal-pass .tg-label:first-of-type { margin-top: 16px; }
+.modal-pass .check-row { margin: 16px 0; font-size: 0.95rem; }
+.modal-pass .toggle { display: flex; width: 100%; }
+.modal-pass .toggle-btn { flex: 1; padding: 11px 14px; font-size: 0.9rem; }
+.modal-pass .export-btn { margin-top: 26px; }
+
 .elev-chart svg {
   width: 100%;
   height: 120px;
@@ -1789,38 +1804,41 @@ button {
 }
 .home-link:hover { color: var(--text); }
 
+/* Feature strip: purely informational. A divider plus a flat, border-less,
+   muted layout (no boxes, no coloured icons) makes it clearly read as a caption
+   — not three more tappable buttons. */
 .home-features {
   display: flex;
-  gap: 12px;
-  margin-top: 32px;
+  gap: 20px;
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
   width: 100%;
 }
 .home-feat {
   flex: 1 1 0;
   min-width: 0;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 16px 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
 }
-.home-feat strong { font-size: 0.92rem; }
-.home-feat span:last-child { font-size: 0.72rem; color: var(--muted); line-height: 1.35; }
+.home-feat strong { font-size: 0.8rem; font-weight: 700; color: var(--text); opacity: 0.82; }
+.home-feat span:last-child { font-size: 0.7rem; color: var(--muted); line-height: 1.35; }
 .home-feat-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 13px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.05);
 }
-.home-feat-icon.kurvig { background: var(--kurvig); }
-.home-feat-icon.bed { background: #a855f7; }
-.home-feat-icon.gpx { background: var(--schnell); }
+/* uniform, quiet icon treatment — no per-feature accent colours */
+.home-feat-icon.kurvig,
+.home-feat-icon.bed,
+.home-feat-icon.gpx { background: rgba(255, 255, 255, 0.05); color: var(--muted); }
 
 .home-cta.install {
   background: rgba(255, 255, 255, 0.1);
@@ -1902,13 +1920,13 @@ button {
   box-shadow: none;
 }
 
-.home-cta.genius {
+/* Secondary CTAs that carry a sub-label (Tour-Genius, Pässeplaner). They read
+   like the other neutral buttons — only "Neue Tour planen" stays accented — so
+   the home screen has a single focal point instead of three coloured boxes. */
+.home-cta.genius,
+.home-cta.passes {
   flex-wrap: wrap;
-  background: rgba(255, 157, 60, 0.1);
-  border: 1px solid rgba(255, 157, 60, 0.55);
-  color: var(--text);
 }
-.home-cta.genius:hover { background: rgba(255, 157, 60, 0.18); }
 .home-cta-sub {
   flex-basis: 100%;
   text-align: center;
@@ -2061,10 +2079,6 @@ button {
 }
 
 /* ── Pässeplaner ─────────────────────────────────────────────────────── */
-.home-cta.passes {
-  /* slightly different accent so it reads as its own feature */
-  border-color: rgba(168, 139, 250, 0.5);
-}
 .quickplan-btn.passes {
   border-color: rgba(168, 139, 250, 0.5);
 }
