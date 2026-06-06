@@ -2212,3 +2212,30 @@ button {
 .pp-need.on { background: #fb5165; color: #2a0a0e; border-color: transparent; }
 .pp-nice.on { background: #f59e0b; color: #2a1402; border-color: transparent; }
 .pp-rm { flex: 0 0 auto; color: var(--muted); }
+
+/* Pässeplaner: pass dots as DOM markers (robust against style errors) */
+.pass-marker {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #3aa0ff;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+.pass-marker:hover { transform: scale(1.25); }
+.pass-marker--need {
+  width: 20px;
+  height: 20px;
+  background: #fb5165;
+  border-width: 3px;
+  box-shadow: 0 0 0 2px rgba(251, 81, 101, 0.35), 0 1px 5px rgba(0, 0, 0, 0.5);
+}
+.pass-marker--nice {
+  width: 20px;
+  height: 20px;
+  background: #f59e0b;
+  border-width: 3px;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.35), 0 1px 5px rgba(0, 0, 0, 0.5);
+}
