@@ -5,10 +5,9 @@ import PassSelectPanel from "./components/PassSelectPanel";
 import {
   orderByNearestNeighbour,
   orderForLoop,
-  throughPassesAlong,
-  type KeyedPass,
   type PassMark,
 } from "./lib/passplanner";
+import { optimizeLoop } from "./lib/passopt";
 import RoutePanel from "./components/RoutePanel";
 import RouteModal from "./components/RouteModal";
 import QuickPlanModal, { type QuickStop } from "./components/QuickPlanModal";
@@ -345,47 +344,50 @@ export default function App() {
   };
 
   // Turn the marked passes into a normal route (start → passes → end/back).
-  const createPassRoute = () => {
-    if (!passSession) return;
+  // With auto-fill on, a real router-scored optimiser (Tour-Genius principle)
+  // strings the marked passes together and adds the scenic through-passes that
+  // genuinely lie on the loop — every candidate judged by BRouter, not by
+  // straight-line geometry — so it rides as many passes as possible while
+  // minimising back-tracking (no eastward Oberalp-style spurs).
+  const createPassRoute = async () => {
+    if (!passSession || passBusy) return;
     setPassBusy(true);
     const { start, end } = passSession;
-    const picked = passSession.passes.filter((p) => passMarks[p.key]);
-    const startPt = { lat: start.lat, lng: start.lng };
-    // Round trips: order around the centroid for a clean loop. Point-to-point:
-    // nearest-neighbour from start toward the destination.
-    const ordered = end
-      ? orderByNearestNeighbour(startPt, picked)
-      : orderForLoop(startPt, picked);
-    const last = end ?? start; // round trip ends at the start
+    const marked = passSession.passes.filter((p) => passMarks[p.key]);
+    const startPt = { lat: start.lat, lng: start.lng, name: start.name };
+    const endPt = end ? { lat: end.lat, lng: end.lng, name: end.name } : null;
 
-    // Required anchors in visiting order (start → marked passes → end/back).
-    const anchors: Array<{ name: string; lat: number; lng: number; key?: string }> = [
+    // Stops the route will run through. Default = the simple ordering (used when
+    // auto-fill is off, there are no marked passes, or the router is unreachable).
+    let stops: Array<{ name?: string; lat: number; lng: number }>;
+    const orderedMarked = endPt
+      ? orderByNearestNeighbour(startPt, marked)
+      : orderForLoop(startPt, marked);
+    const last = end ?? start;
+    stops = [
       { name: start.name, lat: start.lat, lng: start.lng },
-      ...ordered.map((p) => ({ name: p.name, lat: p.lat, lng: p.lng, key: p.key })),
+      ...orderedMarked.map((p) => ({ name: p.name, lat: p.lat, lng: p.lng })),
       { name: last.name, lat: last.lat, lng: last.lng },
     ];
 
-    // Best-effort: between each pair of anchors, auto-insert through-passes that
-    // lie along the leg (within a corridor), so the route rides passes on the
-    // way without the user marking every single one. Spur/dead-end roads are
-    // excluded (kind !== "pass"); already-used passes are skipped.
-    const used = new Set<string>(ordered.map((p) => p.key));
-    const stops: Array<{ name: string; lat: number; lng: number }> = [anchors[0]];
-    for (let i = 1; i < anchors.length; i++) {
-      const a = anchors[i - 1];
-      const b = anchors[i];
-      if (passSession.autoFill) {
-        const candidates = passSession.passes.filter(
-          (p: KeyedPass) => !used.has(p.key) && !passMarks[p.key],
+    if (passSession.autoFill && marked.length > 0) {
+      try {
+        const opt = await optimizeLoop({
+          start: startPt,
+          end: endPt,
+          marked,
+          region: passSession.passes,
+          profile: "kurvig_plus",
+        });
+        stops = opt.stops;
+      } catch (e) {
+        // Router unreachable → fall back to the plain marked-only ordering.
+        setError(
+          `Pässe-Optimierer nicht erreichbar – einfache Reihenfolge verwendet. (${(e as Error).message})`,
         );
-        for (const p of throughPassesAlong(a, b, candidates)) {
-          if (used.has(p.key)) continue;
-          used.add(p.key);
-          stops.push({ name: p.name, lat: p.lat, lng: p.lng });
-        }
       }
-      stops.push({ name: b.name, lat: b.lat, lng: b.lng });
     }
+
     setPendingDay(false);
     setWaypoints(
       stops.map((s) => ({

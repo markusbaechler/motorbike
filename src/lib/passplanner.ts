@@ -117,49 +117,14 @@ export function orderByNearestNeighbour<T extends { lat: number; lng: number }>(
   return ordered;
 }
 
-/** Position of p relative to segment a→b: t = 0..1 along, perp = metres aside. */
-function alongAndPerp(
-  p: { lat: number; lng: number },
-  a: { lat: number; lng: number },
-  b: { lat: number; lng: number },
-): { t: number; perp: number } {
-  const Re = 6371000;
-  const r = (d: number) => (d * Math.PI) / 180;
-  const lat0 = r((a.lat + b.lat) / 2);
-  const x = (q: { lat: number; lng: number }) => Re * r(q.lng) * Math.cos(lat0);
-  const y = (q: { lat: number; lng: number }) => Re * r(q.lat);
-  const ax = x(a), ay = y(a), bx = x(b), by = y(b), px = x(p), py = y(p);
-  const dx = bx - ax, dy = by - ay;
-  const len = Math.hypot(dx, dy) || 1;
-  const ux = dx / len, uy = dy / len;
-  const rx = px - ax, ry = py - ay;
-  return { t: (rx * ux + ry * uy) / len, perp: Math.abs(rx * -uy + ry * ux) };
-}
-
 /**
- * Through-passes that lie *along* the leg a→b (inside a corridor), so a route
- * naturally rides over passes on the way without the user marking every one.
- * Spur/dead-end roads (kind "road") are never inserted. Ordered along the leg.
+ * Note: auto-adding "through-passes on the way" used to be done geometrically
+ * (project candidate passes onto the straight leg between two anchors). That
+ * was unreliable — between e.g. Susten and Gotthard the straight line runs east
+ * past Oberalp, so it picked the wrong passes. It has been replaced by the
+ * router-scored optimiser in passopt.ts (optimizeLoop), which judges every
+ * candidate with the real router (BRouter).
  */
-export function throughPassesAlong(
-  a: { lat: number; lng: number },
-  b: { lat: number; lng: number },
-  candidates: KeyedPass[],
-  opts: { corridorKm?: number; maxPerLeg?: number; minLegKm?: number } = {},
-): KeyedPass[] {
-  const corridor = (opts.corridorKm ?? 12) * 1000;
-  const maxPerLeg = opts.maxPerLeg ?? 6;
-  const minLeg = (opts.minLegKm ?? 8) * 1000;
-  if (haversine([a.lng, a.lat], [b.lng, b.lat]) < minLeg) return [];
-  const picks: { t: number; p: KeyedPass }[] = [];
-  for (const p of candidates) {
-    if (p.kind !== "pass") continue;
-    const { t, perp } = alongAndPerp(p, a, b);
-    if (t > 0.05 && t < 0.95 && perp <= corridor) picks.push({ t, p });
-  }
-  picks.sort((x, y) => x.t - y.t);
-  return picks.slice(0, maxPerLeg).map((x) => x.p);
-}
 
 /**
  * Order picks around their centroid by angle, so a round trip sweeps around
