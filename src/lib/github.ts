@@ -23,8 +23,10 @@ function toBase64(s: string): string {
 }
 
 async function currentSha(token: string): Promise<string | undefined> {
-  const res = await fetch(`${API}?ref=${encodeURIComponent(BRANCH)}`, {
+  // Always hit the network (a cached, stale SHA is what causes the 409).
+  const res = await fetch(`${API}?ref=${encodeURIComponent(BRANCH)}&t=${Date.now()}`, {
     headers: headers(token),
+    cache: "no-store",
   });
   if (res.status === 404) return undefined;
   if (!res.ok) {
@@ -37,21 +39,26 @@ async function currentSha(token: string): Promise<string | undefined> {
 
 /** Commit the given JSON content to public/passes.json on the deploy branch. */
 export async function commitPasses(jsonText: string, token: string): Promise<void> {
-  const sha = await currentSha(token);
-  const res = await fetch(API, {
-    method: "PUT",
-    headers: { ...headers(token), "Content-Type": "application/json" },
-    body: JSON.stringify({
-      message: "Pässe via Admin aktualisiert",
-      content: toBase64(jsonText),
-      sha,
-      branch: BRANCH,
-    }),
-  });
-  if (!res.ok) {
+  let lastError = "";
+  // Retry on 409 (SHA conflict): refetch the fresh SHA and try once more.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const sha = await currentSha(token);
+    const res = await fetch(API, {
+      method: "PUT",
+      headers: { ...headers(token), "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: "Pässe via Admin aktualisiert",
+        content: toBase64(jsonText),
+        sha,
+        branch: BRANCH,
+      }),
+    });
+    if (res.ok) return;
     const t = await res.text();
-    throw new Error(`GitHub-Speichern fehlgeschlagen (HTTP ${res.status}). ${t.slice(0, 200)}`);
+    lastError = `HTTP ${res.status}. ${t.slice(0, 200)}`;
+    if (res.status !== 409) break; // only SHA conflicts are worth retrying
   }
+  throw new Error(`GitHub-Speichern fehlgeschlagen (${lastError})`);
 }
 
 export const ADMIN_TARGET = { OWNER, REPO, BRANCH, PATH };
