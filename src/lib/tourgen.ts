@@ -1,7 +1,7 @@
 import { bearing, bearingDelta, destination, haversine, type Coord } from "./geo";
 import { fetchMultiPoint } from "./routing";
 import { analyse, type RouteAnalysis } from "./analysis";
-import { ensurePasses, type NamedPlace } from "./passes";
+import { DEFAULT_PASSES, type NamedPlace } from "./passes";
 import type { RouteProfile } from "../types";
 
 // The Tour-Genius generates real round trips (start = finish) and ranks them by
@@ -247,7 +247,11 @@ export async function findTours(
   // actively ride over them (instead of relying on the geometric circle alone).
   const startCoord: Coord = [start.lng, start.lat];
   const named = (p: NamedPlace): TourStop => ({ name: p.name, lat: p.lat, lng: p.lng });
-  const passes = await ensurePasses();
+  // Tour-Genius rides only the hand-curated set of great roads (DEFAULT_PASSES)
+  // so loop quality stays high. The full public/passes.json list (used by the
+  // separate pass feature) deliberately does NOT feed Genius — otherwise the
+  // many ordinary nearby passes crowd out the famous ones.
+  const passes = DEFAULT_PASSES;
   const inRange = passes
     .map((p) => ({
     p,
