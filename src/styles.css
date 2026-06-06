@@ -2072,23 +2072,44 @@ button {
 /* Floating pass-selection bar (top, does not cover the map) */
 .pass-select {
   position: absolute;
-  top: max(64px, calc(env(safe-area-inset-top) + 56px));
+  top: max(14px, calc(env(safe-area-inset-top) + 10px));
   left: 50%;
   transform: translateX(-50%);
-  z-index: 12;
-  width: min(560px, calc(100vw - 20px));
+  z-index: 13;
+  width: max-content;
+  max-width: calc(100vw - 20px);
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px 14px;
+  gap: 16px;
+  padding: 10px 12px 10px 16px;
   background: var(--panel);
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
+  border-radius: var(--pill);
+  box-shadow: var(--shadow);
+}
+
+/* Pässeplaner start/end markers + hover popup */
+.wp-marker.pass-endpoint {
+  width: 28px;
+  height: 28px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: default;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.25), 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+.pass-popup .maplibregl-popup-content {
+  background: #100f12;
+  color: #f6f5f3;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 5px 9px;
+  border-radius: 8px;
   box-shadow: var(--shadow-sm);
+}
+.pass-popup .maplibregl-popup-tip {
+  display: none;
 }
 
 .pass-select-info {

@@ -12,7 +12,14 @@ export interface PassPoint {
   lat: number;
   lng: number;
   surface: string;
+  height: number;
   mark: "none" | "need" | "nice";
+}
+
+export interface PassEndpoint {
+  lat: number;
+  lng: number;
+  name: string;
 }
 
 interface Props {
@@ -26,6 +33,7 @@ interface Props {
   // Pässeplaner: when non-null the map shows clickable pass dots and the normal
   // tap-to-add-waypoint behaviour is suppressed.
   passPoints?: PassPoint[] | null;
+  passEndpoints?: { start: PassEndpoint; end: PassEndpoint | null } | null;
   onTogglePass?: (key: string) => void;
 }
 
@@ -34,7 +42,13 @@ function passFeatures(points: PassPoint[]): GeoJSON.FeatureCollection {
     type: "FeatureCollection",
     features: points.map((p) => ({
       type: "Feature",
-      properties: { key: p.key, name: p.name, surface: p.surface, mark: p.mark },
+      properties: {
+        key: p.key,
+        name: p.name,
+        surface: p.surface,
+        height: p.height,
+        mark: p.mark,
+      },
       geometry: { type: "Point", coordinates: [p.lng, p.lat] },
     })),
   };
@@ -57,6 +71,7 @@ export default function MapView({
   onMoveWaypoint,
   onInsertWaypoint,
   passPoints = null,
+  passEndpoints = null,
   onTogglePass,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -68,6 +83,8 @@ export default function MapView({
   // True while the Pässeplaner pass layer is active (suppresses add-waypoint).
   const passModeRef = useRef(false);
   const fitPassCountRef = useRef(0);
+  const endpointMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const passPopupRef = useRef<maplibregl.Popup | null>(null);
 
   const addRef = useRef(onAddWaypoint);
   const moveRef = useRef(onMoveWaypoint);
@@ -167,6 +184,28 @@ export default function MapView({
           "circle-stroke-width": ["case", ["==", ["get", "mark"], "none"], 1, 2],
         },
       });
+      // Names of unmarked passes appear once you zoom in (mobile-friendly).
+      map.addLayer({
+        id: "pass-all-labels",
+        type: "symbol",
+        source: "passes",
+        filter: ["==", ["get", "mark"], "none"],
+        minzoom: 9.5,
+        layout: {
+          "text-field": ["get", "name"],
+          "text-size": 11,
+          "text-offset": [0, 1.0],
+          "text-anchor": "top",
+          "text-max-width": 11,
+          "text-optional": true,
+        },
+        paint: {
+          "text-color": "#dcd9d3",
+          "text-halo-color": "#100f12",
+          "text-halo-width": 1.3,
+        },
+      });
+      // Marked passes are always labelled (and brighter).
       map.addLayer({
         id: "pass-sel-labels",
         type: "symbol",
@@ -174,17 +213,42 @@ export default function MapView({
         filter: ["!=", ["get", "mark"], "none"],
         layout: {
           "text-field": ["get", "name"],
-          "text-size": 11,
+          "text-size": 12,
           "text-offset": [0, 1.1],
           "text-anchor": "top",
           "text-max-width": 12,
         },
         paint: {
-          "text-color": "#f6f5f3",
+          "text-color": "#ffffff",
           "text-halo-color": "#100f12",
-          "text-halo-width": 1.4,
+          "text-halo-width": 1.6,
         },
       });
+
+      const passPopup = new maplibregl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+        offset: 12,
+        className: "pass-popup",
+      });
+      passPopupRef.current = passPopup;
+
+      const showPopup = (e: maplibregl.MapLayerMouseEvent) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        const p = f.properties as { name?: string; height?: number };
+        const coords = (f.geometry as GeoJSON.Point).coordinates as [number, number];
+        const h = p.height ? ` · ${p.height} m` : "";
+        passPopup.setLngLat(coords).setText(`${p.name ?? ""}${h}`).addTo(map);
+        map.getCanvas().style.cursor = "pointer";
+      };
+      map.on("mouseenter", "pass-dots", showPopup);
+      map.on("mousemove", "pass-dots", showPopup);
+      map.on("mouseleave", "pass-dots", () => {
+        passPopup.remove();
+        map.getCanvas().style.cursor = "";
+      });
+
       map.on("click", "pass-dots", (e) => {
         const key = e.features?.[0]?.properties?.key as string | undefined;
         if (key) {
@@ -192,8 +256,6 @@ export default function MapView({
           togglePassRef.current?.(key);
         }
       });
-      map.on("mouseenter", "pass-dots", () => { map.getCanvas().style.cursor = "pointer"; });
-      map.on("mouseleave", "pass-dots", () => { map.getCanvas().style.cursor = ""; });
 
       loadedRef.current = true;
       setupLineDrag(map);
@@ -344,13 +406,41 @@ export default function MapView({
       if (pts.length > 0 && fitPassCountRef.current === 0) {
         const b = new maplibregl.LngLatBounds();
         pts.forEach((p) => b.extend([p.lng, p.lat]));
-        map.fitBounds(b, { padding: { top: 110, bottom: 160, left: 50, right: 50 }, maxZoom: 11 });
+        if (passEndpoints) {
+          b.extend([passEndpoints.start.lng, passEndpoints.start.lat]);
+          if (passEndpoints.end) b.extend([passEndpoints.end.lng, passEndpoints.end.lat]);
+        }
+        map.fitBounds(b, { padding: { top: 120, bottom: 160, left: 50, right: 50 }, maxZoom: 11 });
       }
       fitPassCountRef.current = pts.length;
     };
     if (loadedRef.current) apply();
     else map.once("load", apply);
   }, [passPoints]);
+
+  // --- Pässeplaner start/end markers ---
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    for (const m of endpointMarkersRef.current) m.remove();
+    endpointMarkersRef.current = [];
+    if (!passEndpoints) return;
+
+    const make = (pt: PassEndpoint, color: string, glyph: string) => {
+      const el = document.createElement("div");
+      el.className = "wp-marker pass-endpoint";
+      el.style.background = color;
+      el.textContent = glyph;
+      el.title = pt.name;
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat([pt.lng, pt.lat])
+        .setPopup(new maplibregl.Popup({ offset: 14, closeButton: false }).setText(pt.name))
+        .addTo(map);
+      endpointMarkersRef.current.push(marker);
+    };
+    make(passEndpoints.start, "#34d399", "S");
+    if (passEndpoints.end) make(passEndpoints.end, "#fb7185", "Z");
+  }, [passEndpoints]);
 
   // --- Fly to a searched location ---
   useEffect(() => {
