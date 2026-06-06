@@ -87,7 +87,7 @@ export function passesInCorridor(passes: KeyedPass[], p: CorridorParams): KeyedP
 
 /**
  * Order picks into a sensible visiting sequence with a greedy
- * nearest-neighbour walk from the start. Works for round trips too.
+ * nearest-neighbour walk from the start. Good for point-to-point trips.
  */
 export function orderByNearestNeighbour<T extends { lat: number; lng: number }>(
   start: { lat: number; lng: number },
@@ -111,4 +111,35 @@ export function orderByNearestNeighbour<T extends { lat: number; lng: number }>(
     cur = [next.lng, next.lat];
   }
   return ordered;
+}
+
+/**
+ * Order picks around their centroid by angle, so a round trip sweeps around
+ * the area in one direction (a clean loop) instead of doubling back. The loop
+ * is started at the pick whose angle is closest to the start → passes' general
+ * direction, for a natural exit from the start.
+ */
+export function orderForLoop<T extends { lat: number; lng: number }>(
+  start: { lat: number; lng: number },
+  picks: T[],
+): T[] {
+  if (picks.length <= 2) return orderByNearestNeighbour(start, picks);
+  const cLat = picks.reduce((s, p) => s + p.lat, 0) / picks.length;
+  const cLng = picks.reduce((s, p) => s + p.lng, 0) / picks.length;
+  const ang = (p: { lat: number; lng: number }) =>
+    Math.atan2(p.lat - cLat, p.lng - cLng);
+  const sorted = [...picks].sort((a, b) => ang(a) - ang(b));
+  // Rotate so the loop begins near the start's bearing into the cluster.
+  const startAng = Math.atan2(cLat - start.lat, cLng - start.lng);
+  let bestIdx = 0;
+  let bestDiff = Infinity;
+  sorted.forEach((p, i) => {
+    let d = Math.abs(ang(p) - startAng);
+    if (d > Math.PI) d = 2 * Math.PI - d;
+    if (d < bestDiff) {
+      bestDiff = d;
+      bestIdx = i;
+    }
+  });
+  return [...sorted.slice(bestIdx), ...sorted.slice(0, bestIdx)];
 }
