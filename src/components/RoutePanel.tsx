@@ -120,6 +120,13 @@ export default function RoutePanel({
   const days = computeDays(waypoints);
   const nums = dayNumbers(waypoints, days);
 
+  // A round trip ends where it starts (e.g. Tour-Genius loops). Such a tour has
+  // no final overnight to book, so we hide the accommodation UI for it.
+  const first = waypoints[0];
+  const last = waypoints[waypoints.length - 1];
+  const isRoundTrip =
+    waypoints.length >= 3 && !!first && !!last && first.lat === last.lat && first.lng === last.lng;
+
   // Collapse inactive days by default; only the last (active) day is open.
   // The user can toggle any day open/closed.
   const [openOverrides, setOpenOverrides] = useState<Record<number, boolean>>({});
@@ -320,7 +327,7 @@ export default function RoutePanel({
         )}
       </div>
 
-      {days.length > 0 && (
+      {days.length > 0 && !(isRoundTrip && days.length === 1) && (
         <div className="booking-row">
           <span className="booking-summary">
             <Icon name="bed" size={15} /> {bookingPrefs.adults} Erw.
@@ -387,13 +394,15 @@ export default function RoutePanel({
                     value={overnight.dayDate ?? ""}
                     onChange={(e) => onSetDayMeta(overnight.id, { dayDate: e.target.value })}
                   />
-                  <button
-                    className="hotel-btn"
-                    onClick={() => onOpenHotel(placeName(overnight), overnight.dayDate)}
-                    title="Hotels an diesem Übernachtungsort suchen"
-                  >
-                    <Icon name="bed" size={15} /> Hotels
-                  </button>
+                  {!(isFinalDay && isRoundTrip) && (
+                    <button
+                      className="hotel-btn"
+                      onClick={() => onOpenHotel(placeName(overnight), overnight.dayDate)}
+                      title="Hotels an diesem Übernachtungsort suchen"
+                    >
+                      <Icon name="bed" size={15} /> Hotels
+                    </button>
+                  )}
                 </div>
               )}
               {open && overnight.dayDate && weather[`${overnight.id}:${overnight.dayDate}`] === null && (
