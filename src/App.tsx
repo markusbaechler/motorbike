@@ -292,12 +292,10 @@ export default function App() {
     setShowPassPlanner(false);
   };
 
-  const togglePassMark = (key: string) =>
+  const setPassMark = (key: string, mark: PassMark | null) =>
     setPassMarks((prev) => {
-      const cur = prev[key];
       const next: Record<string, PassMark> = { ...prev };
-      if (cur === undefined) next[key] = "need";
-      else if (cur === "need") next[key] = "nice";
+      if (mark) next[key] = mark;
       else delete next[key];
       return next;
     });
@@ -434,7 +432,7 @@ export default function App() {
         onInsertWaypoint={insertWaypoint}
         passPoints={passPoints}
         passEndpoints={passEndpoints}
-        onTogglePass={togglePassMark}
+        onSetPassMark={setPassMark}
       />
 
       <RoutePanel

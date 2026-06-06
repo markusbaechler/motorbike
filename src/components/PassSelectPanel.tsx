@@ -28,7 +28,7 @@ export default function PassSelectPanel({
       <div className="pass-select-info">
         <strong>{total} Pässe im Korridor</strong>
         <span className="pass-select-hint">
-          Tippe Pässe an: 1× <b className="need">Need-to</b>, 2× <b className="nice">Nice-to</b>
+          Pass antippen → <b className="need">Need-to</b> / <b className="nice">Nice-to</b> wählen
         </span>
         <span className="pass-select-counts">
           <i className="pass-dot need" /> {needCount}
