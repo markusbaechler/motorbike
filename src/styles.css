@@ -1502,6 +1502,13 @@ button {
   .day-name-input {
     flex: 1 1 100%;
   }
+  /* Each control on its own full-width row so the blue "Hotels" button (opens
+     Booking.com) no longer sits flush against the date field where it gets
+     tapped by accident. */
+  .day-date-input,
+  .hotel-btn {
+    flex: 1 1 100%;
+  }
 
   .modal-backdrop {
     padding: 10px;
