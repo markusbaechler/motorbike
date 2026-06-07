@@ -2342,3 +2342,22 @@ button {
   max-height: 160px;
   overflow: auto;
 }
+
+.retry-btn {
+  margin-left: 8px;
+  background: rgba(255, 138, 30, 0.16);
+  color: var(--accent);
+  border: 1px solid rgba(255, 138, 30, 0.4);
+  border-radius: var(--pill);
+  padding: 3px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.retry-btn:hover { background: rgba(255, 138, 30, 0.26); }
+
+.rating-plan {
+  margin: 2px 0 6px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}

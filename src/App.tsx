@@ -250,6 +250,45 @@ export default function App() {
     setWaypoints([]);
   };
 
+  // Reverse the route direction (also flips per-leg profiles correctly and
+  // drops day metadata, which doesn't map cleanly when reversed).
+  const reverseRoute = () => {
+    setPendingDay(false);
+    setWaypoints((wps) => {
+      if (wps.length < 2) return wps;
+      const n = wps.length;
+      const rev = [...wps]
+        .reverse()
+        .map((w) => ({ ...w, dayEnd: undefined, dayName: undefined, dayDate: undefined }));
+      for (let k = 1; k < n; k++) rev[k].legProfile = wps[n - k].legProfile;
+      return rev;
+    });
+    setFitSignal((nn) => nn + 1);
+  };
+
+  // Close the route into a loop by appending the start as the final waypoint.
+  const makeRoundTrip = () => {
+    setPendingDay(false);
+    setWaypoints((wps) => {
+      if (wps.length < 2) return wps;
+      const first = wps[0];
+      const last = wps[wps.length - 1];
+      if (first.lat === last.lat && first.lng === last.lng) return wps;
+      return [
+        ...wps,
+        {
+          ...first,
+          id: makeId(),
+          legProfile: defaultProfile,
+          dayEnd: undefined,
+          dayName: undefined,
+          dayDate: undefined,
+        },
+      ];
+    });
+    setFitSignal((nn) => nn + 1);
+  };
+
   const onSearchSelect = (r: GeoResult) => {
     addWaypoint(r.lng, r.lat, r.name);
     setFocus({ lng: r.lng, lat: r.lat, key: Date.now() });
@@ -437,6 +476,9 @@ export default function App() {
 
   // Recompute the route whenever the waypoints change (coords, order or
   // per-leg profile). A short debounce avoids hammering the server.
+  // Bumping routeAttempt re-runs the routing (manual "retry" after an error).
+  const [routeAttempt, setRouteAttempt] = useState(0);
+  const retryRoute = () => setRouteAttempt((n) => n + 1);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => {
     if (waypoints.length < 2) {
@@ -468,7 +510,7 @@ export default function App() {
       controller.abort();
       clearTimeout(debounceRef.current);
     };
-  }, [waypoints]);
+  }, [waypoints, routeAttempt]);
 
   return (
     <div className="app">
@@ -503,6 +545,9 @@ export default function App() {
         route={route}
         loading={loading}
         error={error}
+        onRetryRoute={retryRoute}
+        onReverse={reverseRoute}
+        onRoundTrip={makeRoundTrip}
         pendingDay={pendingDay}
         bookingPrefs={bookingPrefs}
         onOpenDetails={() => setShowDetails(true)}

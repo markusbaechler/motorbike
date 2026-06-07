@@ -11,6 +11,9 @@ interface Props {
   route: RouteResult | null;
   loading: boolean;
   error: string | null;
+  onRetryRoute: () => void;
+  onReverse: () => void;
+  onRoundTrip: () => void;
   pendingDay: boolean;
   bookingPrefs: BookingPrefs;
   onOpenDetails: () => void;
@@ -99,6 +102,9 @@ export default function RoutePanel({
   route,
   loading,
   error,
+  onRetryRoute,
+  onReverse,
+  onRoundTrip,
   pendingDay,
   bookingPrefs,
   onOpenDetails,
@@ -297,6 +303,16 @@ export default function RoutePanel({
         </button>
         <span className="default-label">Neuer Abschnitt:</span>
         <ProfileToggle value={defaultProfile} onChange={onDefaultProfileChange} />
+        {waypoints.length >= 2 && (
+          <>
+            <button className="clear-btn" onClick={onReverse} title="Richtung umkehren">
+              <Icon name="down" size={14} /> Umkehren
+            </button>
+            <button className="clear-btn" onClick={onRoundTrip} title="Zurück zum Start (Rundtour)">
+              <Icon name="loop" size={14} /> Rundtour
+            </button>
+          </>
+        )}
         {waypoints.length > 0 && (
           <button className="clear-btn" onClick={onClear}>
             Zurücksetzen
@@ -314,7 +330,12 @@ export default function RoutePanel({
           <span className="hint">Nächsten Punkt setzen, um die Route zu berechnen.</span>
         )}
         {loading && <span className="hint">Route wird berechnet …</span>}
-        {error && <span className="error">⚠ {error}</span>}
+        {error && (
+          <span className="error">
+            ⚠ {error}
+            <button className="retry-btn" onClick={onRetryRoute}>Erneut versuchen</button>
+          </span>
+        )}
         {route && !loading && !error && (
           <span className="stats">
             {days.length > 1 && <strong>{days.length} Tage</strong>}

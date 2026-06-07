@@ -17,6 +17,9 @@ interface Props {
   onClose: () => void;
 }
 
+// Rough motorcycle tank range (km) for the fuel-stop estimate.
+const TANK_RANGE_KM = 300;
+
 function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = Math.round(minutes % 60);
@@ -185,6 +188,11 @@ export default function RouteModal({ waypoints, route, weather, onClose }: Props
                 {multiDay && <strong>{days.length} Tage · </strong>}
                 <strong>{route.distanceKm.toFixed(0)} km</strong> ·{" "}
                 <strong>{formatDuration(route.durationMin)}</strong>
+              </p>
+              <p className="rating-plan">
+                ⛽ ≈ {Math.max(0, Math.ceil(route.distanceKm / TANK_RANGE_KM) - 1)} Tankstopp
+                {Math.max(0, Math.ceil(route.distanceKm / TANK_RANGE_KM) - 1) === 1 ? "" : "s"}
+                {" · "}☕ Pause alle ~2 h ({Math.max(1, Math.round(route.durationMin / 120))}×)
               </p>
               <button className="info-link" onClick={() => setShowInfo(true)}>
                 <Icon name="info" size={15} /> Wie wird bewertet?
