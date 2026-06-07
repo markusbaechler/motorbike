@@ -85,12 +85,12 @@ export default function App() {
     }
     const draft = loadDraft();
     if (draft && draft.waypoints.length >= 1) {
+      // Restore the in-progress route so nothing is lost on an accidental
+      // reload, but stay on the Home screen — opening the app should show the
+      // planner start, not jump straight into the last tour. (A shared #r= link
+      // above still opens its route directly.)
       setWaypoints(draft.waypoints.map((w) => ({ ...w, id: makeId() })));
       if (draft.defaultProfile) setDefaultProfile(draft.defaultProfile as RouteProfile);
-      if (draft.waypoints.length >= 2) {
-        setShowHome(false);
-        setFitSignal((n) => n + 1);
-      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
