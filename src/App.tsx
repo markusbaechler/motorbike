@@ -25,7 +25,7 @@ import {
   saveBookingPrefs,
   listRoutes,
   saveDraft,
-  loadDraft,
+  clearDraft,
   type BookingPrefs,
 } from "./lib/storage";
 import { addDays, buildBookingUrl } from "./lib/booking";
@@ -72,8 +72,12 @@ export default function App() {
   const [showHome, setShowHome] = useState(true);
   const [showShare, setShowShare] = useState(false);
 
-  // On first launch: a shared route (#r=…) wins; otherwise restore the
-  // auto-saved draft so an accidental reload doesn't lose in-progress work.
+  // On first launch only a shared route (#r=…) opens directly. We deliberately
+  // do NOT auto-load the last saved draft into the map: opening the app should
+  // give a clean Home screen, not resurrect a previous session's waypoints
+  // (which then turned up as a stray marker in other tools). The draft is still
+  // written on every change, so a "resume last route" affordance can be added
+  // later without losing data.
   useEffect(() => {
     const shared = readSharedRoute();
     if (shared && shared.length >= 2) {
@@ -81,16 +85,6 @@ export default function App() {
       setShowHome(false);
       setFitSignal((n) => n + 1);
       history.replaceState(null, "", window.location.pathname + window.location.search);
-      return;
-    }
-    const draft = loadDraft();
-    if (draft && draft.waypoints.length >= 1) {
-      // Restore the in-progress route so nothing is lost on an accidental
-      // reload, but stay on the Home screen — opening the app should show the
-      // planner start, not jump straight into the last tour. (A shared #r= link
-      // above still opens its route directly.)
-      setWaypoints(draft.waypoints.map((w) => ({ ...w, id: makeId() })));
-      if (draft.defaultProfile) setDefaultProfile(draft.defaultProfile as RouteProfile);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -248,6 +242,9 @@ export default function App() {
   const clearAll = () => {
     setPendingDay(false);
     setWaypoints([]);
+    setRoute(null);
+    setError(null);
+    clearDraft(); // hard reset: forget the saved draft too
   };
 
   // Reverse the route direction (also flips per-leg profiles correctly and
