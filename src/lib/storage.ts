@@ -124,6 +124,38 @@ export function parseRouteFile(text: string): { name: string; waypoints: Waypoin
   return { name: typeof d.name === "string" ? d.name : "Importierte Route", waypoints: d.waypoints };
 }
 
+// --- Recently used places (search convenience) ---
+
+export interface RecentPlace {
+  name: string;
+  lat: number;
+  lng: number;
+}
+
+const RECENT_KEY = "motorbike.recent.v1";
+const RECENT_MAX = 8;
+
+export function getRecentPlaces(): RecentPlace[] {
+  try {
+    const data = JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]");
+    return Array.isArray(data) ? (data as RecentPlace[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function addRecentPlace(p: RecentPlace): void {
+  try {
+    const list = getRecentPlaces().filter(
+      (r) => r.name !== p.name || Math.abs(r.lat - p.lat) > 1e-4 || Math.abs(r.lng - p.lng) > 1e-4,
+    );
+    list.unshift({ name: p.name, lat: p.lat, lng: p.lng });
+    localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, RECENT_MAX)));
+  } catch {
+    /* ignore */
+  }
+}
+
 // --- Booking / accommodation preferences (once per device) ---
 
 export interface BookingPrefs {

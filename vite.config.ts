@@ -6,6 +6,18 @@ import { VitePWA } from "vite-plugin-pwa";
 // GitHub Pages subpath (e.g. https://<user>.github.io/motorbike/).
 export default defineConfig({
   base: "./",
+  build: {
+    rollupOptions: {
+      output: {
+        // Split heavy vendors into their own chunks so they cache independently
+        // and download in parallel (better repeat-visit performance).
+        manualChunks: {
+          maplibre: ["maplibre-gl"],
+          qrcode: ["qrcode"],
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({

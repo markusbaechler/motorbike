@@ -2361,3 +2361,14 @@ button {
   font-size: 0.82rem;
   color: var(--muted);
 }
+
+.search-recent-head {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  cursor: default;
+  padding-bottom: 2px;
+}
+.search-recent-head:hover { background: none; }
+.search-recent-icon { opacity: 0.5; }
