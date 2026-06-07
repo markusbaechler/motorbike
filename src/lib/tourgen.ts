@@ -37,13 +37,14 @@ export interface TourCandidate {
 // Target ride distance per duration (real road km on curvy roads).
 const TARGET_KM: Record<TourDuration, number> = { half: 90, full: 190 };
 // Realistic ride-time budget per duration. Mountain passes are slow (~35 km/h),
-// so distance alone is a poor proxy: the Genius must cap saddle time too. A
-// "1 Tag" tour is a day out (≈6 h riding, leaving time for stops/lunch), NOT a
-// 10 h marathon. These bound both the ranking penalty and the hard filter.
+// so distance alone is a poor proxy: the Genius must cap saddle time too.
+// TARGET_MIN is the comfortable target the ranking steers toward; MAX_MIN is the
+// hard ceiling a tour may reach: a half day may take up to 4 h, a full day 8 h.
 const TARGET_MIN: Record<TourDuration, number> = { half: 180, full: 360 };
-const MAX_MIN: Record<TourDuration, number> = { half: 270, full: 450 };
-// Hard upper distance bound (× target). The lower bound stays soft (inBand).
-const MAX_KM_FACTOR = 1.5;
+const MAX_MIN: Record<TourDuration, number> = { half: 240, full: 480 };
+// Hard upper distance bound (× target); kept generous so the ride-time ceiling
+// (MAX_MIN) is the binding constraint, not distance. Lower bound stays soft.
+const MAX_KM_FACTOR = 1.7;
 
 // Roads are a bit longer than the straight circle through the via-points.
 const DETOUR = 1.3;
