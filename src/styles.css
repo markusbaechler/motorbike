@@ -2257,7 +2257,9 @@ button {
 .pp-nice.on { background: #f59e0b; color: #2a1402; border-color: transparent; }
 .pp-rm { flex: 0 0 auto; color: var(--muted); }
 
-/* Pässeplaner: pass dots as DOM markers (robust against style errors) */
+/* Pässeplaner: pass dots as DOM markers (robust against style errors).
+   NOTE: do NOT set `position` here — MapLibre positions its markers with
+   `position: absolute` and overriding it makes the dots drift on zoom/pan. */
 .pass-marker {
   width: 16px;
   height: 16px;
@@ -2266,11 +2268,11 @@ button {
   border: 2px solid #ffffff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
   cursor: pointer;
-  position: relative;
   transition: transform 0.1s ease;
 }
 /* Finger-sized invisible hit area around the small visual dot so passes are
-   easy to tap on a phone without enlarging the dot itself. */
+   easy to tap on a phone without enlarging the dot itself. Anchors to the
+   marker element, which MapLibre already makes `position: absolute`. */
 .pass-marker::before {
   content: "";
   position: absolute;
