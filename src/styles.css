@@ -1427,11 +1427,16 @@ button {
 /* ------------------------------------------------------------------ */
 @media (max-width: 620px) {
   .panel {
-    padding: 14px 12px;
+    padding: 16px 12px;
     padding-bottom: max(14px, env(safe-area-inset-bottom));
     max-height: 64dvh;
     border-radius: 24px 24px 0 0;
   }
+
+  /* On small screens the panel's top padding is tighter; the grabber's
+     negative pull would jam the expand/collapse chevron into the rounded top
+     corner. Drop the pull so the chevron sits cleanly on the grabber line. */
+  .panel-handle { margin-top: 0; }
 
   .panel-row.top {
     gap: 8px;
