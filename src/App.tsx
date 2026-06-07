@@ -527,8 +527,11 @@ export default function App() {
       {!passSession && <SearchBox onSelect={onSearchSelect} />}
 
       <MapView
-        waypoints={waypoints}
-        route={route}
+        // The Pässeplaner is a dedicated mode (the SearchBox is hidden too):
+        // don't clutter it with the normal route's waypoints/line, which may
+        // include a restored draft from an earlier session.
+        waypoints={passSession ? [] : waypoints}
+        route={passSession ? null : route}
         focus={focus}
         fitSignal={fitSignal}
         onAddWaypoint={addWaypoint}
