@@ -36,6 +36,14 @@ export interface TourCandidate {
 
 // Target ride distance per duration (real road km on curvy roads).
 const TARGET_KM: Record<TourDuration, number> = { half: 90, full: 190 };
+// Realistic ride-time budget per duration. Mountain passes are slow (~35 km/h),
+// so distance alone is a poor proxy: the Genius must cap saddle time too. A
+// "1 Tag" tour is a day out (≈6 h riding, leaving time for stops/lunch), NOT a
+// 10 h marathon. These bound both the ranking penalty and the hard filter.
+const TARGET_MIN: Record<TourDuration, number> = { half: 180, full: 360 };
+const MAX_MIN: Record<TourDuration, number> = { half: 270, full: 450 };
+// Hard upper distance bound (× target). The lower bound stays soft (inBand).
+const MAX_KM_FACTOR = 1.5;
 
 // Roads are a bit longer than the straight circle through the via-points.
 const DETOUR = 1.3;
@@ -56,6 +64,10 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 
 export function targetKm(duration: TourDuration): number {
   return TARGET_KM[duration];
+}
+
+export function targetMin(duration: TourDuration): number {
+  return TARGET_MIN[duration];
 }
 
 interface Sample {
@@ -294,16 +306,21 @@ export async function findTours(
     throw new Error("Keine Tour gefunden. Anderen Start oder eine andere Dauer versuchen.");
   }
 
-  // Wider band than the requested length: in the mountains the standout loop
-  // (passes, side valleys) is often a bit longer, and we'd rather offer it than
-  // a tame valley lap. The preview shows the real distance anyway.
-  const inBand = (c: TourCandidate) =>
-    c.distanceKm >= target * 0.6 && c.distanceKm <= target * 1.7;
+  const tMin = TARGET_MIN[duration];
+  const maxMin = MAX_MIN[duration];
+  const maxKm = target * MAX_KM_FACTOR;
+
+  // A "day tour" must actually fit in a day. Reject anything over the realistic
+  // ride-time / distance ceiling outright — a twisty mountain loop may run a bit
+  // long, but a 10 h, 380 km slog is never the answer to "Tagestour".
+  const fitsDay = (c: TourCandidate) => c.durationMin <= maxMin && c.distanceKm <= maxKm;
+  // Soft lower bound too: don't offer a tiny lap when a half/full day was asked.
+  const inBand = (c: TourCandidate) => c.distanceKm >= target * 0.6 && fitsDay(c);
 
   // What riders actually want: lots of climbing, passes, curves and small
-  // back-roads. Score that explicitly and only lightly weigh distance, so a
-  // twisty mountain loop beats a flat lap around the lake. Spurs are still
-  // penalised; roundness matters only a little.
+  // back-roads — but inside a realistic time budget, and as a genuine loop
+  // rather than a there-and-back down a main valley. Spurs, big roads and
+  // overshooting the requested length/time are all punished hard.
   const ascentPerKm = (c: TourCandidate) =>
     c.distanceKm > 0 ? c.analysis.ascentM / c.distanceKm : 0;
   const share = (km: number, c: TourCandidate) =>
@@ -314,6 +331,12 @@ export async function findTours(
     // Big roads the rider does NOT want: Hauptstrassen + Schnellstrassen + Autobahn.
     const bigShare = share(rk.haupt + rk.schnell + rk.autobahn, c);
     const smallShare = share(rk.neben, c); // little Landstrassen
+    // Overshooting the requested size is punished much harder than undershooting
+    // (a slightly short loop is fine, a double-length marathon is not), and saddle
+    // time over the day budget is penalised on top.
+    const overKm = Math.max(0, c.distanceKm - target) / target;
+    const underKm = Math.max(0, target - c.distanceKm) / target;
+    const overMin = Math.max(0, c.durationMin - tMin) / tMin;
     return (
       s.curves * 0.95 + // twisty
       s.mountains * 1.4 + // altitude + passes + climb
@@ -321,16 +344,21 @@ export async function findTours(
       Math.min(ascentPerKm(c), 18) * 0.18 + // climbing density (hm/km)
       smallShare * 6 + // reward small Landstrassen
       c.passBonus * 2.5 - // deliberately rides a famous curated pass/road
-      bigShare * 10 - // strongly punish Haupt-/Schnellstr./Autobahn
-      c.doubled * 6 - // dead-end / there-and-back stubs
-      (Math.abs(c.distanceKm - target) / target) * 2
+      bigShare * 14 - // strongly punish Haupt-/Schnellstr./Autobahn (valley slogs)
+      c.doubled * 10 - // dead-end / there-and-back stubs
+      overKm * 9 - // too long for the requested duration
+      underKm * 3 - // a bit short
+      overMin * 6 // over the realistic ride-time budget
     );
   };
 
-  // Drop only the clearly broken ones (heavy spurs / wildly wrong length), but
-  // always keep enough to browse so the rider never gets just "1 / 1".
+  // Drop the clearly broken ones (heavy spurs) and anything that can't fit the
+  // day, but always keep enough to browse so the rider never gets just "1 / 1".
+  // The time/distance ceiling (fitsDay) is enforced in EVERY fallback so an
+  // over-long monster can never slip through when few clean loops are found.
   let pool = ok.filter((c) => c.doubled <= 0.22 && inBand(c));
-  if (pool.length < 3) pool = ok.filter((c) => c.doubled <= 0.32);
+  if (pool.length < 3) pool = ok.filter((c) => c.doubled <= 0.32 && fitsDay(c));
+  if (pool.length === 0) pool = ok.filter(fitsDay);
   if (pool.length === 0) pool = ok;
 
   pool.sort((a, b) => fun(b) - fun(a));

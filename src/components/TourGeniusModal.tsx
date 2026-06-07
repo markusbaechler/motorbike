@@ -2,7 +2,7 @@ import { useState } from "react";
 import Icon from "./Icon";
 import PlaceInput from "./PlaceInput";
 import { searchPlaces, type GeoResult } from "../lib/geocoding";
-import { findTours, targetKm, type TourCandidate, type TourDuration } from "../lib/tourgen";
+import { findTours, targetKm, targetMin, type TourCandidate, type TourDuration } from "../lib/tourgen";
 import type { RouteProfile } from "../types";
 
 interface Props {
@@ -92,14 +92,14 @@ export default function TourGeniusModal({ onResults, onClose }: Props) {
               onClick={() => setDuration("half")}
             >
               <strong>½ Tag</strong>
-              <span>≈ {targetKm("half")} km</span>
+              <span>≈ {targetKm("half")} km · ~{Math.round(targetMin("half") / 60)} h</span>
             </button>
             <button
               className={`tg-choice ${duration === "full" ? "active" : ""}`}
               onClick={() => setDuration("full")}
             >
               <strong>1 Tag</strong>
-              <span>≈ {targetKm("full")} km</span>
+              <span>≈ {targetKm("full")} km · ~{Math.round(targetMin("full") / 60)} h</span>
             </button>
           </div>
 
