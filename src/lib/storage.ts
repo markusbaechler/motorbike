@@ -60,6 +60,46 @@ export function renameRoute(id: string, name: string): void {
   }
 }
 
+// --- Auto-saved draft of the route currently being planned ---
+// Protects work-in-progress against an accidental reload / app close (the live
+// route otherwise only exists in memory).
+
+export interface RouteDraft {
+  waypoints: Waypoint[];
+  defaultProfile: string;
+  savedAt: number;
+}
+
+const DRAFT_KEY = "motorbike.draft.v1";
+
+export function saveDraft(waypoints: Waypoint[], defaultProfile: string): void {
+  try {
+    if (waypoints.length === 0) {
+      localStorage.removeItem(DRAFT_KEY);
+      return;
+    }
+    const draft: RouteDraft = { waypoints, defaultProfile, savedAt: Date.now() };
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+  } catch {
+    /* storage full / unavailable → ignore */
+  }
+}
+
+export function loadDraft(): RouteDraft | null {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw) as RouteDraft;
+    return Array.isArray(d.waypoints) && d.waypoints.length > 0 ? d : null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearDraft(): void {
+  localStorage.removeItem(DRAFT_KEY);
+}
+
 // --- File export / import (device transfer & sharing) ---
 
 export function exportRouteFile(name: string, waypoints: Waypoint[]): void {

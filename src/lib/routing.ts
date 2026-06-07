@@ -196,6 +196,51 @@ interface Leg {
   profile: RouteProfile;
 }
 
+// --- Network robustness -----------------------------------------------------
+// The public BRouter server is free but occasionally slow or briefly
+// unavailable. Wrap requests with a timeout and a few retries (exponential
+// backoff) on timeouts, network errors and transient server errors (5xx/429),
+// so a hiccup doesn't surface as a hard failure.
+const REQUEST_TIMEOUT_MS = 20000;
+const MAX_TRIES = 3;
+
+const backoff = (attempt: number) =>
+  new Promise((r) => setTimeout(r, 600 * 2 ** attempt));
+
+async function brouterFetch(url: string, signal?: AbortSignal): Promise<Response> {
+  let lastErr: Error | null = null;
+  for (let attempt = 0; attempt < MAX_TRIES; attempt++) {
+    if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+    const ctrl = new AbortController();
+    const onAbort = () => ctrl.abort();
+    signal?.addEventListener("abort", onAbort, { once: true });
+    const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
+    try {
+      const res = await fetch(url, { signal: ctrl.signal });
+      if ((res.status >= 500 || res.status === 429) && attempt < MAX_TRIES - 1) {
+        lastErr = new Error(`HTTP ${res.status}`);
+        await backoff(attempt);
+        continue;
+      }
+      return res;
+    } catch (e) {
+      // The caller aborted (e.g. waypoints changed) → propagate, don't retry.
+      if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+      // Otherwise it was our timeout or a network error → retry.
+      lastErr = e as Error;
+      if (attempt < MAX_TRIES - 1) {
+        await backoff(attempt);
+        continue;
+      }
+      throw lastErr;
+    } finally {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", onAbort);
+    }
+  }
+  throw lastErr ?? new Error("Routing fehlgeschlagen");
+}
+
 async function fetchLeg(
   from: Waypoint,
   to: Waypoint,
@@ -217,7 +262,7 @@ async function fetchLeg(
 
     let res: Response;
     try {
-      res = await fetch(url, { signal });
+      res = await brouterFetch(url, signal);
     } catch (e) {
       if ((e as Error).name === "AbortError") throw e;
       lastError = (e as Error).message;
@@ -278,7 +323,7 @@ export async function fetchMultiPoint(
 
     let res: Response;
     try {
-      res = await fetch(url, { signal });
+      res = await brouterFetch(url, signal);
     } catch (e) {
       if ((e as Error).name === "AbortError") throw e;
       lastError = (e as Error).message;

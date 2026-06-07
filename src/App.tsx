@@ -20,7 +20,14 @@ import Home from "./components/Home";
 import ShareModal from "./components/ShareModal";
 import SearchBox from "./components/SearchBox";
 import { readSharedRoute } from "./lib/share";
-import { getBookingPrefs, saveBookingPrefs, listRoutes, type BookingPrefs } from "./lib/storage";
+import {
+  getBookingPrefs,
+  saveBookingPrefs,
+  listRoutes,
+  saveDraft,
+  loadDraft,
+  type BookingPrefs,
+} from "./lib/storage";
 import { addDays, buildBookingUrl } from "./lib/booking";
 import { computeDays } from "./lib/days";
 import { fetchWeather, type WeatherDay } from "./lib/weather";
@@ -65,7 +72,8 @@ export default function App() {
   const [showHome, setShowHome] = useState(true);
   const [showShare, setShowShare] = useState(false);
 
-  // Load a route shared via URL hash (#r=…) on first launch.
+  // On first launch: a shared route (#r=…) wins; otherwise restore the
+  // auto-saved draft so an accidental reload doesn't lose in-progress work.
   useEffect(() => {
     const shared = readSharedRoute();
     if (shared && shared.length >= 2) {
@@ -73,9 +81,24 @@ export default function App() {
       setShowHome(false);
       setFitSignal((n) => n + 1);
       history.replaceState(null, "", window.location.pathname + window.location.search);
+      return;
+    }
+    const draft = loadDraft();
+    if (draft && draft.waypoints.length >= 1) {
+      setWaypoints(draft.waypoints.map((w) => ({ ...w, id: makeId() })));
+      if (draft.defaultProfile) setDefaultProfile(draft.defaultProfile as RouteProfile);
+      if (draft.waypoints.length >= 2) {
+        setShowHome(false);
+        setFitSignal((n) => n + 1);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-save the current route as a draft on every change.
+  useEffect(() => {
+    saveDraft(waypoints, defaultProfile);
+  }, [waypoints, defaultProfile]);
 
   // PWA install handling (Android/Chrome native prompt; iOS shows a hint).
   type InstallPrompt = { prompt: () => void; userChoice: Promise<unknown> };

@@ -2306,3 +2306,39 @@ button {
   border-width: 3px;
   box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.35), 0 1px 5px rgba(0, 0, 0, 0.5);
 }
+
+/* --- Global crash fallback (ErrorBoundary) --- */
+.crash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg);
+}
+.crash-card {
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+.crash-card h1 { font-size: 1.3rem; margin: 0 0 8px; }
+.crash-card p { color: var(--muted); margin: 0 0 14px; }
+.crash-detail {
+  text-align: left;
+  font-size: 0.78rem;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 0 0 16px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 160px;
+  overflow: auto;
+}
