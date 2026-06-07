@@ -5,12 +5,16 @@ import { DEFAULT_CENTER, DEFAULT_ZOOM, MAP_STYLE_URL } from "../config";
 import rawPasses from "../data/passes.json";
 import rawCoords from "../data/pass-coords.json";
 import type {
+  Endpoint,
   GeoPass,
   LngLat,
   MarkState,
   Pass,
+  SavedRoute,
+  SavedRouteMeta,
   SurfaceFilter,
 } from "../lib/types";
+import { newRouteId, routeStore } from "../lib/routeStore";
 import { withNeighbours } from "../lib/countries";
 import {
   cachedCoord,
@@ -45,12 +49,6 @@ function bakedCoord(pass: Pass): LngLat | undefined {
   return c ? { lon: c[0], lat: c[1] } : undefined;
 }
 
-interface Endpoint {
-  text: string;
-  coord: LngLat | null;
-  label: string | null;
-}
-
 const EMPTY_LINE: GeoJSON.Feature<GeoJSON.LineString> = {
   type: "Feature",
   properties: {},
@@ -83,6 +81,11 @@ export default function PassPlanner() {
   const [marks, setMarks] = useState<Record<string, MarkState>>({});
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [routeOrder, setRouteOrder] = useState<GeoPass[]>([]);
+
+  // --- saved routes (M6) ---------------------------------------------------
+  const [saved, setSaved] = useState<SavedRouteMeta[]>([]);
+  const [routeName, setRouteName] = useState("");
+  const [currentId, setCurrentId] = useState<string | null>(null);
 
   // --- status --------------------------------------------------------------
   const [status, setStatus] = useState<string>("");
@@ -372,6 +375,105 @@ export default function PassPlanner() {
     }
   }, [start.coord, dest.coord, roundTrip, selected, surface]);
 
+  // --- saved routes: load list, save, load, delete -------------------------
+  const refreshSaved = useCallback(async () => {
+    setSaved(await routeStore.list());
+  }, []);
+
+  useEffect(() => {
+    void refreshSaved();
+  }, [refreshSaved]);
+
+  const saveCurrent = useCallback(async () => {
+    const name = routeName.trim();
+    if (!name) {
+      setStatus("Bitte einen Namen für die Route eingeben.");
+      return;
+    }
+    if (!start.text.trim()) {
+      setStatus("Es gibt noch nichts zu speichern – zuerst eine Route planen.");
+      return;
+    }
+    const id = currentId ?? newRouteId();
+    const entry: SavedRoute = {
+      id,
+      name,
+      updatedAt: Date.now(),
+      start,
+      roundTrip,
+      dest,
+      surface,
+      includeNeighbours,
+      corridorKm,
+      marks,
+    };
+    await routeStore.save(entry);
+    setCurrentId(id);
+    await refreshSaved();
+    setStatus(`Route „${name}“ gespeichert.`);
+  }, [
+    routeName,
+    currentId,
+    start,
+    roundTrip,
+    dest,
+    surface,
+    includeNeighbours,
+    corridorKm,
+    marks,
+    refreshSaved,
+  ]);
+
+  const loadSaved = useCallback(
+    async (id: string) => {
+      const entry = await routeStore.load(id);
+      if (!entry) {
+        setStatus("Diese Route existiert nicht mehr.");
+        await refreshSaved();
+        return;
+      }
+      loadToken.current++; // cancel any in-flight pass loading
+      setStart(entry.start);
+      setRoundTrip(entry.roundTrip);
+      setDest(entry.dest);
+      setSurface(entry.surface);
+      setIncludeNeighbours(entry.includeNeighbours);
+      setCorridorKm(entry.corridorKm);
+      setMarks(entry.marks);
+      setRouteName(entry.name);
+      setCurrentId(entry.id);
+      // Reset derived state; the user re-runs "Pässe einblenden" to render.
+      setPasses([]);
+      setRoute(null);
+      setRouteOrder([]);
+      const map = mapRef.current;
+      (map?.getSource(SRC_ROUTE) as maplibregl.GeoJSONSource)?.setData(
+        EMPTY_LINE,
+      );
+      placeMarker(startMarker, entry.start.coord, "#22c55e", map);
+      placeMarker(destMarker, entry.dest.coord, "#ef4444", map);
+      if (entry.start.coord) {
+        map?.flyTo({
+          center: [entry.start.coord.lon, entry.start.coord.lat],
+          zoom: 8,
+        });
+      }
+      setStatus(
+        `„${entry.name}“ geladen. „Pässe einblenden“, um die Karte zu füllen.`,
+      );
+    },
+    [refreshSaved],
+  );
+
+  const deleteSaved = useCallback(
+    async (id: string) => {
+      await routeStore.remove(id);
+      if (currentId === id) setCurrentId(null);
+      await refreshSaved();
+    },
+    [currentId, refreshSaved],
+  );
+
   const needCount = selected.filter((p) => marks[p.id] === "need").length;
   const niceCount = selected.filter((p) => marks[p.id] === "nice").length;
 
@@ -406,6 +508,13 @@ export default function PassPlanner() {
         route={route}
         routeOrder={routeOrder}
         flyTo={(p) => mapRef.current?.flyTo({ center: [p.lon, p.lat], zoom: 12 })}
+        saved={saved}
+        routeName={routeName}
+        setRouteName={setRouteName}
+        currentId={currentId}
+        saveCurrent={saveCurrent}
+        loadSaved={loadSaved}
+        deleteSaved={deleteSaved}
       />
     </>
   );
@@ -413,10 +522,15 @@ export default function PassPlanner() {
 
 function placeMarker(
   ref: React.MutableRefObject<maplibregl.Marker | null>,
-  coord: LngLat,
+  coord: LngLat | null,
   color: string,
-  map: maplibregl.Map,
+  map: maplibregl.Map | null,
 ) {
+  if (!coord || !map) {
+    ref.current?.remove();
+    ref.current = null;
+    return;
+  }
   if (!ref.current) {
     ref.current = new maplibregl.Marker({ color }).addTo(map);
   }
@@ -453,6 +567,13 @@ interface PanelProps {
   route: RouteResult | null;
   routeOrder: GeoPass[];
   flyTo: (p: GeoPass) => void;
+  saved: SavedRouteMeta[];
+  routeName: string;
+  setRouteName: (v: string) => void;
+  currentId: string | null;
+  saveCurrent: () => void;
+  loadSaved: (id: string) => void;
+  deleteSaved: (id: string) => void;
 }
 
 function Panel(props: PanelProps) {
@@ -485,6 +606,13 @@ function Panel(props: PanelProps) {
     route,
     routeOrder,
     flyTo,
+    saved,
+    routeName,
+    setRouteName,
+    currentId,
+    saveCurrent,
+    loadSaved,
+    deleteSaved,
   } = props;
 
   return (
@@ -590,6 +718,48 @@ function Panel(props: PanelProps) {
             <button onClick={reset} disabled={busy}>
               Zurücksetzen
             </button>
+          </div>
+
+          {/* Saved routes (M6) – local-first; cloud sync planned for M7. */}
+          <div className="saved">
+            <div className="saved__save">
+              <input
+                type="text"
+                value={routeName}
+                placeholder="Routenname"
+                onChange={(e) => setRouteName(e.target.value)}
+              />
+              <button onClick={saveCurrent} title="Aktuelle Route speichern">
+                {currentId ? "Aktualisieren" : "Speichern"}
+              </button>
+            </div>
+            {saved.length > 0 && (
+              <ul className="saved__list">
+                {saved.map((r) => (
+                  <li
+                    key={r.id}
+                    className={`saved__item ${
+                      r.id === currentId ? "saved__item--active" : ""
+                    }`}
+                  >
+                    <button
+                      className="saved__name"
+                      onClick={() => loadSaved(r.id)}
+                      title="Route laden"
+                    >
+                      {r.name}
+                    </button>
+                    <button
+                      className="saved__del"
+                      onClick={() => deleteSaved(r.id)}
+                      title="Route löschen"
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           {progress && (

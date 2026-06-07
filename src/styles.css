@@ -220,6 +220,80 @@ fieldset.field .radio {
   line-height: 1.35;
 }
 
+.saved {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding-top: 10px;
+}
+
+.saved__save {
+  display: flex;
+  gap: 8px;
+}
+
+.saved__save input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+.saved__save button {
+  flex: 0 0 auto;
+}
+
+.saved__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 22vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.saved__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  border-radius: 6px;
+}
+
+.saved__item--active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.saved__name {
+  flex: 1;
+  text-align: left !important;
+  background: none !important;
+  border: none !important;
+  padding: 4px 2px !important;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saved__del {
+  flex: 0 0 auto !important;
+  background: none !important;
+  border: none !important;
+  opacity: 0.6;
+  padding: 4px 6px !important;
+}
+
+.saved__del:hover {
+  opacity: 1;
+}
+
 .passlist {
   display: flex;
   flex-direction: column;

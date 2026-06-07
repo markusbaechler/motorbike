@@ -99,5 +99,9 @@ gecacht) zurück, sodass nichts fehlt.
 - [ ] **M3 – Route bearbeiten**: Wegpunkte verschieben, Distanz/Zeit/Höhenprofil.
 - [ ] **M4 – Sehenswürdigkeiten**: POIs entlang der Route, Filter.
 - [ ] **M5 – Booking.com**: Deep-Link-Buttons pro Etappe/Ort.
-- [ ] **M6 – Speichern & PWA-Feinschliff**: Routen lokal speichern/laden.
-- [ ] **M7 (optional)**: Konten + Cloud-Sync, Offline-Karten.
+- [x] **M6 – Speichern**: Routen (Start/Ziel, Korridor, Markierungen) lokal
+  benennen, speichern, laden und löschen. Persistenz hinter einer
+  `RouteStore`-Abstraktion ([`src/lib/routeStore.ts`](src/lib/routeStore.ts)),
+  damit Cloud-Sync später als zweite Implementierung andocken kann.
+- [ ] **M7 (optional)**: Konten + **opt-in** Cloud-Sync (Supabase), Offline-Karten.
+  Sync bleibt freiwillig – ohne Login funktioniert die App vollständig lokal.
