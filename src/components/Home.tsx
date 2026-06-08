@@ -81,7 +81,7 @@ export default function Home({
           <div className="home-feat">
             <span className="home-feat-icon kurvig"><Icon name="zap" size={18} /></span>
             <strong>Kurvig</strong>
-            <span>Fun-Routing über kleine Straßen &amp; Pässe</span>
+            <span>Fun-Routing über kleine Strassen &amp; Pässe</span>
           </div>
           <div className="home-feat">
             <span className="home-feat-icon bed"><Icon name="bed" size={18} /></span>
