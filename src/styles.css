@@ -1964,13 +1964,25 @@ button {
   width: 100%;
   margin-bottom: 4px;
 }
-.tg-modes .toggle-btn {
+.tg-modes .toggle-btn,
+.tg-styles .toggle-btn {
   flex: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
   padding: 11px 14px;
+}
+
+/* Fahrstil toggle: full width, consistent with Tour-Typ and Dauer above. */
+.tg-styles {
+  display: flex;
+  width: 100%;
+}
+
+/* Give the primary action room so it doesn't cling to the Fahrstil row. */
+.tg-go {
+  margin-top: 22px;
 }
 
 .tg-choices {
