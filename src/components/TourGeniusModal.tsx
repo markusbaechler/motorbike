@@ -159,7 +159,7 @@ export default function TourGeniusModal({ onResults, onClose }: Props) {
           </div>
 
           <label className="tg-label">Fahrstil</label>
-          <span className="toggle">
+          <span className="toggle tg-styles">
             {PROFILES.map((p) => (
               <button
                 key={p.id}
@@ -173,7 +173,7 @@ export default function TourGeniusModal({ onResults, onClose }: Props) {
 
           {error && <p className="error">⚠ {error}</p>}
 
-          <button className="export-btn primary" disabled={busy} onClick={search}>
+          <button className="export-btn primary tg-go" disabled={busy} onClick={search}>
             {busy ? "Beste Tour wird gesucht …" : (
               <><Icon name="compass" size={17} /> Tour finden</>
             )}
