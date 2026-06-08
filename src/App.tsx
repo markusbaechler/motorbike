@@ -674,7 +674,6 @@ export default function App() {
             setShowHome(false);
             setShowRoutes(true);
           }}
-          onMap={() => setShowHome(false)}
         />
       )}
     </div>

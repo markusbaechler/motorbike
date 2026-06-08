@@ -10,7 +10,6 @@ interface Props {
   onGenius: () => void;
   onPasses: () => void;
   onRoutes: () => void;
-  onMap: () => void;
 }
 
 export default function Home({
@@ -22,7 +21,6 @@ export default function Home({
   onGenius,
   onPasses,
   onRoutes,
-  onMap,
 }: Props) {
   const [showIosHint, setShowIosHint] = useState(false);
   return (
@@ -50,7 +48,7 @@ export default function Home({
           </button>
           <button className="home-cta genius" onClick={onGenius}>
             <Icon name="compass" size={20} /> Tour-Genius
-            <span className="home-cta-sub">Rundtour automatisch finden</span>
+            <span className="home-cta-sub">Touren automatisch generieren</span>
           </button>
           <button className="home-cta passes" onClick={onPasses}>
             <Icon name="mountain" size={20} /> Pässeplaner
@@ -70,10 +68,6 @@ export default function Home({
               <Icon name="download" size={19} /> Als App installieren
             </button>
           )}
-
-          <button className="home-link" onClick={onMap}>
-            Direkt zur Karte →
-          </button>
 
           {showIosHint && (
             <p className="ios-hint">
