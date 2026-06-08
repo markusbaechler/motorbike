@@ -182,6 +182,72 @@ function cleanVias(samples: Sample[], k: number): TourStop[] {
   return vias;
 }
 
+// Route a fixed set of stops once and turn it into a scored candidate.
+// (findTours has its own inline equivalents tuned for the loop optimiser; this
+// shared helper is used by the point-to-point generator below.)
+async function routeCandidate(
+  stops: TourStop[],
+  profile: RouteProfile,
+  passBonus: number,
+  signal?: AbortSignal,
+): Promise<TourCandidate> {
+  const r = await fetchMultiPoint(stops, profile, signal);
+  const s = resample(r.feature);
+  return {
+    stops,
+    distanceKm: r.distanceKm,
+    durationMin: r.durationMin,
+    roundness: roundnessOf(r.feature, r.distanceKm * 1000),
+    doubled: doubledOf(s),
+    passBonus,
+    analysis: analyse([r.feature]),
+  };
+}
+
+// Rider-attractiveness score: lots of climbing, passes, curves and small
+// back-roads, inside a realistic time budget, with big roads / overshoot
+// punished. Mirrors the round-trip ranking so both modes feel consistent.
+function funScore(c: TourCandidate, target: number, tMin: number): number {
+  const s = c.analysis.scores;
+  const rk = c.analysis.roadKm;
+  const share = (km: number) => (c.distanceKm > 0 ? km / c.distanceKm : 0);
+  const ascentPerKm = c.distanceKm > 0 ? c.analysis.ascentM / c.distanceKm : 0;
+  const bigShare = share(rk.haupt + rk.schnell + rk.autobahn);
+  const smallShare = share(rk.neben);
+  const overKm = Math.max(0, c.distanceKm - target) / target;
+  const underKm = Math.max(0, target - c.distanceKm) / target;
+  const overMin = Math.max(0, c.durationMin - tMin) / tMin;
+  return (
+    s.curves * 0.95 +
+    s.mountains * 1.4 +
+    Math.min(c.analysis.passes, 8) * 0.9 +
+    Math.min(ascentPerKm, 18) * 0.18 +
+    smallShare * 6 +
+    c.passBonus * 2.5 -
+    bigShare * 14 -
+    c.doubled * 10 -
+    overKm * 9 -
+    underKm * 3 -
+    overMin * 6
+  );
+}
+
+// De-duplicate near-identical candidates (same length & climb) so the variants
+// the rider browses are genuinely different routes. Returns up to 6.
+function dedupe(pool: TourCandidate[]): TourCandidate[] {
+  const variants: TourCandidate[] = [];
+  for (const c of pool) {
+    const dup = variants.some(
+      (v) =>
+        Math.abs(v.distanceKm - c.distanceKm) < 3 &&
+        Math.abs(v.analysis.ascentM - c.analysis.ascentM) < 150,
+    );
+    if (!dup) variants.push(c);
+    if (variants.length >= 6) break;
+  }
+  return variants.length > 0 ? variants : pool.slice(0, 6);
+}
+
 export async function findTours(
   start: { lat: number; lng: number; name?: string },
   duration: TourDuration,
@@ -448,18 +514,118 @@ export async function findTours(
   if (pool.length === 0) pool = ok;
 
   pool.sort((a, b) => fun(b) - fun(a));
+  return dedupe(pool);
+}
 
-  // De-duplicate near-identical loops (same length & climb) so the variants the
-  // rider browses are genuinely different routes.
-  const variants: TourCandidate[] = [];
-  for (const c of pool) {
-    const dup = variants.some(
-      (v) =>
-        Math.abs(v.distanceKm - c.distanceKm) < 3 &&
-        Math.abs(v.analysis.ascentM - c.analysis.ascentM) < 150,
-    );
-    if (!dup) variants.push(c);
-    if (variants.length >= 6) break;
+// Point-to-point variant: scenic routes from `start` to a different `dest`
+// (not a loop). We generate a spread of detours — perpendicular offsets off the
+// direct line plus curated passes that lie within the corridor — and rank them
+// with the same rider-attractiveness score as the round trips.
+export async function findToursToDest(
+  start: { lat: number; lng: number; name?: string },
+  dest: { lat: number; lng: number; name?: string },
+  duration: TourDuration,
+  profile: RouteProfile,
+  signal?: AbortSignal,
+): Promise<TourCandidate[]> {
+  const a: Coord = [start.lng, start.lat];
+  const b: Coord = [dest.lng, dest.lat];
+  const startStop: TourStop = { lat: start.lat, lng: start.lng, name: start.name };
+  const destStop: TourStop = { lat: dest.lat, lng: dest.lng, name: dest.name };
+  const directKm = haversine(a, b) / 1000;
+  const dir = bearing(a, b);
+  // A detour can't be shorter than the direct line; aim a bit beyond it, but at
+  // least the chosen day length so ½-Tag/1-Tag still scale the scenic detour.
+  const target = Math.max(TARGET_KM[duration], directKm * 1.15);
+  const tMin = TARGET_MIN[duration];
+  const maxMin = MAX_MIN[duration];
+  const offScale = directKm * 1000;
+
+  const jobs: Promise<TourCandidate>[] = [];
+  // The plain direct route as a baseline.
+  jobs.push(routeCandidate([startStop, destStop], profile, 0, signal));
+
+  // Single perpendicular detour: push a via off the direct line at a few points
+  // along it, on either side, by a few offsets.
+  const ALONG = [0.35, 0.5, 0.65];
+  const OFF = [0.18, 0.32, 0.5];
+  const SIDE = [90, -90];
+  for (const along of ALONG) {
+    const base = destination(a, dir, offScale * along);
+    for (const off of OFF) {
+      for (const side of SIDE) {
+        const v = destination(base, (dir + side + 360) % 360, offScale * off);
+        jobs.push(routeCandidate([startStop, { lng: v[0], lat: v[1] }, destStop], profile, 0, signal));
+      }
+    }
   }
-  return variants.length > 0 ? variants : pool.slice(0, 6);
+  // Two-via S-detours on the same side for longer, more deliberate swings.
+  for (const off of [0.22, 0.4]) {
+    for (const side of SIDE) {
+      const p1 = destination(destination(a, dir, offScale * 0.33), (dir + side + 360) % 360, offScale * off);
+      const p2 = destination(destination(a, dir, offScale * 0.66), (dir + side + 360) % 360, offScale * off);
+      jobs.push(
+        routeCandidate(
+          [startStop, { lng: p1[0], lat: p1[1] }, { lng: p2[0], lat: p2[1] }, destStop],
+          profile,
+          0,
+          signal,
+        ),
+      );
+    }
+  }
+
+  // --- Curated passes inside the start→dest corridor ---
+  const lat0 = (start.lat * Math.PI) / 180;
+  const kx = Math.cos(lat0) * 111320;
+  const ky = 110540;
+  const ax = a[0] * kx, ay = a[1] * ky;
+  const bx = b[0] * kx, by = b[1] * ky;
+  const dxL = bx - ax, dyL = by - ay;
+  const len2 = dxL * dxL + dyL * dyL || 1;
+  const corridor = DEFAULT_PASSES.map((p) => {
+    const px = p.lng * kx, py = p.lat * ky;
+    const t = ((px - ax) * dxL + (py - ay) * dyL) / len2; // 0..1 along the line
+    const perp = Math.hypot(px - (ax + t * dxL), py - (ay + t * dyL)) / 1000; // km off
+    return { p, t, perp };
+  })
+    .filter((x) => x.t > 0.08 && x.t < 0.92 && x.perp <= Math.max(20, directKm * 0.45))
+    .sort((u, v) => u.perp - v.perp)
+    .slice(0, 8);
+
+  const named = (p: NamedPlace): TourStop => ({ name: p.name, lat: p.lat, lng: p.lng });
+  for (const x of corridor) {
+    jobs.push(routeCandidate([startStop, named(x.p), destStop], profile, 1, signal));
+  }
+  // Pairs of corridor passes, visited in order along the line.
+  const byT = [...corridor].sort((u, v) => u.t - v.t);
+  for (let i = 0; i < byT.length; i++) {
+    for (let j = i + 1; j < byT.length; j++) {
+      if (byT[j].t - byT[i].t < 0.2) continue;
+      jobs.push(
+        routeCandidate([startStop, named(byT[i].p), named(byT[j].p), destStop], profile, 2, signal),
+      );
+    }
+  }
+
+  const settled = await Promise.allSettled(jobs);
+  if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+  const ok = settled
+    .filter((s): s is PromiseFulfilledResult<TourCandidate> => s.status === "fulfilled")
+    .map((s) => s.value);
+  if (ok.length === 0) {
+    throw new Error("Keine Strecke gefunden. Anderen Start/Zielort oder eine andere Dauer versuchen.");
+  }
+
+  // Keep routes from roughly direct up to a generous detour, within the day's
+  // ride-time ceiling so a scenic detour never balloons past the budget.
+  const maxKm = Math.max(target, directKm) * 1.8;
+  const fits = (c: TourCandidate) =>
+    c.distanceKm >= directKm * 0.9 && c.distanceKm <= maxKm && c.durationMin <= maxMin;
+  let pool = ok.filter((c) => c.doubled <= 0.18 && fits(c));
+  if (pool.length < 3) pool = ok.filter((c) => c.doubled <= 0.3 && c.durationMin <= maxMin);
+  if (pool.length === 0) pool = ok;
+
+  pool.sort((u, v) => funScore(v, target, tMin) - funScore(u, target, tMin));
+  return dedupe(pool);
 }
