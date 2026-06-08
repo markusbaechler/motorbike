@@ -54,10 +54,6 @@ const CELL_M = 170;
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
-export function targetKm(duration: TourDuration): number {
-  return TARGET_KM[duration];
-}
-
 interface Sample {
   lng: number;
   lat: number;
@@ -155,6 +151,69 @@ function cleanVias(samples: Sample[], k: number): TourStop[] {
   return vias;
 }
 
+// Route a fixed set of stops once and turn it into a scored candidate.
+async function routeCandidate(
+  stops: TourStop[],
+  profile: RouteProfile,
+  passBonus: number,
+  signal?: AbortSignal,
+): Promise<TourCandidate> {
+  const r = await fetchMultiPoint(stops, profile, signal);
+  const s = resample(r.feature);
+  return {
+    stops,
+    distanceKm: r.distanceKm,
+    durationMin: r.durationMin,
+    roundness: roundnessOf(r.feature, r.distanceKm * 1000),
+    doubled: doubledOf(s),
+    passBonus,
+    analysis: analyse([r.feature]),
+  };
+}
+
+const ascentPerKm = (c: TourCandidate) =>
+  c.distanceKm > 0 ? c.analysis.ascentM / c.distanceKm : 0;
+const shareKm = (km: number, c: TourCandidate) =>
+  c.distanceKm > 0 ? km / c.distanceKm : 0;
+
+// What riders actually want: lots of climbing, passes, curves and small
+// back-roads. Score that explicitly and only lightly weigh distance, so a
+// twisty mountain route beats a flat lap. Spurs are still penalised.
+function funScore(c: TourCandidate, target: number): number {
+  const s = c.analysis.scores;
+  const rk = c.analysis.roadKm;
+  // Big roads the rider does NOT want: Hauptstrassen + Schnellstrassen + Autobahn.
+  const bigShare = shareKm(rk.haupt + rk.schnell + rk.autobahn, c);
+  const smallShare = shareKm(rk.neben, c); // little Landstrassen
+  return (
+    s.curves * 0.95 + // twisty
+    s.mountains * 1.4 + // altitude + passes + climb
+    Math.min(c.analysis.passes, 8) * 0.9 + // explicit pass bonus
+    Math.min(ascentPerKm(c), 18) * 0.18 + // climbing density (hm/km)
+    smallShare * 6 + // reward small Landstrassen
+    c.passBonus * 2.5 - // deliberately rides a famous curated pass/road
+    bigShare * 10 - // strongly punish Haupt-/Schnellstr./Autobahn
+    c.doubled * 6 - // dead-end / there-and-back stubs
+    (Math.abs(c.distanceKm - target) / target) * 2
+  );
+}
+
+// De-duplicate near-identical candidates (same length & climb) so the variants
+// the rider browses are genuinely different routes. Returns up to 6.
+function dedupe(pool: TourCandidate[]): TourCandidate[] {
+  const variants: TourCandidate[] = [];
+  for (const c of pool) {
+    const dup = variants.some(
+      (v) =>
+        Math.abs(v.distanceKm - c.distanceKm) < 3 &&
+        Math.abs(v.analysis.ascentM - c.analysis.ascentM) < 150,
+    );
+    if (!dup) variants.push(c);
+    if (variants.length >= 6) break;
+  }
+  return variants.length > 0 ? variants : pool.slice(0, 6);
+}
+
 export async function findTours(
   start: { lat: number; lng: number; name?: string },
   duration: TourDuration,
@@ -221,22 +280,6 @@ export async function findTours(
     }
   };
 
-  // Route a fixed set of stops once (no refinement) — used for the curated
-  // pass loops, whose waypoints already sit on great roads.
-  const buildStops = async (stops: TourStop[], passBonus: number): Promise<TourCandidate> => {
-    const r = await fetchMultiPoint(stops, profile, signal);
-    const s = resample(r.feature);
-    return {
-      stops,
-      distanceKm: r.distanceKm,
-      durationMin: r.durationMin,
-      roundness: roundnessOf(r.feature, r.distanceKm * 1000),
-      doubled: doubledOf(s),
-      passBonus,
-      analysis: analyse([r.feature]),
-    };
-  };
-
   const jobs: Promise<TourCandidate>[] = [];
   for (const rf of RADIUS_FACTORS) {
     for (const deg of BEARINGS) jobs.push(build(deg, baseRadiusM * rf));
@@ -282,7 +325,7 @@ export async function findTours(
       passes: 1,
     });
   }
-  for (const ps of passSets) jobs.push(buildStops(ps.stops, ps.passes));
+  for (const ps of passSets) jobs.push(routeCandidate(ps.stops, profile, ps.passes, signal));
 
   const settled = await Promise.allSettled(jobs);
   if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
@@ -300,52 +343,120 @@ export async function findTours(
   const inBand = (c: TourCandidate) =>
     c.distanceKm >= target * 0.6 && c.distanceKm <= target * 1.7;
 
-  // What riders actually want: lots of climbing, passes, curves and small
-  // back-roads. Score that explicitly and only lightly weigh distance, so a
-  // twisty mountain loop beats a flat lap around the lake. Spurs are still
-  // penalised; roundness matters only a little.
-  const ascentPerKm = (c: TourCandidate) =>
-    c.distanceKm > 0 ? c.analysis.ascentM / c.distanceKm : 0;
-  const share = (km: number, c: TourCandidate) =>
-    c.distanceKm > 0 ? km / c.distanceKm : 0;
-  const fun = (c: TourCandidate) => {
-    const s = c.analysis.scores;
-    const rk = c.analysis.roadKm;
-    // Big roads the rider does NOT want: Hauptstrassen + Schnellstrassen + Autobahn.
-    const bigShare = share(rk.haupt + rk.schnell + rk.autobahn, c);
-    const smallShare = share(rk.neben, c); // little Landstrassen
-    return (
-      s.curves * 0.95 + // twisty
-      s.mountains * 1.4 + // altitude + passes + climb
-      Math.min(c.analysis.passes, 8) * 0.9 + // explicit pass bonus
-      Math.min(ascentPerKm(c), 18) * 0.18 + // climbing density (hm/km)
-      smallShare * 6 + // reward small Landstrassen
-      c.passBonus * 2.5 - // deliberately rides a famous curated pass/road
-      bigShare * 10 - // strongly punish Haupt-/Schnellstr./Autobahn
-      c.doubled * 6 - // dead-end / there-and-back stubs
-      (Math.abs(c.distanceKm - target) / target) * 2
-    );
-  };
-
   // Drop only the clearly broken ones (heavy spurs / wildly wrong length), but
   // always keep enough to browse so the rider never gets just "1 / 1".
   let pool = ok.filter((c) => c.doubled <= 0.22 && inBand(c));
   if (pool.length < 3) pool = ok.filter((c) => c.doubled <= 0.32);
   if (pool.length === 0) pool = ok;
 
-  pool.sort((a, b) => fun(b) - fun(a));
+  pool.sort((a, b) => funScore(b, target) - funScore(a, target));
+  return dedupe(pool);
+}
 
-  // De-duplicate near-identical loops (same length & climb) so the variants the
-  // rider browses are genuinely different routes.
-  const variants: TourCandidate[] = [];
-  for (const c of pool) {
-    const dup = variants.some(
-      (v) =>
-        Math.abs(v.distanceKm - c.distanceKm) < 3 &&
-        Math.abs(v.analysis.ascentM - c.analysis.ascentM) < 150,
-    );
-    if (!dup) variants.push(c);
-    if (variants.length >= 6) break;
+// Point-to-point variant: scenic routes from `start` to a different `dest`
+// (not a loop). We generate a spread of detours — perpendicular offsets off the
+// direct line plus curated passes that lie within the corridor — and rank them
+// with the same rider-attractiveness score as the round trips.
+export async function findToursToDest(
+  start: { lat: number; lng: number; name?: string },
+  dest: { lat: number; lng: number; name?: string },
+  duration: TourDuration,
+  profile: RouteProfile,
+  signal?: AbortSignal,
+): Promise<TourCandidate[]> {
+  const a: Coord = [start.lng, start.lat];
+  const b: Coord = [dest.lng, dest.lat];
+  const startStop: TourStop = { lat: start.lat, lng: start.lng, name: start.name };
+  const destStop: TourStop = { lat: dest.lat, lng: dest.lng, name: dest.name };
+  const directKm = haversine(a, b) / 1000;
+  const dir = bearing(a, b);
+  // A detour can't be shorter than the direct line; aim a bit beyond it, but at
+  // least the chosen day length so ½-Tag/1-Tag still scale the scenic detour.
+  const target = Math.max(TARGET_KM[duration], directKm * 1.15);
+  const offScale = directKm * 1000;
+
+  const jobs: Promise<TourCandidate>[] = [];
+  // The plain direct route as a baseline.
+  jobs.push(routeCandidate([startStop, destStop], profile, 0, signal));
+
+  // Single perpendicular detour: push a via off the direct line at a few points
+  // along it, on either side, by a few offsets.
+  const ALONG = [0.35, 0.5, 0.65];
+  const OFF = [0.18, 0.32, 0.5];
+  const SIDE = [90, -90];
+  for (const along of ALONG) {
+    const base = destination(a, dir, offScale * along);
+    for (const off of OFF) {
+      for (const side of SIDE) {
+        const v = destination(base, (dir + side + 360) % 360, offScale * off);
+        jobs.push(routeCandidate([startStop, { lng: v[0], lat: v[1] }, destStop], profile, 0, signal));
+      }
+    }
   }
-  return variants.length > 0 ? variants : pool.slice(0, 6);
+  // Two-via S-detours on the same side for longer, more deliberate swings.
+  for (const off of [0.22, 0.4]) {
+    for (const side of SIDE) {
+      const p1 = destination(destination(a, dir, offScale * 0.33), (dir + side + 360) % 360, offScale * off);
+      const p2 = destination(destination(a, dir, offScale * 0.66), (dir + side + 360) % 360, offScale * off);
+      jobs.push(
+        routeCandidate(
+          [startStop, { lng: p1[0], lat: p1[1] }, { lng: p2[0], lat: p2[1] }, destStop],
+          profile,
+          0,
+          signal,
+        ),
+      );
+    }
+  }
+
+  // --- Curated passes inside the start→dest corridor ---
+  const lat0 = (start.lat * Math.PI) / 180;
+  const kx = Math.cos(lat0) * 111320;
+  const ky = 110540;
+  const ax = a[0] * kx, ay = a[1] * ky;
+  const bx = b[0] * kx, by = b[1] * ky;
+  const dxL = bx - ax, dyL = by - ay;
+  const len2 = dxL * dxL + dyL * dyL || 1;
+  const corridor = DEFAULT_PASSES.map((p) => {
+    const px = p.lng * kx, py = p.lat * ky;
+    const t = ((px - ax) * dxL + (py - ay) * dyL) / len2; // 0..1 along the line
+    const perp = Math.hypot(px - (ax + t * dxL), py - (ay + t * dyL)) / 1000; // km off
+    return { p, t, perp };
+  })
+    .filter((x) => x.t > 0.08 && x.t < 0.92 && x.perp <= Math.max(20, directKm * 0.45))
+    .sort((u, v) => u.perp - v.perp)
+    .slice(0, 8);
+
+  const named = (p: NamedPlace): TourStop => ({ name: p.name, lat: p.lat, lng: p.lng });
+  for (const x of corridor) {
+    jobs.push(routeCandidate([startStop, named(x.p), destStop], profile, 1, signal));
+  }
+  // Pairs of corridor passes, visited in order along the line.
+  const byT = [...corridor].sort((u, v) => u.t - v.t);
+  for (let i = 0; i < byT.length; i++) {
+    for (let j = i + 1; j < byT.length; j++) {
+      if (byT[j].t - byT[i].t < 0.2) continue;
+      jobs.push(
+        routeCandidate([startStop, named(byT[i].p), named(byT[j].p), destStop], profile, 2, signal),
+      );
+    }
+  }
+
+  const settled = await Promise.allSettled(jobs);
+  if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+  const ok = settled
+    .filter((s): s is PromiseFulfilledResult<TourCandidate> => s.status === "fulfilled")
+    .map((s) => s.value);
+  if (ok.length === 0) {
+    throw new Error("Keine Strecke gefunden. Anderen Start/Zielort oder eine andere Dauer versuchen.");
+  }
+
+  // Keep routes from roughly direct up to a generous detour of the target.
+  const maxKm = Math.max(target, directKm) * 1.8;
+  let pool = ok.filter((c) => c.doubled <= 0.18 && c.distanceKm >= directKm * 0.9 && c.distanceKm <= maxKm);
+  if (pool.length < 3) pool = ok.filter((c) => c.doubled <= 0.3);
+  if (pool.length === 0) pool = ok;
+
+  pool.sort((u, v) => funScore(v, target) - funScore(u, target));
+  return dedupe(pool);
 }
