@@ -126,23 +126,81 @@ export function orderByNearestNeighbour<T extends { lat: number; lng: number }>(
  * candidate with the real router (BRouter).
  */
 
+// Largest pick count for which we brute-force the optimal visiting order. 7
+// passes → 5040 permutations, trivial; beyond that we fall back to the angular
+// sweep. Riders practically never mark more than a handful.
+const BRUTE_MAX = 7;
+
+/** Total straight-line length of the closed tour start → seq… → start. */
+function loopLength(
+  start: { lat: number; lng: number },
+  seq: { lat: number; lng: number }[],
+): number {
+  const s: Coord = [start.lng, start.lat];
+  let len = haversine(s, [seq[0].lng, seq[0].lat]);
+  for (let i = 1; i < seq.length; i++) {
+    len += haversine([seq[i - 1].lng, seq[i - 1].lat], [seq[i].lng, seq[i].lat]);
+  }
+  return len + haversine([seq[seq.length - 1].lng, seq[seq.length - 1].lat], s);
+}
+
+/** Visit every permutation of `items` exactly once (Heap's algorithm). */
+function forEachPermutation<T>(items: T[], visit: (perm: T[]) => void): void {
+  const a = [...items];
+  const c = new Array(a.length).fill(0);
+  visit([...a]);
+  let i = 0;
+  while (i < a.length) {
+    if (c[i] < i) {
+      const j = i % 2 === 0 ? 0 : c[i];
+      [a[i], a[j]] = [a[j], a[i]];
+      visit([...a]);
+      c[i]++;
+      i = 0;
+    } else {
+      c[i] = 0;
+      i++;
+    }
+  }
+}
+
 /**
- * Order picks around their centroid by angle, so a round trip sweeps around
- * the area in one direction (a clean loop) instead of doubling back. The loop
- * is started at the pick whose angle is closest to the start → passes' general
- * direction, for a natural exit from the start.
+ * Order picks into a clean, crossing-free round-trip sequence.
+ *
+ * For a handful of passes we brute-force the shortest closed tour
+ * (start → … → start). The optimal tour is provably free of self-crossings AND
+ * naturally enters/exits at the passes nearest the start — which is exactly what
+ * the old angular sweep got wrong: starting e.g. Susten/Grimsel/Furka from
+ * Wassen it cut the loop at Grimsel (the farthest pass), forcing the route to
+ * drive out past Furka to reach Grimsel and straight back again. Beyond
+ * BRUTE_MAX picks we fall back to an angular sweep around the centroid.
  */
 export function orderForLoop<T extends { lat: number; lng: number }>(
   start: { lat: number; lng: number },
   picks: T[],
 ): T[] {
   if (picks.length <= 2) return orderByNearestNeighbour(start, picks);
+
+  if (picks.length <= BRUTE_MAX) {
+    let best = picks;
+    let bestLen = Infinity;
+    forEachPermutation(picks, (perm) => {
+      const len = loopLength(start, perm);
+      if (len < bestLen) {
+        bestLen = len;
+        best = perm;
+      }
+    });
+    return best;
+  }
+
+  // Fallback for many picks: angular sweep around the centroid, started near the
+  // start's bearing into the cluster.
   const cLat = picks.reduce((s, p) => s + p.lat, 0) / picks.length;
   const cLng = picks.reduce((s, p) => s + p.lng, 0) / picks.length;
   const ang = (p: { lat: number; lng: number }) =>
     Math.atan2(p.lat - cLat, p.lng - cLng);
   const sorted = [...picks].sort((a, b) => ang(a) - ang(b));
-  // Rotate so the loop begins near the start's bearing into the cluster.
   const startAng = Math.atan2(cLat - start.lat, cLng - start.lng);
   let bestIdx = 0;
   let bestDiff = Infinity;

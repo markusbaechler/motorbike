@@ -27,9 +27,14 @@ const PASSES = JSON.parse(
 ).map((p) => ({ ...p, key: `${p.lat},${p.lng}` }));
 
 const byName = (needle) => {
-  const hit = PASSES.find((p) =>
-    p.name.toLowerCase().includes(needle.toLowerCase()),
-  );
+  // Prefer an exact name, then a through-pass match, then any match — so e.g.
+  // "Grimselpass" picks the real pass, not "Oberaarsee (… Grimselpass)" (a
+  // dead-end spur) that merely contains the word.
+  const lc = needle.toLowerCase();
+  const hit =
+    PASSES.find((p) => p.name.toLowerCase() === lc) ||
+    PASSES.find((p) => p.name.toLowerCase().includes(lc) && p.kind === "pass") ||
+    PASSES.find((p) => p.name.toLowerCase().includes(lc));
   if (!hit) throw new Error(`Pass not found: ${needle}`);
   return hit;
 };
@@ -158,6 +163,18 @@ await runCase({
   end: null,
   markedNames: ["Furkapass", "Sustenpass"],
   expectIncludes: ["Furka", "Susten"],
+});
+
+// Regression: marking the three classic passes must yield the clean
+// Susten–Grimsel–Furka triangle (in order, both endpoints near the start) — NOT
+// an over-stuffed knot down to Gotthard/Nufenen with an eastward Oberalp spur.
+await runCase({
+  name: "Wassen · Rundtour · markiert Susten + Grimsel + Furka (keine Überfüllung)",
+  start: wassen,
+  end: null,
+  markedNames: ["Sustenpass", "Grimselpass", "Furkapass"],
+  expectIncludes: ["Susten", "Grimsel", "Furka"],
+  expectExcludes: ["Oberalp", "Nufenen", "Gotthard"],
 });
 
 console.log(`\n${failures === 0 ? "✅ ALLE TESTS GRÜN" : `❌ ${failures} TEST(S) FEHLGESCHLAGEN`}`);

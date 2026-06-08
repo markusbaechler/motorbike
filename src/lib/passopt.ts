@@ -66,6 +66,16 @@ const W_PASS = 35;
 const W_KM = 1;
 const W_DOUBLED = 480;
 
+// Absolute ceiling on a tour's retraced fraction. A pure score gate can't stop
+// over-stuffing: each extra pass lengthens the loop, which DILUTES the global
+// `doubled` fraction, so spurs/southern bulges (Oberalp, Nufenen) keep sneaking
+// in and the loop ties itself in knots. The clean Alpine multi-pass loops the
+// optimiser is meant to produce stay well under this (Susten-Grimsel-Furka-
+// Gotthard ≈ 0.05, Gotthard-Furka-Grimsel-Brünig ≈ 0.09); the 7-pass tangle that
+// prompted this gate sat at ≈ 0.16. Any insertion that pushes a tour above the
+// ceiling is rejected outright, regardless of how many passes it would add.
+const MAX_DOUBLED = 0.11;
+
 const score = (t: { passCount: number; distanceKm: number; doubled: number }) =>
   t.passCount * W_PASS - t.distanceKm * W_KM - t.doubled * W_DOUBLED;
 
@@ -271,10 +281,13 @@ export async function optimizeLoop(params: OptimizeParams): Promise<OptResult> {
       } catch {
         continue; // routing failed for this trial — skip it
       }
-      // Keep the best candidate that improves the routed score. The retracing
-      // term in the score is what rejects out-and-back spurs (a marginal-only
-      // gate can't: a genuine through-pass like Furka raises the global
-      // `doubled` more than a short spur does, because it lengthens the loop).
+      // Reject anything that turns the tour into a knot (absolute retracing
+      // ceiling) before even considering the score — this is what stops the
+      // optimiser from stuffing in spurs/bulges (Oberalp, Nufenen) that the
+      // dilution-prone score alone lets through.
+      if (routed.doubled > MAX_DOUBLED) continue;
+      // Among the acceptable candidates, keep the one that improves the routed
+      // score most.
       if (score(routed) > score(current) && (!best || score(routed) > score(best))) {
         best = routed;
         bestKey = p.key;
