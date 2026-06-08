@@ -2,6 +2,8 @@ import { bearing, bearingDelta, destination, haversine, type Coord } from "./geo
 import { fetchMultiPoint } from "./routing";
 import { analyse, type RouteAnalysis } from "./analysis";
 import { DEFAULT_PASSES, type NamedPlace } from "./passes";
+import { optimizeLoop, type OptResult } from "./passopt";
+import { ensureEuroPasses, type KeyedPass } from "./passplanner";
 import type { RouteProfile } from "../types";
 
 // The Tour-Genius generates real round trips (start = finish) and ranks them by
@@ -36,6 +38,15 @@ export interface TourCandidate {
 
 // Target ride distance per duration (real road km on curvy roads).
 const TARGET_KM: Record<TourDuration, number> = { half: 90, full: 190 };
+// Realistic ride-time budget per duration. Mountain passes are slow (~35 km/h),
+// so distance alone is a poor proxy: the Genius must cap saddle time too.
+// TARGET_MIN is the comfortable target the ranking steers toward; MAX_MIN is the
+// hard ceiling a tour may reach: a half day may take up to 4 h, a full day 8 h.
+const TARGET_MIN: Record<TourDuration, number> = { half: 180, full: 360 };
+const MAX_MIN: Record<TourDuration, number> = { half: 240, full: 480 };
+// Hard upper distance bound (× target); kept generous so the ride-time ceiling
+// (MAX_MIN) is the binding constraint, not distance. Lower bound stays soft.
+const MAX_KM_FACTOR = 1.7;
 
 // Roads are a bit longer than the straight circle through the via-points.
 const DETOUR = 1.3;
@@ -52,7 +63,27 @@ const STEP_M = 120;
 // Grid cell for detecting retraced road.
 const CELL_M = 170;
 
+// --- Pass-loop generation (preferred over geometric rings) ---
+// The Genius anchors on famous nearby passes and lets the router-scored
+// optimiser (passopt.optimizeLoop) build clean multi-pass loops over the real
+// through-passes on the way (e.g. Susten–Grimsel–Furka–Gotthard from Wassen).
+// That produces genuine loops with far fewer there-and-back stubs than forcing
+// the route through points on a geometric circle. Rings remain a fallback for
+// starts with no famous passes nearby.
+const SEED_COUNT = 5; // how many anchor passes to seed loops from
+const SEED_BEARING_SEP = 38; // min bearing gap between seeds (°) → spread of loops
+const MAX_ADDS: Record<TourDuration, number> = { half: 2, full: 6 };
+const CORRIDOR_KM: Record<TourDuration, number> = { half: 20, full: 32 };
+
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+
+export function targetKm(duration: TourDuration): number {
+  return TARGET_KM[duration];
+}
+
+export function targetMin(duration: TourDuration): number {
+  return TARGET_MIN[duration];
+}
 
 interface Sample {
   lng: number;
@@ -152,6 +183,8 @@ function cleanVias(samples: Sample[], k: number): TourStop[] {
 }
 
 // Route a fixed set of stops once and turn it into a scored candidate.
+// (findTours has its own inline equivalents tuned for the loop optimiser; this
+// shared helper is used by the point-to-point generator below.)
 async function routeCandidate(
   stops: TourStop[],
   profile: RouteProfile,
@@ -171,30 +204,31 @@ async function routeCandidate(
   };
 }
 
-const ascentPerKm = (c: TourCandidate) =>
-  c.distanceKm > 0 ? c.analysis.ascentM / c.distanceKm : 0;
-const shareKm = (km: number, c: TourCandidate) =>
-  c.distanceKm > 0 ? km / c.distanceKm : 0;
-
-// What riders actually want: lots of climbing, passes, curves and small
-// back-roads. Score that explicitly and only lightly weigh distance, so a
-// twisty mountain route beats a flat lap. Spurs are still penalised.
-function funScore(c: TourCandidate, target: number): number {
+// Rider-attractiveness score: lots of climbing, passes, curves and small
+// back-roads, inside a realistic time budget, with big roads / overshoot
+// punished. Mirrors the round-trip ranking so both modes feel consistent.
+function funScore(c: TourCandidate, target: number, tMin: number): number {
   const s = c.analysis.scores;
   const rk = c.analysis.roadKm;
-  // Big roads the rider does NOT want: Hauptstrassen + Schnellstrassen + Autobahn.
-  const bigShare = shareKm(rk.haupt + rk.schnell + rk.autobahn, c);
-  const smallShare = shareKm(rk.neben, c); // little Landstrassen
+  const share = (km: number) => (c.distanceKm > 0 ? km / c.distanceKm : 0);
+  const ascentPerKm = c.distanceKm > 0 ? c.analysis.ascentM / c.distanceKm : 0;
+  const bigShare = share(rk.haupt + rk.schnell + rk.autobahn);
+  const smallShare = share(rk.neben);
+  const overKm = Math.max(0, c.distanceKm - target) / target;
+  const underKm = Math.max(0, target - c.distanceKm) / target;
+  const overMin = Math.max(0, c.durationMin - tMin) / tMin;
   return (
-    s.curves * 0.95 + // twisty
-    s.mountains * 1.4 + // altitude + passes + climb
-    Math.min(c.analysis.passes, 8) * 0.9 + // explicit pass bonus
-    Math.min(ascentPerKm(c), 18) * 0.18 + // climbing density (hm/km)
-    smallShare * 6 + // reward small Landstrassen
-    c.passBonus * 2.5 - // deliberately rides a famous curated pass/road
-    bigShare * 10 - // strongly punish Haupt-/Schnellstr./Autobahn
-    c.doubled * 6 - // dead-end / there-and-back stubs
-    (Math.abs(c.distanceKm - target) / target) * 2
+    s.curves * 0.95 +
+    s.mountains * 1.4 +
+    Math.min(c.analysis.passes, 8) * 0.9 +
+    Math.min(ascentPerKm, 18) * 0.18 +
+    smallShare * 6 +
+    c.passBonus * 2.5 -
+    bigShare * 14 -
+    c.doubled * 10 -
+    overKm * 9 -
+    underKm * 3 -
+    overMin * 6
   );
 }
 
@@ -223,7 +257,14 @@ export async function findTours(
   const target = TARGET_KM[duration];
   const baseRadiusM = ((target / DETOUR) * 1000) / (2 * Math.PI);
   const origin: Coord = [start.lng, start.lat];
+  const startCoord: Coord = [start.lng, start.lat];
   const startStop: TourStop = { lat: start.lat, lng: start.lng, name: start.name };
+
+  // Realistic day-tour ceilings (used both to fall back and to filter/rank).
+  const tMin = TARGET_MIN[duration];
+  const maxMin = MAX_MIN[duration];
+  const maxKm = target * MAX_KM_FACTOR;
+  const fitsDay = (c: TourCandidate) => c.durationMin <= maxMin && c.distanceKm <= maxKm;
 
   const ringFor = (radiusM: number) =>
     clamp(
@@ -280,76 +321,199 @@ export async function findTours(
     }
   };
 
-  const jobs: Promise<TourCandidate>[] = [];
-  for (const rf of RADIUS_FACTORS) {
-    for (const deg of BEARINGS) jobs.push(build(deg, baseRadiusM * rf));
-  }
+  // Route a fixed set of stops once (no refinement) — used for the curated
+  // pass loops, whose waypoints already sit on great roads.
+  const buildStops = async (stops: TourStop[], passBonus: number): Promise<TourCandidate> => {
+    const r = await fetchMultiPoint(stops, profile, signal);
+    const s = resample(r.feature);
+    return {
+      stops,
+      distanceKm: r.distanceKm,
+      durationMin: r.durationMin,
+      roundness: roundnessOf(r.feature, r.distanceKm * 1000),
+      doubled: doubledOf(s),
+      passBonus,
+      analysis: analyse([r.feature]),
+    };
+  };
 
-  // --- Curated pass/road loops ---
-  // Famous motorcycle roads within reach of the start, turned into loops that
-  // actively ride over them (instead of relying on the geometric circle alone).
-  const startCoord: Coord = [start.lng, start.lat];
-  const named = (p: NamedPlace): TourStop => ({ name: p.name, lat: p.lat, lng: p.lng });
-  // Tour-Genius rides only the hand-curated set of great roads (DEFAULT_PASSES)
-  // so loop quality stays high. The full public/passes.json list (used by the
-  // separate pass feature) deliberately does NOT feed Genius — otherwise the
-  // many ordinary nearby passes crowd out the famous ones.
-  const passes = DEFAULT_PASSES;
-  const inRange = passes
-    .map((p) => ({
-    p,
-    d: haversine(startCoord, [p.lng, p.lat]) / 1000,
-    b: bearing(startCoord, [p.lng, p.lat]),
-  }))
-    .filter((x) => x.d >= target * 0.06 && x.d <= target * 0.5)
-    .sort((a, b) => a.d - b.d)
-    .slice(0, 9);
+  // ---- PRIMARY: router-optimised pass loops ----
+  // Anchor on famous passes within reach (spread across bearings) and let the
+  // optimiser build a clean multi-pass loop over the real through-passes around
+  // each anchor. Every candidate is judged by the real router, so the result is
+  // a genuine loop (e.g. Susten–Grimsel–Furka–Gotthard) instead of an
+  // out-and-back down the main valley.
+  const buildPassLoops = async (): Promise<TourCandidate[]> => {
+    let region: KeyedPass[] = [];
+    try {
+      region = (await ensureEuroPasses()).filter(
+        (p) => p.surface === "asphalt" && p.kind === "pass",
+      );
+    } catch {
+      return []; // no pass data available → caller falls back to rings
+    }
+    if (region.length === 0) return [];
 
-  const passSets: { stops: TourStop[]; passes: number }[] = [];
-  // Pairs of passes on different sides of the start → a triangle loop over both.
-  for (let i = 0; i < inRange.length && passSets.length < 9; i++) {
-    for (let j = i + 1; j < inRange.length && passSets.length < 9; j++) {
-      if (bearingDelta(inRange[i].b, inRange[j].b) < 55) continue;
+    // Nearest region pass to a curated anchor → gives the famous pass a real
+    // key (so the optimiser won't add it again) while keeping its name.
+    const asKeyed = (p: NamedPlace): KeyedPass => {
+      let best: KeyedPass | null = null;
+      let bd = Infinity;
+      for (const e of region) {
+        const d = haversine([p.lng, p.lat], [e.lng, e.lat]);
+        if (d < bd) { bd = d; best = e; }
+      }
+      return best && bd < 4000
+        ? { ...best, name: p.name }
+        : { name: p.name, lat: p.lat, lng: p.lng, surface: "asphalt", height: 0, kind: "pass", key: `${p.lat},${p.lng}` };
+    };
+
+    const seedsAll = DEFAULT_PASSES.map((p) => ({
+      p,
+      d: haversine(startCoord, [p.lng, p.lat]) / 1000,
+      b: bearing(startCoord, [p.lng, p.lat]),
+    }))
+      .filter((x) => x.d >= target * 0.1 && x.d <= target * 0.45)
+      .sort((a, b) => a.d - b.d);
+    const seeds: typeof seedsAll = [];
+    for (const s of seedsAll) {
+      if (seeds.length >= SEED_COUNT) break;
+      if (seeds.some((q) => bearingDelta(q.b, s.b) < SEED_BEARING_SEP)) continue;
+      seeds.push(s);
+    }
+
+    const toCand = (r: OptResult): TourCandidate => ({
+      stops: r.stops.map((s) => ({ lat: s.lat, lng: s.lng, name: s.name })),
+      distanceKm: r.distanceKm,
+      durationMin: r.durationMin,
+      roundness: roundnessOf(r.feature, r.distanceKm * 1000),
+      doubled: r.doubled,
+      passBonus: r.passCount,
+      analysis: analyse([r.feature]),
+    });
+
+    const settled = await Promise.allSettled(
+      seeds.map((s) =>
+        optimizeLoop({
+          start,
+          end: null,
+          marked: [asKeyed(s.p)],
+          region,
+          profile,
+          signal,
+          maxAdds: MAX_ADDS[duration],
+          corridorKm: CORRIDOR_KM[duration],
+          trialsPerRound: 3,
+          maxPool: 12,
+        }).then(toCand),
+      ),
+    );
+    if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+    return settled
+      .filter((x): x is PromiseFulfilledResult<TourCandidate> => x.status === "fulfilled")
+      .map((x) => x.value);
+  };
+
+  // ---- FALLBACK: geometric rings + simple curated pairs ----
+  // For starts with no famous passes nearby (or if the pass data can't load).
+  const buildRings = async (): Promise<TourCandidate[]> => {
+    const named = (p: NamedPlace): TourStop => ({ name: p.name, lat: p.lat, lng: p.lng });
+    const jobs: Promise<TourCandidate>[] = [];
+    for (const rf of RADIUS_FACTORS) {
+      for (const deg of BEARINGS) jobs.push(build(deg, baseRadiusM * rf));
+    }
+    const inRange = DEFAULT_PASSES.map((p) => ({
+      p,
+      d: haversine(startCoord, [p.lng, p.lat]) / 1000,
+      b: bearing(startCoord, [p.lng, p.lat]),
+    }))
+      .filter((x) => x.d >= target * 0.06 && x.d <= target * 0.5)
+      .sort((a, b) => a.d - b.d)
+      .slice(0, 9);
+    const passSets: { stops: TourStop[]; passes: number }[] = [];
+    for (let i = 0; i < inRange.length && passSets.length < 9; i++) {
+      for (let j = i + 1; j < inRange.length && passSets.length < 9; j++) {
+        if (bearingDelta(inRange[i].b, inRange[j].b) < 55) continue;
+        passSets.push({
+          stops: [startStop, named(inRange[i].p), named(inRange[j].p), startStop],
+          passes: 2,
+        });
+      }
+    }
+    for (const x of inRange.slice(0, 4)) {
+      const opp = destination(startCoord, (x.b + 180) % 360, x.d * 1000);
       passSets.push({
-        stops: [startStop, named(inRange[i].p), named(inRange[j].p), startStop],
-        passes: 2,
+        stops: [startStop, named(x.p), { lng: opp[0], lat: opp[1] }, startStop],
+        passes: 1,
       });
     }
-  }
-  // Single nearby pass + a balancing point on the opposite side (forces a loop
-  // rather than out-and-back) for the closest few passes.
-  for (const x of inRange.slice(0, 4)) {
-    const opp = destination(startCoord, (x.b + 180) % 360, x.d * 1000);
-    passSets.push({
-      stops: [startStop, named(x.p), { lng: opp[0], lat: opp[1] }, startStop],
-      passes: 1,
-    });
-  }
-  for (const ps of passSets) jobs.push(routeCandidate(ps.stops, profile, ps.passes, signal));
+    for (const ps of passSets) jobs.push(buildStops(ps.stops, ps.passes));
+    const settled = await Promise.allSettled(jobs);
+    if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+    return settled
+      .filter((s): s is PromiseFulfilledResult<TourCandidate> => s.status === "fulfilled")
+      .map((s) => s.value);
+  };
 
-  const settled = await Promise.allSettled(jobs);
-  if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
-  const ok = settled
-    .filter((s): s is PromiseFulfilledResult<TourCandidate> => s.status === "fulfilled")
-    .map((s) => s.value);
+  let ok = await buildPassLoops();
+  // Fall back to the geometric approach only when the optimiser couldn't find
+  // enough clean, day-sized loops.
+  if (ok.filter((c) => c.doubled <= 0.22 && fitsDay(c)).length < 3) {
+    ok = ok.concat(await buildRings());
+  }
 
   if (ok.length === 0) {
     throw new Error("Keine Tour gefunden. Anderen Start oder eine andere Dauer versuchen.");
   }
 
-  // Wider band than the requested length: in the mountains the standout loop
-  // (passes, side valleys) is often a bit longer, and we'd rather offer it than
-  // a tame valley lap. The preview shows the real distance anyway.
-  const inBand = (c: TourCandidate) =>
-    c.distanceKm >= target * 0.6 && c.distanceKm <= target * 1.7;
+  // Soft lower bound too: don't offer a tiny lap when a half/full day was asked.
+  const inBand = (c: TourCandidate) => c.distanceKm >= target * 0.6 && fitsDay(c);
 
-  // Drop only the clearly broken ones (heavy spurs / wildly wrong length), but
-  // always keep enough to browse so the rider never gets just "1 / 1".
+  // What riders actually want: lots of climbing, passes, curves and small
+  // back-roads — but inside a realistic time budget, and as a genuine loop
+  // rather than a there-and-back down a main valley. Spurs, big roads and
+  // overshooting the requested length/time are all punished hard.
+  const ascentPerKm = (c: TourCandidate) =>
+    c.distanceKm > 0 ? c.analysis.ascentM / c.distanceKm : 0;
+  const share = (km: number, c: TourCandidate) =>
+    c.distanceKm > 0 ? km / c.distanceKm : 0;
+  const fun = (c: TourCandidate) => {
+    const s = c.analysis.scores;
+    const rk = c.analysis.roadKm;
+    // Big roads the rider does NOT want: Hauptstrassen + Schnellstrassen + Autobahn.
+    const bigShare = share(rk.haupt + rk.schnell + rk.autobahn, c);
+    const smallShare = share(rk.neben, c); // little Landstrassen
+    // Overshooting the requested size is punished much harder than undershooting
+    // (a slightly short loop is fine, a double-length marathon is not), and saddle
+    // time over the day budget is penalised on top.
+    const overKm = Math.max(0, c.distanceKm - target) / target;
+    const underKm = Math.max(0, target - c.distanceKm) / target;
+    const overMin = Math.max(0, c.durationMin - tMin) / tMin;
+    return (
+      s.curves * 0.95 + // twisty
+      s.mountains * 1.4 + // altitude + passes + climb
+      Math.min(c.analysis.passes, 8) * 0.9 + // explicit pass bonus
+      Math.min(ascentPerKm(c), 18) * 0.18 + // climbing density (hm/km)
+      smallShare * 6 + // reward small Landstrassen
+      c.passBonus * 2.5 - // deliberately rides a famous curated pass/road
+      bigShare * 14 - // strongly punish Haupt-/Schnellstr./Autobahn (valley slogs)
+      c.doubled * 10 - // dead-end / there-and-back stubs
+      overKm * 9 - // too long for the requested duration
+      underKm * 3 - // a bit short
+      overMin * 6 // over the realistic ride-time budget
+    );
+  };
+
+  // Drop the clearly broken ones (heavy spurs) and anything that can't fit the
+  // day, but always keep enough to browse so the rider never gets just "1 / 1".
+  // The time/distance ceiling (fitsDay) is enforced in EVERY fallback so an
+  // over-long monster can never slip through when few clean loops are found.
   let pool = ok.filter((c) => c.doubled <= 0.22 && inBand(c));
-  if (pool.length < 3) pool = ok.filter((c) => c.doubled <= 0.32);
+  if (pool.length < 3) pool = ok.filter((c) => c.doubled <= 0.32 && fitsDay(c));
+  if (pool.length === 0) pool = ok.filter(fitsDay);
   if (pool.length === 0) pool = ok;
 
-  pool.sort((a, b) => funScore(b, target) - funScore(a, target));
+  pool.sort((a, b) => fun(b) - fun(a));
   return dedupe(pool);
 }
 
@@ -373,6 +537,8 @@ export async function findToursToDest(
   // A detour can't be shorter than the direct line; aim a bit beyond it, but at
   // least the chosen day length so ½-Tag/1-Tag still scale the scenic detour.
   const target = Math.max(TARGET_KM[duration], directKm * 1.15);
+  const tMin = TARGET_MIN[duration];
+  const maxMin = MAX_MIN[duration];
   const offScale = directKm * 1000;
 
   const jobs: Promise<TourCandidate>[] = [];
@@ -451,12 +617,15 @@ export async function findToursToDest(
     throw new Error("Keine Strecke gefunden. Anderen Start/Zielort oder eine andere Dauer versuchen.");
   }
 
-  // Keep routes from roughly direct up to a generous detour of the target.
+  // Keep routes from roughly direct up to a generous detour, within the day's
+  // ride-time ceiling so a scenic detour never balloons past the budget.
   const maxKm = Math.max(target, directKm) * 1.8;
-  let pool = ok.filter((c) => c.doubled <= 0.18 && c.distanceKm >= directKm * 0.9 && c.distanceKm <= maxKm);
-  if (pool.length < 3) pool = ok.filter((c) => c.doubled <= 0.3);
+  const fits = (c: TourCandidate) =>
+    c.distanceKm >= directKm * 0.9 && c.distanceKm <= maxKm && c.durationMin <= maxMin;
+  let pool = ok.filter((c) => c.doubled <= 0.18 && fits(c));
+  if (pool.length < 3) pool = ok.filter((c) => c.doubled <= 0.3 && c.durationMin <= maxMin);
   if (pool.length === 0) pool = ok;
 
-  pool.sort((u, v) => funScore(v, target) - funScore(u, target));
+  pool.sort((u, v) => funScore(v, target, tMin) - funScore(u, target, tMin));
   return dedupe(pool);
 }

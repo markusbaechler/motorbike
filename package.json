@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "lint": "tsc -b --noEmit",
     "test": "vitest run",
-    "test:passopt": "node --loader ./scripts/ts-resolve.mjs scripts/test-passopt.mjs"
+    "test:passopt": "node --loader ./scripts/ts-resolve.mjs scripts/test-passopt.mjs",
+    "test:tourgen": "node --loader ./scripts/ts-resolve.mjs scripts/test-tourgen.mjs"
   },
   "dependencies": {
     "@types/qrcode": "^1.5.6",

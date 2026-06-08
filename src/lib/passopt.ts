@@ -32,6 +32,7 @@ export interface OptStop {
 export interface OptResult {
   stops: OptStop[]; // start, …passes…, end (or start again for a round trip)
   distanceKm: number;
+  durationMin: number;
   doubled: number; // 0 (no overlap) … 1 (mostly retraced)
   passCount: number; // number of pass anchors the tour rides
   feature: GeoJSON.Feature;
@@ -179,6 +180,7 @@ const toStop = (p: KeyedPass): OptStop => ({
 interface Routed {
   stops: OptStop[];
   distanceKm: number;
+  durationMin: number;
   doubled: number;
   passCount: number;
   feature: GeoJSON.Feature;
@@ -193,6 +195,7 @@ async function routeTour(
   return {
     stops,
     distanceKm: r.distanceKm,
+    durationMin: r.durationMin,
     doubled: doubledOf(resample(r.feature)),
     passCount: stops.filter((s) => s.key).length,
     feature: r.feature,
@@ -291,6 +294,7 @@ export async function optimizeLoop(params: OptimizeParams): Promise<OptResult> {
   return {
     stops: current.stops,
     distanceKm: current.distanceKm,
+    durationMin: current.durationMin,
     doubled: current.doubled,
     passCount: current.passCount,
     feature: current.feature,
