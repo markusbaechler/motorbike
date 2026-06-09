@@ -113,7 +113,11 @@ export default function App() {
   const isStandalone =
     window.matchMedia?.("(display-mode: standalone)").matches ||
     (navigator as unknown as { standalone?: boolean }).standalone === true;
-  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  // iPadOS 13+ Safari reports a desktop "Macintosh" user agent by default, so a
+  // plain UA test misses the iPad. A touch-capable Mac is really an iPad.
+  const isIos =
+    /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+    (/Mac/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
   // Weather per day (overnight location + date) via Open-Meteo.
   const [weather, setWeather] = useState<Record<string, WeatherDay | null>>({});
   const weatherFetched = useRef<Set<string>>(new Set());
