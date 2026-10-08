@@ -5,6 +5,7 @@ interface Props {
   value: string;
   placeholder: string;
   bias?: { lat: number; lng: number };
+  autoFocus?: boolean;
   onChange: (value: string) => void;
   onPick: (result: GeoResult) => void;
 }
@@ -19,7 +20,7 @@ interface Props {
  * parent (pre-filled stops, the resolved name after a pick) never reopen the
  * suggestion list.
  */
-export default function PlaceInput({ value, placeholder, bias, onChange, onPick }: Props) {
+export default function PlaceInput({ value, placeholder, bias, autoFocus, onChange, onPick }: Props) {
   const [results, setResults] = useState<GeoResult[]>([]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
@@ -95,9 +96,12 @@ export default function PlaceInput({ value, placeholder, bias, onChange, onPick 
       e.preventDefault();
       setActive((a) => (a <= 0 ? results.length - 1 : a - 1));
     } else if (e.key === "Enter") {
-      if (active >= 0 && results[active]) {
+      // Enter takes the highlighted suggestion, or the first one when none is
+      // highlighted (typing "Sion" + Enter is enough).
+      const pickIdx = active >= 0 ? active : 0;
+      if (results[pickIdx]) {
         e.preventDefault();
-        choose(results[active]);
+        choose(results[pickIdx]);
       }
     } else if (e.key === "Escape") {
       // Only swallow Escape while the list is open; otherwise the dialog closes.
@@ -116,6 +120,7 @@ export default function PlaceInput({ value, placeholder, bias, onChange, onPick 
         value={value}
         placeholder={placeholder}
         aria-label={placeholder}
+        autoFocus={autoFocus}
         onChange={(e) => {
           typed.current = true;
           onChange(e.target.value);

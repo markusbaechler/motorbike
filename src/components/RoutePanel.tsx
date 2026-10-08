@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import Icon, { type IconName } from "./Icon";
 import Modal from "./Modal";
+import PlaceInput from "./PlaceInput";
 import { computeDays, dayStats, dayNumbers } from "../lib/days";
 import { DESKTOP_QUERY, useMediaQuery } from "../lib/useMediaQuery";
+import type { GeoResult } from "../lib/geocoding";
 import type { BookingPrefs } from "../lib/storage";
 import { isFair, type WeatherDay } from "../lib/weather";
 import type { RouteProfile, RouteResult, Waypoint } from "../types";
@@ -34,7 +36,46 @@ interface Props {
   onAddDay: () => void;
   onRemoveWaypoint: (id: string) => void;
   onReorderWaypoint: (id: string, direction: -1 | 1) => void;
+  // Inline place search in the list: insert into a leg, or append at the end.
+  onInsertWaypoint: (legIndex: number, lng: number, lat: number, name?: string) => void;
+  onAppendWaypoint: (lng: number, lat: number, name?: string) => void;
   onClear: () => void;
+}
+
+// Small inline place search shown where a point is about to be inserted.
+function InlineAdd({
+  placeholder,
+  bias,
+  onPick,
+  onCancel,
+}: {
+  placeholder: string;
+  bias?: { lat: number; lng: number };
+  onPick: (r: GeoResult) => void;
+  onCancel: () => void;
+}) {
+  const [text, setText] = useState("");
+  return (
+    <div
+      className="wp-insert"
+      onKeyDown={(e) => {
+        // Escape with the suggestion list closed abandons the insert.
+        if (e.key === "Escape") onCancel();
+      }}
+    >
+      <PlaceInput
+        value={text}
+        placeholder={placeholder}
+        bias={bias}
+        autoFocus
+        onChange={setText}
+        onPick={onPick}
+      />
+      <button className="wp-btn" onClick={onCancel} aria-label="Abbrechen" title="Abbrechen">
+        <Icon name="x" size={16} />
+      </button>
+    </div>
+  );
 }
 
 export const PROFILE_LABEL: Record<RouteProfile, string> = {
@@ -135,10 +176,36 @@ export default function RoutePanel({
   onAddDay,
   onRemoveWaypoint,
   onReorderWaypoint,
+  onInsertWaypoint,
+  onAppendWaypoint,
   onClear,
 }: Props) {
   const days = computeDays(waypoints);
   const nums = dayNumbers(waypoints, days);
+
+  // Where an inline place search is open: a leg index, "end", or nothing.
+  const [insertAt, setInsertAt] = useState<number | "end" | null>(null);
+  const closeInsert = () => setInsertAt(null);
+  // Bias the search toward the middle of the leg (or the last point).
+  const legMid = (a: Waypoint, b: Waypoint) => ({ lat: (a.lat + b.lat) / 2, lng: (a.lng + b.lng) / 2 });
+  const lastWp = waypoints[waypoints.length - 1];
+
+  const appendRow =
+    insertAt === "end" ? (
+      <InlineAdd
+        placeholder="Nächsten Punkt suchen …"
+        bias={lastWp ? { lat: lastWp.lat, lng: lastWp.lng } : undefined}
+        onPick={(r) => {
+          onAppendWaypoint(r.lng, r.lat, r.name);
+          closeInsert();
+        }}
+        onCancel={closeInsert}
+      />
+    ) : (
+      <button className="add-stop-btn wp-append" onClick={() => setInsertAt("end")}>
+        <Icon name="plus" size={15} /> Punkt anhängen
+      </button>
+    );
 
   // A round trip ends where it starts (e.g. Tour-Genius loops). Such a tour has
   // no final overnight to book, so we hide the accommodation UI for it.
@@ -228,7 +295,27 @@ export default function RoutePanel({
               onChange={(p) => onSetLegProfile(wp.id, p)}
             />
             {leg && <span className="segment-stats">{leg.distanceKm.toFixed(0)} km</span>}
+            <button
+              className={`segment-insert ${insertAt === i - 1 ? "active" : ""}`}
+              onClick={() => setInsertAt(insertAt === i - 1 ? null : i - 1)}
+              aria-label={`Zwischenziel in Abschnitt ${i}→${i + 1} einfügen`}
+              title="Zwischenziel einfügen"
+              aria-expanded={insertAt === i - 1}
+            >
+              <Icon name="plus" size={14} />
+            </button>
           </div>
+        )}
+        {i > 0 && insertAt === i - 1 && (
+          <InlineAdd
+            placeholder="Zwischenziel suchen …"
+            bias={legMid(waypoints[i - 1], wp)}
+            onPick={(r) => {
+              onInsertWaypoint(i - 1, r.lng, r.lat, r.name);
+              closeInsert();
+            }}
+            onCancel={closeInsert}
+          />
         )}
 
         <div className="wp-row">
@@ -509,12 +596,16 @@ export default function RoutePanel({
                   {indices.map((i) => renderWaypoint(i, overnight.dayDate))}
                 </ul>
               )}
+              {open && isFinalDay && !pendingDay && appendRow}
             </div>
           );
         })
       ) : (
         waypoints.length > 0 && (
-          <ul className="wp-list">{waypoints.map((_, i) => renderWaypoint(i))}</ul>
+          <>
+            <ul className="wp-list">{waypoints.map((_, i) => renderWaypoint(i))}</ul>
+            {appendRow}
+          </>
         )
       )}
 
