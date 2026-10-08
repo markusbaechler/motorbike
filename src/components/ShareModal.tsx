@@ -2,16 +2,18 @@ import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import Icon from "./Icon";
 import Modal from "./Modal";
-import { buildShareUrl } from "../lib/share";
+import { buildShareUrl, type ShareStats } from "../lib/share";
 import type { Waypoint } from "../types";
 
 interface Props {
   waypoints: Waypoint[];
+  // Routed totals, if the route is computed; they ride along in the link.
+  stats?: ShareStats;
   onClose: () => void;
 }
 
-export default function ShareModal({ waypoints, onClose }: Props) {
-  const url = buildShareUrl(waypoints);
+export default function ShareModal({ waypoints, stats, onClose }: Props) {
+  const url = buildShareUrl(waypoints, stats);
   const [qr, setQr] = useState<string>("");
   const [copied, setCopied] = useState(false);
 
@@ -67,6 +69,10 @@ export default function ShareModal({ waypoints, onClose }: Props) {
             Teilen …
           </button>
         )}
+        <p className="modal-note">
+          Derselbe Link ist auch der «Planer-Link» für eine Club-Tour auf der Website
+          (Pages CMS → Club-Touren).
+        </p>
       </div>
     </Modal>
   );

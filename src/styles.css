@@ -2004,6 +2004,7 @@ button {
    the home screen has a single focal point instead of three coloured boxes. */
 .home-cta.genius,
 .home-cta.passes,
+.home-cta.club,
 .home-cta.resume {
   flex-wrap: wrap;
 }
@@ -2558,6 +2559,61 @@ button {
 }
 .home-cta.primary .home-cta-sub {
   color: rgba(255, 255, 255, 0.85);
+}
+
+/* --- Club-Touren: tours published on the website, listed in the planner --- */
+.club-item {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+.club-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.club-level {
+  flex: 0 0 auto;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: var(--pill);
+  background: var(--accent-soft);
+  color: var(--accent);
+  white-space: nowrap;
+}
+.club-desc {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.club-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.club-tags span {
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: var(--pill);
+  background: rgba(255, 255, 255, 0.07);
+}
+.club-next {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+.club-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+}
+.club-actions .export-btn {
+  text-decoration: none;
 }
 
 /* --- Umzug: "moved" card on the old address, result toast on the new one --- */

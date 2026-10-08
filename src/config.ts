@@ -18,9 +18,15 @@ export const APP_NAME = "Routenplaner";
 export const SITE_URL = "https://pudgilly.ch";
 export const SITE_LINKS = {
   home: `${SITE_URL}/`,
+  touren: `${SITE_URL}/touren/`,
   impressum: `${SITE_URL}/impressum/`,
   datenschutz: `${SITE_URL}/datenschutz/`,
 };
+
+// Club tours published by the website (Pages CMS → Astro endpoint). Same
+// origin as the planner in production; overridable for local development.
+export const CLUB_TOURS_URL: string =
+  import.meta.env.VITE_CLUB_TOURS_URL?.trim() || `${SITE_URL}/touren.json`;
 
 // Booking.com affiliate id of the club (optional). Set at build time via
 // VITE_BOOKING_AID so members never have to enter it themselves.

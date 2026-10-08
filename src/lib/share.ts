@@ -28,7 +28,14 @@ function b64urlDecode(s: string): string {
 
 type Row = [number, number, string, number, string, string, string];
 
-export function encodeRoute(waypoints: Waypoint[]): string {
+// Routed distance/time, embedded so the website can show them for club tours
+// without routing at build time. The planner itself ignores them on import.
+export interface ShareStats {
+  distanceKm: number;
+  durationMin: number;
+}
+
+export function encodeRoute(waypoints: Waypoint[], stats?: ShareStats): string {
   const w: Row[] = waypoints.map((p) => [
     Number(p.lng.toFixed(5)),
     Number(p.lat.toFixed(5)),
@@ -38,7 +45,11 @@ export function encodeRoute(waypoints: Waypoint[]): string {
     p.dayName ?? "",
     p.dayDate ?? "",
   ]);
-  return b64urlEncode(JSON.stringify({ v: 1, w }));
+  const payload: { v: 1; w: Row[]; s?: [number, number] } = { v: 1, w };
+  if (stats && Number.isFinite(stats.distanceKm) && Number.isFinite(stats.durationMin)) {
+    payload.s = [Math.round(stats.distanceKm), Math.round(stats.durationMin)];
+  }
+  return b64urlEncode(JSON.stringify(payload));
 }
 
 // Returns null for anything that isn't a complete, well-formed route: the link
@@ -66,9 +77,9 @@ export function decodeRoute(code: string): Waypoint[] | null {
   }
 }
 
-export function buildShareUrl(waypoints: Waypoint[]): string {
+export function buildShareUrl(waypoints: Waypoint[], stats?: ShareStats): string {
   const { origin, pathname } = window.location;
-  return `${origin}${pathname}#r=${encodeRoute(waypoints)}`;
+  return `${origin}${pathname}#r=${encodeRoute(waypoints, stats)}`;
 }
 
 /** Read a shared route from the current URL hash, if present. */

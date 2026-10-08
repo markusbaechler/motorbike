@@ -1,0 +1,300 @@
+# Konfiguration für Pages CMS (https://pagescms.org)
+# Definiert, welche Inhalte über die CMS-Oberfläche bearbeitet werden können.
+
+media:
+  # Bilder liegen in src/assets, damit Astro sie beim Build verkleinert und komprimiert.
+  input: src/assets/galerie
+  output: /galerie
+
+content:
+  # ---------- Listen / Sammlungen ----------
+  - name: touren
+    label: Club-Touren
+    type: file
+    path: src/data/touren.json
+    list: true
+    fields:
+      - name: slug
+        label: Kürzel
+        type: string
+        description: Kurz, nur Kleinbuchstaben, Ziffern und Bindestrich, z. B. buendnerrunde. Wird in Links verwendet und bei Events als Verweis eingetragen.
+      - { name: title, label: Name der Tour, type: string }
+      - { name: region, label: Region, type: string }
+      - name: level
+        label: Anspruch
+        type: select
+        options:
+          values: [leicht, mittel, anspruchsvoll]
+      - { name: description, label: Beschreibung, type: text }
+      - { name: highlights, label: Highlights (Pässe, Orte), type: string, list: true }
+      - name: planerLink
+        label: Planer-Link
+        type: string
+        description: Im Routenplaner die Tour öffnen → «Teilen» → «Link kopieren» und hier einfügen. Daraus liest die Website Punkte, Tage, Kilometer und Fahrzeit.
+      - name: image
+        label: Bild (optional)
+        type: image
+
+  - name: events
+    label: Events
+    type: file
+    path: src/data/events.json
+    list: true
+    fields:
+      - name: date
+        label: Datum
+        type: date
+        options:
+          format: yyyy-MM-dd
+      - name: endDate
+        label: Bis-Datum (nur bei mehrtägigen Terminen)
+        type: date
+        # Wichtig: ohne default "" setzt Pages CMS bei jedem Speichern das heutige Datum ein.
+        default: ""
+        description: Leer lassen bei eintägigen Terminen.
+        options:
+          format: yyyy-MM-dd
+      - { name: title, label: Titel, type: string }
+      - { name: location, label: Ort, type: string }
+      - name: type
+        label: Art
+        type: select
+        options:
+          values: [Ausfahrt, Treffen, Fest, Kurs]
+      - { name: description, label: Beschreibung, type: text }
+      - name: tour
+        label: Club-Tour (Kürzel)
+        type: string
+        description: Kürzel einer Tour aus «Club-Touren», z. B. buendnerrunde. Leer lassen, wenn kein Tourvorschlag dazugehört.
+
+  - name: team
+    label: Vorstand (Köpfe des Clubs)
+    type: file
+    path: src/data/team.json
+    list: true
+    fields:
+      - { name: name, label: Name, type: string }
+      - { name: role, label: Funktion, type: string }
+      - { name: bike, label: Motorrad, type: string }
+      - { name: emoji, label: Emoji / Avatar, type: string }
+
+  - name: timeline
+    label: Meilensteine
+    type: file
+    path: src/data/timeline.json
+    list: true
+    fields:
+      - { name: year, label: Jahr, type: string }
+      - { name: text, label: Text, type: text }
+
+  - name: gallery
+    label: Galerie
+    type: file
+    path: src/data/gallery.json
+    list: true
+    fields:
+      - name: image
+        label: Bild
+        type: image
+        description: Bild hochladen oder auswählen. Ohne Bild wird eine farbige Kachel mit Motorrad-Symbol angezeigt.
+      - { name: caption, label: Bildunterschrift, type: string }
+      - { name: tag, label: Schlagwort, type: string }
+      - name: hue
+        label: Farbton (0–360, nur ohne Bild relevant)
+        type: number
+        options: { min: 0, max: 360 }
+
+  # ---------- Globale Einstellungen ----------
+  - name: site
+    label: Einstellungen (Kontakt & Zahlen)
+    type: file
+    path: src/data/site.json
+    fields:
+      - { name: email, label: E-Mail, type: string }
+      - { name: phone, label: Telefon, type: string }
+      - { name: address, label: Adresse, type: string }
+      - { name: footerTagline, label: Footer-Spruch, type: string }
+      - name: stats
+        label: Kennzahlen (Startseite)
+        type: object
+        fields:
+          - { name: members, label: Mitglieder, type: number }
+          - { name: toursPerYear, label: Touren pro Jahr, type: number }
+          - { name: founded, label: Gegründet (Jahr), type: number }
+
+  # ---------- Seitentexte ----------
+  - name: page_home
+    label: Seite · Startseite
+    type: file
+    path: src/data/pages/home.json
+    fields:
+      - name: hero
+        label: Hero (oben)
+        type: object
+        fields:
+          - { name: eyebrow, label: Kleiner Text oben, type: string }
+          - { name: titleLine1, label: Titel Zeile 1, type: string }
+          - { name: titleLine2, label: Titel Zeile 2, type: string }
+          - { name: lead, label: Einleitungstext, type: text }
+          - { name: primaryCtaLabel, label: Button 1 Text, type: string }
+          - { name: primaryCtaHref, label: Button 1 Link, type: string }
+          - { name: secondaryCtaLabel, label: Button 2 Text, type: string }
+          - { name: secondaryCtaHref, label: Button 2 Link, type: string }
+      - name: intro
+        label: Intro-Abschnitt
+        type: object
+        fields:
+          - { name: eyebrow, label: Kleiner Text, type: string }
+          - { name: heading, label: Überschrift, type: string }
+          - { name: paragraphs, label: Absätze, type: text, list: true }
+          - { name: linkLabel, label: Link-Text, type: string }
+          - { name: linkHref, label: Link-Ziel, type: string }
+      - name: values
+        label: Werte-Karten
+        type: object
+        fields:
+          - { name: eyebrow, label: Kleiner Text, type: string }
+          - { name: heading, label: Überschrift, type: string }
+          - name: items
+            label: Karten
+            type: object
+            list: true
+            fields:
+              - { name: icon, label: Icon (Emoji), type: string }
+              - { name: title, label: Titel, type: string }
+              - { name: text, label: Text, type: text }
+      - name: eventsPreview
+        label: Abschnitt "Nächste Events"
+        type: object
+        fields:
+          - { name: eyebrow, label: Kleiner Text, type: string }
+          - { name: heading, label: Überschrift, type: string }
+      - name: cta
+        label: Abschluss-Aufruf (CTA)
+        type: object
+        fields:
+          - { name: heading, label: Überschrift, type: string }
+          - { name: lead, label: Text, type: text }
+          - { name: buttonLabel, label: Button-Text, type: string }
+          - { name: buttonHref, label: Button-Link, type: string }
+
+  - name: page_about
+    label: Seite · Über uns
+    type: file
+    path: src/data/pages/about.json
+    fields:
+      - name: hero
+        label: Hero (oben)
+        type: object
+        fields:
+          - { name: eyebrow, label: Kleiner Text, type: string }
+          - { name: title, label: Titel, type: string }
+          - { name: text, label: Untertitel, type: text }
+      - name: history
+        label: Geschichte
+        type: object
+        fields:
+          - { name: eyebrow, label: Kleiner Text, type: string }
+          - { name: heading, label: Überschrift, type: string }
+          - { name: paragraphs, label: Absätze, type: text, list: true }
+      - name: values
+        label: Werte-Karten
+        type: object
+        fields:
+          - { name: eyebrow, label: Kleiner Text, type: string }
+          - { name: heading, label: Überschrift, type: string }
+          - name: items
+            label: Karten
+            type: object
+            list: true
+            fields:
+              - { name: icon, label: Icon (Emoji), type: string }
+              - { name: title, label: Titel, type: string }
+              - { name: text, label: Text, type: text }
+      - name: timelineHeading
+        label: Überschrift "Meilensteine"
+        type: object
+        fields:
+          - { name: eyebrow, label: Kleiner Text, type: string }
+          - { name: heading, label: Überschrift, type: string }
+      - name: teamHeading
+        label: Überschrift "Vorstand"
+        type: object
+        fields:
+          - { name: eyebrow, label: Kleiner Text, type: string }
+          - { name: heading, label: Überschrift, type: string }
+
+  - name: page_gallery
+    label: Seite · Galerie (Texte)
+    type: file
+    path: src/data/pages/gallery.json
+    fields:
+      - name: hero
+        label: Hero (oben)
+        type: object
+        fields:
+          - { name: eyebrow, label: Kleiner Text, type: string }
+          - { name: title, label: Titel, type: string }
+          - { name: text, label: Untertitel, type: text }
+      - { name: note, label: Hinweis unten, type: text }
+
+  - name: page_events
+    label: Seite · Events (Texte)
+    type: file
+    path: src/data/pages/events.json
+    fields:
+      - name: hero
+        label: Kopfbereich (nächster Termin)
+        type: object
+        fields:
+          - { name: eyebrow, label: Label über dem nächsten Termin, type: string }
+          - { name: title, label: Seitentitel (nur für Suchmaschinen und Screenreader), type: string }
+      - { name: listHeading, label: Überschrift der Terminliste, type: string }
+      - { name: note, label: Hinweis unter der Überschrift, type: text }
+      - { name: ctaButtonLabel, label: Button-Text (unten), type: string }
+      - { name: ctaButtonHref, label: Button-Link (unten), type: string }
+      - name: program
+        label: Jahresprogramm (PDF-Download)
+        type: object
+        fields:
+          - { name: heading, label: Überschrift, type: string }
+          - { name: text, label: Text, type: text }
+          - { name: buttonLabel, label: Button-Text, type: string }
+          - name: file
+            label: Pfad zur PDF-Datei
+            type: string
+            description: Datei liegt in public/downloads, z. B. /downloads/jahresprogramm-2027.pdf
+
+  - name: page_touren
+    label: Seite · Touren (Texte)
+    type: file
+    path: src/data/pages/touren.json
+    fields:
+      - name: hero
+        label: Hero (oben)
+        type: object
+        fields:
+          - { name: eyebrow, label: Kleiner Text, type: string }
+          - { name: title, label: Titel, type: string }
+          - { name: text, label: Untertitel, type: text }
+      - { name: note, label: Hinweis unter der Liste, type: text }
+
+  - name: page_contact
+    label: Seite · Kontakt (Texte)
+    type: file
+    path: src/data/pages/contact.json
+    fields:
+      - name: hero
+        label: Hero (oben)
+        type: object
+        fields:
+          - { name: eyebrow, label: Kleiner Text, type: string }
+          - { name: title, label: Titel, type: string }
+          - { name: text, label: Untertitel, type: text }
+      - name: directHeading
+        label: Überschrift "So erreichst du uns"
+        type: object
+        fields:
+          - { name: eyebrow, label: Kleiner Text, type: string }
+          - { name: heading, label: Überschrift, type: string }
+      - { name: web3formsKey, label: Web3Forms Access Key (von web3forms.com), type: string }

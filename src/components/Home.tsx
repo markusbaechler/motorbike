@@ -29,6 +29,8 @@ interface Props {
   onGenius: () => void;
   onPasses: () => void;
   onRoutes: () => void;
+  // Club tours from the website; absent on the old hosting (no same-origin feed).
+  onClubTours?: () => void;
   onResume: () => void;
   onBack: () => void;
 }
@@ -45,6 +47,7 @@ export default function Home({
   onGenius,
   onPasses,
   onRoutes,
+  onClubTours,
   onResume,
   onBack,
 }: Props) {
@@ -145,6 +148,12 @@ export default function Home({
             <Icon name="mountain" size={20} /> Pässeplaner
             <span className="home-cta-sub">Tour über ausgewählte Pässe</span>
           </button>
+          {onClubTours && (
+            <button className="home-cta club" onClick={onClubTours}>
+              <Icon name="scenery" size={20} /> Club-Touren
+              <span className="home-cta-sub">Vorschläge der Pudgilly Riders</span>
+            </button>
+          )}
           <button className="home-cta" onClick={onRoutes}>
             <Icon name="folder" size={19} /> Meine Touren
             {savedCount > 0 ? ` (${savedCount})` : ""}
