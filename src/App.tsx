@@ -19,19 +19,23 @@ import BookingPrefsModal from "./components/BookingPrefsModal";
 import Home from "./components/Home";
 import ShareModal from "./components/ShareModal";
 import SearchBox from "./components/SearchBox";
+import ConfirmDialog from "./components/ConfirmDialog";
 import { readSharedRoute } from "./lib/share";
 import {
   getBookingPrefs,
   saveBookingPrefs,
   listRoutes,
   saveDraft,
+  loadDraft,
   clearDraft,
   type BookingPrefs,
+  type RouteDraft,
 } from "./lib/storage";
 import { addDays, buildBookingUrl } from "./lib/booking";
 import { computeDays } from "./lib/days";
 import { fetchWeather, type WeatherDay } from "./lib/weather";
 import { fetchRoute } from "./lib/routing";
+import { APP_NAME, CLUB_NAME } from "./config";
 import type { GeoResult } from "./lib/geocoding";
 import type { RouteProfile, RouteResult, Waypoint } from "./types";
 
@@ -71,13 +75,16 @@ export default function App() {
   // Inviting start screen, shown on launch.
   const [showHome, setShowHome] = useState(true);
   const [showShare, setShowShare] = useState(false);
+  // Auto-saved route from the previous session. It is offered on the Home
+  // screen ("Letzte Route fortsetzen") rather than loaded silently: opening
+  // the app should start clean, not resurrect stray waypoints.
+  const [draft, setDraft] = useState<RouteDraft | null>(() => loadDraft());
+  const [confirmReset, setConfirmReset] = useState(false);
+  // Cancels a running Pässeplaner optimisation when the session is left.
+  const passAbortRef = useRef<AbortController | null>(null);
+  const [passProgress, setPassProgress] = useState<string | null>(null);
 
-  // On first launch only a shared route (#r=…) opens directly. We deliberately
-  // do NOT auto-load the last saved draft into the map: opening the app should
-  // give a clean Home screen, not resurrect a previous session's waypoints
-  // (which then turned up as a stray marker in other tools). The draft is still
-  // written on every change, so a "resume last route" affordance can be added
-  // later without losing data.
+  // On first launch only a shared route (#r=…) opens directly.
   useEffect(() => {
     const shared = readSharedRoute();
     if (shared && shared.length >= 2) {
@@ -86,11 +93,15 @@ export default function App() {
       setFitSignal((n) => n + 1);
       history.replaceState(null, "", window.location.pathname + window.location.search);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-save the current route as a draft on every change.
+  // Auto-save the current route as a draft on every change. The very first run
+  // (empty map right after launch) must not touch storage, otherwise it would
+  // wipe the draft we are offering to resume on the Home screen.
+  const draftTouched = useRef(false);
   useEffect(() => {
+    if (waypoints.length === 0 && !draftTouched.current) return;
+    draftTouched.current = true;
     saveDraft(waypoints, defaultProfile);
   }, [waypoints, defaultProfile]);
 
@@ -186,6 +197,17 @@ export default function App() {
     ]);
   };
 
+  // "Start hier" from the map's context menu: the point becomes the first
+  // waypoint; the old start turns into a regular stop reached with the
+  // default profile.
+  const prependWaypoint = (lng: number, lat: number) => {
+    setPendingDay(false);
+    setWaypoints((wps) => [
+      { id: makeId(), lng, lat, legProfile: defaultProfile },
+      ...wps.map((w, i) => (i === 0 ? { ...w, legProfile: defaultProfile } : w)),
+    ]);
+  };
+
   // End the current day at the last waypoint (overnight) so the next point
   // added begins a new day.
   const addDay = () =>
@@ -249,6 +271,19 @@ export default function App() {
     setRoute(null);
     setError(null);
     clearDraft(); // hard reset: forget the saved draft too
+    setDraft(null);
+    setConfirmReset(false);
+  };
+  // Resetting throws the whole route away → ask first once there is one.
+  const requestClear = () => (waypoints.length >= 2 ? setConfirmReset(true) : clearAll());
+
+  const resumeDraft = () => {
+    if (!draft) return;
+    setPendingDay(false);
+    setDefaultProfile(draft.defaultProfile);
+    setWaypoints(draft.waypoints.map((w) => ({ ...w, id: makeId() })));
+    setShowHome(false);
+    setFitSignal((n) => n + 1);
   };
 
   // Reverse the route direction (also flips per-leg profiles correctly and
@@ -402,8 +437,14 @@ export default function App() {
   const passNiceCount = Object.values(passMarks).filter((m) => m === "nice").length;
 
   const cancelPassSession = () => {
+    // Also stops an optimisation that is still routing, so its result can't
+    // land on the map after the rider backed out.
+    passAbortRef.current?.abort();
+    passAbortRef.current = null;
     setPassSession(null);
     setPassMarks({});
+    setPassBusy(false);
+    setPassProgress(null);
   };
 
   // Turn the marked passes into a normal route (start → passes → end/back).
@@ -433,6 +474,8 @@ export default function App() {
       { name: last.name, lat: last.lat, lng: last.lng },
     ];
 
+    const ctrl = new AbortController();
+    passAbortRef.current = ctrl;
     if (passSession.autoFill && marked.length > 0) {
       try {
         const opt = await optimizeLoop({
@@ -441,15 +484,22 @@ export default function App() {
           marked,
           region: passSession.passes,
           profile: "kurvig_plus",
+          signal: ctrl.signal,
+          onProgress: (p) =>
+            setPassProgress(`${p.label} ${Math.min(p.done + 1, p.total)}/${p.total} …`),
         });
         stops = opt.stops;
       } catch (e) {
+        if (ctrl.signal.aborted) return; // the rider cancelled the session
         // Router unreachable → fall back to the plain marked-only ordering.
         setError(
           `Pässe-Optimierer nicht erreichbar – einfache Reihenfolge verwendet. (${(e as Error).message})`,
         );
       }
     }
+    if (ctrl.signal.aborted) return;
+    passAbortRef.current = null;
+    setPassProgress(null);
 
     setPendingDay(false);
     setWaypoints(
@@ -514,16 +564,27 @@ export default function App() {
   }, [waypoints, routeAttempt]);
 
   return (
-    <div className="app">
-      <header className="topbar">
-        <button className="topbar-home" onClick={() => setShowHome(true)} aria-label="Startseite">
-          <img src="./icon.svg" alt="" />
-          <h1>
-            <span className="brand">Motorbike</span>{" "}
-            <span className="tag">Routenplaner</span>
-          </h1>
-        </button>
-      </header>
+    // pass-mode: on wide screens the sidebar is gone, so the map takes the
+    // full width and the floating bars centre over it (see styles.css).
+    <div className={`app ${passSession ? "pass-mode" : ""}`}>
+      {/* The Pässeplaner is a dedicated mode: its own floating bar replaces the
+          title bar, the search box and the route panel, so the whole map stays
+          free for picking passes. */}
+      {!passSession && (
+        <header className="topbar">
+          <button
+            className="topbar-home"
+            onClick={() => setShowHome(true)}
+            aria-label="Startseite des Routenplaners"
+          >
+            <img src="./logo.png" alt="" />
+            <h1 className="topbar-brand">
+              <span className="brand">{CLUB_NAME}</span>
+              <span className="tag">{APP_NAME}</span>
+            </h1>
+          </button>
+        </header>
+      )}
 
       {!passSession && <SearchBox onSelect={onSearchSelect} />}
 
@@ -536,6 +597,7 @@ export default function App() {
         focus={focus}
         fitSignal={fitSignal}
         onAddWaypoint={addWaypoint}
+        onPrependWaypoint={prependWaypoint}
         onMoveWaypoint={moveWaypoint}
         onInsertWaypoint={insertWaypoint}
         passPoints={passPoints}
@@ -543,6 +605,7 @@ export default function App() {
         onSetPassMark={setPassMark}
       />
 
+      {!passSession && (
       <RoutePanel
         waypoints={waypoints}
         defaultProfile={defaultProfile}
@@ -570,8 +633,9 @@ export default function App() {
         onAddDay={addDay}
         onRemoveWaypoint={removeWaypoint}
         onReorderWaypoint={reorderWaypoint}
-        onClear={clearAll}
+        onClear={requestClear}
       />
+      )}
 
       {showDetails && route && (
         <RouteModal
@@ -637,9 +701,23 @@ export default function App() {
           needCount={passNeedCount}
           niceCount={passNiceCount}
           busy={passBusy}
+          progress={passProgress}
           onCreate={createPassRoute}
           onCancel={cancelPassSession}
         />
+      )}
+
+      {confirmReset && (
+        <ConfirmDialog
+          title="Tour zurücksetzen?"
+          confirmLabel="Zurücksetzen"
+          danger
+          onConfirm={clearAll}
+          onCancel={() => setConfirmReset(false)}
+        >
+          Alle {waypoints.length} Punkte und die Tagesaufteilung werden gelöscht. Unter „Meine
+          Touren“ gespeicherte Touren bleiben erhalten.
+        </ConfirmDialog>
       )}
 
       {geniusCands && (
@@ -661,6 +739,14 @@ export default function App() {
           savedCount={listRoutes().length}
           canInstall={!!installEvt && !isStandalone}
           iosInstall={isIos && !isStandalone && !installEvt}
+          draft={
+            draft && waypoints.length === 0
+              ? { points: draft.waypoints.length, days: computeDays(draft.waypoints).length }
+              : null
+          }
+          hasRoute={waypoints.length > 0}
+          onResume={resumeDraft}
+          onBack={() => setShowHome(false)}
           onInstall={doInstall}
           onPlan={() => {
             setShowHome(false);

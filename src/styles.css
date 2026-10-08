@@ -1,6 +1,6 @@
 :root {
   --bg: #100f12;
-  --surface: #1b1916;
+  --surface: #211e1b;
   --surface-2: #262220;
   --panel: rgba(16, 16, 20, 0.74);
   --border: rgba(255, 255, 255, 0.08);
@@ -12,7 +12,10 @@
   --brand-from: #ff8a1e;
   --brand-to: #f0392b;
   --accent: #ff9d3c;
+  --accent-hover: #ffb15f;
+  --accent-soft: rgba(255, 138, 30, 0.14);
   --accent-ink: #2a1402;
+  --transition: 0.25s ease;
 
   /* Route profile semantics (harmonised warm trio + cool "fast") */
   --kurvig: #f59e0b;
@@ -122,12 +125,29 @@ button {
   overflow: hidden;
 }
 
+/* The map and its context menu share one positioned box; on wide screens
+   it starts right of the sidebar (see the desktop block at the end). */
+.map-wrap {
+  position: absolute;
+  inset: 0;
+}
+
 .map {
   position: absolute;
   inset: 0;
 }
 
-/* Floating top bar with the app title */
+/* Keep MapLibre's bottom controls (zoom, compass, locate, scale, attribution)
+   above the bottom sheet. RoutePanel publishes its height as --panel-h and
+   resets it to 0 when the sheet is gone (e.g. Pässeplaner mode). */
+.maplibregl-ctrl-bottom-right,
+.maplibregl-ctrl-bottom-left {
+  bottom: var(--panel-h, 0px);
+  transition: bottom 0.15s ease;
+}
+
+/* Floating club chip (top-left): logo + wordmark, tap = Home. Styled like
+   the brand block of the website header (uppercase, letter-spaced). */
 .topbar {
   position: absolute;
   top: 0;
@@ -136,46 +156,37 @@ button {
   z-index: 10;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
+  padding: 10px 12px;
   padding-top: max(10px, env(safe-area-inset-top));
-  background: linear-gradient(to bottom, rgba(8, 12, 22, 0.7) 0%, transparent 100%);
   pointer-events: none;
 }
 
 .topbar img {
-  width: 30px;
   height: 30px;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  width: auto;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
 }
 
-.topbar h1 {
-  font-size: 1.15rem;
-  font-weight: 800;
+.topbar-brand {
   margin: 0;
-  letter-spacing: -0.01em;
   display: flex;
-  align-items: baseline;
-  gap: 7px;
-}
-
-.topbar h1 .brand {
-  background: linear-gradient(135deg, #ffd9a8, #ff7a4d);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.topbar .tag {
-  font-size: 0.62rem;
+  flex-direction: column;
+  line-height: 1.05;
   text-transform: uppercase;
-  letter-spacing: 1.2px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.topbar-brand .brand {
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.topbar-brand .tag {
+  font-size: 0.56rem;
+  letter-spacing: 0.26em;
   color: var(--accent);
   font-weight: 700;
-  padding: 3px 7px;
-  border-radius: var(--pill);
-  background: rgba(255, 138, 30, 0.16);
-  -webkit-text-fill-color: var(--accent);
 }
 
 /* MapLibre control tweaks so they sit clear of the safe areas */
@@ -349,6 +360,7 @@ button {
   background: transparent;
   color: var(--muted);
   border: none;
+  white-space: nowrap;
   padding: 7px 13px;
   font-size: 0.84rem;
   font-weight: 700;
@@ -401,6 +413,13 @@ button {
   color: var(--text);
 }
 
+/* The sheet is a column flexbox with a max-height: never let its rows shrink
+   below their content when the sheet scrolls, otherwise a wrapped row (e.g.
+   the summary on a phone) overflows into the row below it. */
+.panel > * {
+  flex-shrink: 0;
+}
+
 .summary {
   min-height: 22px;
   font-size: 0.9rem;
@@ -417,8 +436,9 @@ button {
 
 .summary .stats {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 8px 12px;
   width: 100%;
   font-size: 1.05rem;
   font-variant-numeric: tabular-nums;
@@ -426,6 +446,23 @@ button {
 
 .summary .stats strong {
   font-weight: 800;
+  white-space: nowrap;
+}
+
+/* Numbers stay on one line; the action buttons wrap to a second line when
+   the sheet is narrow instead of squeezing the numbers word by word. */
+.stats-nums {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.stats-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
 }
 
 .summary .dot {
@@ -632,20 +669,22 @@ button {
 }
 
 .hotel-btn {
-  background: #006ce4;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--pill);
+  padding: 8px 14px;
   font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
-  transition: filter 0.15s ease;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
 }
 
 .hotel-btn:hover {
-  filter: brightness(1.1);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .booking-row {
@@ -807,7 +846,9 @@ button {
 }
 
 .quickplan-btn.secondary:hover {
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .route-list {
@@ -1006,14 +1047,22 @@ button {
   overflow-y: auto;
 }
 
-.place-results li {
+.place-results li button {
+  display: block;
+  width: 100%;
+  text-align: left;
   padding: 9px 10px;
+  border: none;
   border-radius: 7px;
-  cursor: pointer;
+  background: none;
+  color: var(--text);
+  font: inherit;
   font-size: 0.88rem;
+  cursor: pointer;
 }
 
-.place-results li:hover {
+.place-results li button:hover,
+.place-results li.active button {
   background: rgba(255, 138, 30, 0.18);
 }
 
@@ -1349,7 +1398,7 @@ button {
 /* Floating place-search box under the title bar */
 .searchbox {
   position: absolute;
-  top: max(52px, calc(env(safe-area-inset-top) + 44px));
+  top: max(62px, calc(env(safe-area-inset-top) + 54px));
   left: 12px;
   right: 12px;
   z-index: 11;
@@ -1411,14 +1460,25 @@ button {
   overflow-y: auto;
 }
 
-.search-results li {
+/* Each result is a real button (keyboard: arrows + Enter, see SearchBox). */
+.search-results li button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
   padding: 10px 12px;
+  border: none;
   border-radius: 8px;
-  cursor: pointer;
+  background: none;
+  color: var(--text);
+  font: inherit;
   font-size: 0.9rem;
+  cursor: pointer;
 }
 
-.search-results li:hover {
+.search-results li button:hover,
+.search-results li.active button {
   background: rgba(255, 138, 30, 0.18);
 }
 
@@ -1442,14 +1502,19 @@ button {
     gap: 8px;
   }
 
-  /* Profile toggles fill the width with large, thumb-friendly segments */
-  .default-label {
-    flex: 1 1 100%;
+  /* "Tour planen" + "Mehr" share the row; label and riding-style toggle
+     share the next one with large, thumb-friendly segments. */
+  .panel-row.top .quickplan-btn {
+    flex: 1 1 auto;
+    justify-content: center;
   }
-  .panel-row.top .toggle {
-    flex: 1 1 100%;
+  .panel-row.profile .default-label {
+    flex: 0 0 auto;
   }
-  .panel-row.top .toggle-btn {
+  .panel-row.profile .toggle {
+    flex: 1 1 auto;
+  }
+  .panel-row.profile .toggle-btn {
     flex: 1 1 0;
   }
   .clear-btn {
@@ -1683,11 +1748,21 @@ button {
   pointer-events: auto;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  background: none;
-  border: none;
+  gap: 9px;
+  padding: 5px 14px 5px 7px;
+  border-radius: var(--pill);
+  background: var(--panel);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-sm);
+  color: var(--text);
   cursor: pointer;
-  padding: 0;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.topbar-home:hover {
+  border-color: var(--accent);
 }
 
 .home {
@@ -1744,15 +1819,26 @@ button {
 }
 
 .home-logo {
-  width: 86px;
-  height: 86px;
-  border-radius: 24px;
-  box-shadow: var(--shadow);
-  margin-bottom: 18px;
+  height: 112px;
+  width: auto;
+  margin-bottom: 14px;
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.65));
+}
+
+/* Small uppercase line above the title, same recipe as .eyebrow on the site */
+.home-eyebrow {
+  display: inline-block;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: var(--accent);
+  margin-bottom: 6px;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
 }
 
 .home-title {
-  font-size: 2.6rem;
+  font-size: 2.4rem;
   font-weight: 800;
   margin: 0;
   letter-spacing: -0.02em;
@@ -1787,11 +1873,11 @@ button {
   justify-content: center;
   gap: 10px;
   width: 100%;
-  min-height: 68px;
-  padding: 12px 18px;
-  border-radius: 16px;
-  font-size: 1.05rem;
-  font-weight: 800;
+  min-height: 58px;
+  padding: 12px 20px;
+  border-radius: var(--pill);
+  font-size: 1rem;
+  font-weight: 700;
   cursor: pointer;
   border: 1px solid var(--border-strong);
   background: rgba(255, 255, 255, 0.06);
@@ -1913,22 +1999,12 @@ button {
 .wp-weather.wet { color: #60a5fa; background: rgba(96, 165, 250, 0.14); }
 
 /* --- Tour-Genius --- */
-.quickplan-btn.genius {
-  background: rgba(255, 157, 60, 0.12);
-  color: var(--accent);
-  border: 1px solid rgba(255, 157, 60, 0.5);
-  box-shadow: none;
-}
-.quickplan-btn.genius:hover {
-  background: rgba(255, 157, 60, 0.2);
-  box-shadow: none;
-}
-
 /* Secondary CTAs that carry a sub-label (Tour-Genius, Pässeplaner). They read
    like the other neutral buttons — only "Neue Tour planen" stays accented — so
    the home screen has a single focal point instead of three coloured boxes. */
 .home-cta.genius,
-.home-cta.passes {
+.home-cta.passes,
+.home-cta.resume {
   flex-wrap: wrap;
 }
 .home-cta-sub {
@@ -2113,10 +2189,6 @@ button {
 }
 
 /* ── Pässeplaner ─────────────────────────────────────────────────────── */
-.quickplan-btn.passes {
-  border-color: rgba(168, 139, 250, 0.5);
-}
-
 /* Floating pass-selection bar (top, does not cover the map) */
 .pass-select {
   position: absolute;
@@ -2394,3 +2466,261 @@ button {
 }
 .search-recent-head:hover { background: none; }
 .search-recent-icon { opacity: 0.5; }
+
+/* --- Dialog basics (Modal.tsx) --- */
+/* The dialog box receives focus on open so Tab starts inside it; no ring. */
+.modal:focus {
+  outline: none;
+}
+
+/* Yes/no question on top of another dialog (ConfirmDialog.tsx) */
+.confirm-backdrop {
+  z-index: 70;
+}
+.modal-confirm {
+  max-width: 420px;
+}
+.confirm-text {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+.confirm-actions .export-btn {
+  width: auto;
+  min-width: 120px;
+}
+.export-btn.danger {
+  background: var(--danger);
+  color: #2a0a0e;
+  border-color: transparent;
+}
+.export-btn.danger:hover {
+  filter: brightness(1.07);
+}
+
+/* Tour-Genius: running search with counter and cancel */
+.tg-busy {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 22px;
+}
+.tg-busy .tg-go {
+  margin-top: 0;
+}
+.tg-progress {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.tg-spinner {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tg-spinner { animation: none; }
+}
+
+/* --- Identity: website links on Home, legend under the riding-style toggle --- */
+.home-footer {
+  margin-top: 22px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.home-footer a {
+  color: var(--muted);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+.home-footer a:hover {
+  color: var(--accent);
+}
+.home-cta.primary .home-cta-sub {
+  color: rgba(255, 255, 255, 0.85);
+}
+.toggle-legend {
+  margin-top: 8px;
+}
+
+/* --- Map context menu (right-click / long-press): Start, Zwischenziel, Ziel --- */
+.map-ctx {
+  position: absolute;
+  z-index: 20;
+  min-width: 200px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  animation: pop-in 0.12s ease;
+}
+.map-ctx button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.map-ctx button:hover,
+.map-ctx button:focus-visible {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* --- "Mehr" tools menu on phones --- */
+.tools-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tools-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 58px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+}
+.tools-item:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.tools-item .icon {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+.tools-item span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tools-item strong {
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+.tools-item small {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.tools-item.danger .icon {
+  color: var(--danger);
+}
+
+/* ── Desktop (≥ 900 px): sidebar left, map right ──────────────────────
+   Same components as the bottom sheet, only repositioned. The breakpoint is
+   mirrored in lib/useMediaQuery.ts (DESKTOP_QUERY). */
+@media (min-width: 900px) {
+  :root {
+    --sidebar-w: 400px;
+  }
+  /* Pässeplaner mode has no sidebar: the map gets the whole width. */
+  .app.pass-mode {
+    --sidebar-w: 0px;
+  }
+
+  .map-wrap {
+    left: var(--sidebar-w);
+  }
+
+  .topbar {
+    right: auto;
+    width: var(--sidebar-w);
+    z-index: 12;
+    padding: 14px 16px 0;
+  }
+
+  .searchbox {
+    top: 72px;
+    left: 16px;
+    right: auto;
+    width: calc(var(--sidebar-w) - 32px);
+    max-width: none;
+    margin: 0;
+  }
+
+  .panel {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: auto;
+    width: var(--sidebar-w);
+    max-height: none;
+    border-radius: 0;
+    border-top: 0;
+    border-right: 1px solid var(--border-strong);
+    box-shadow: 12px 0 40px rgba(0, 0, 0, 0.35);
+    padding: 134px 16px 20px;
+    gap: 14px;
+  }
+
+  .panel-handle,
+  .panel-minbar {
+    display: none;
+  }
+
+  .panel-row.top .quickplan-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  /* Floating bars centre over the map, not over the whole window. */
+  .tg-preview,
+  .pass-select {
+    left: calc(var(--sidebar-w) + (100vw - var(--sidebar-w)) / 2);
+  }
+
+  /* The sidebar is narrow: per-leg style toggle on its own full-width line,
+     like on phones, instead of squeezing "Fun 1" into two lines. */
+  .segment {
+    flex-wrap: wrap;
+    gap: 6px 8px;
+  }
+  .segment .toggle {
+    flex: 1 1 100%;
+    order: 3;
+  }
+  .segment .toggle-btn {
+    flex: 1 1 0;
+  }
+}

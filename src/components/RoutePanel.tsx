@@ -1,6 +1,8 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Icon, { type IconName } from "./Icon";
+import Modal from "./Modal";
 import { computeDays, dayStats, dayNumbers } from "../lib/days";
+import { DESKTOP_QUERY, useMediaQuery } from "../lib/useMediaQuery";
 import type { BookingPrefs } from "../lib/storage";
 import { isFair, type WeatherDay } from "../lib/weather";
 import type { RouteProfile, RouteResult, Waypoint } from "../types";
@@ -35,10 +37,17 @@ interface Props {
   onClear: () => void;
 }
 
-const PROFILE_LABEL: Record<RouteProfile, string> = {
+export const PROFILE_LABEL: Record<RouteProfile, string> = {
   kurvig: "Fun 1",
   kurvig_plus: "Fun 2",
   schnell: "Schnell",
+};
+
+// What the three riding styles mean (tooltip + screen readers).
+export const PROFILE_HINT: Record<RouteProfile, string> = {
+  kurvig: "Fun 1: kurvig über kleine Strassen und Pässe, zuverlässig",
+  kurvig_plus: "Fun 2: maximal kurvig, nimmt auch Umwege in Kauf",
+  schnell: "Schnell: direkt, auch über die Autobahn",
 };
 
 function formatDuration(minutes: number): string {
@@ -88,6 +97,9 @@ function ProfileToggle({
           key={p}
           className={`toggle-btn ${value === p ? "active" : ""} ${p}`}
           onClick={() => onChange(p)}
+          title={PROFILE_HINT[p]}
+          aria-label={PROFILE_HINT[p]}
+          aria-pressed={value === p}
         >
           {PROFILE_LABEL[p]}
         </button>
@@ -143,8 +155,43 @@ export default function RoutePanel({
   const toggleDay = (d: number) =>
     setOpenOverrides((o) => ({ ...o, [d]: !isDayOpen(d) }));
 
-  // The whole bottom sheet can be minimised to free up the map.
-  const [min, setMin] = useState(false);
+  // Wide screens show the panel as a sidebar next to the map (no grabber, no
+  // minimise); phones get the bottom sheet.
+  const desktop = useMediaQuery(DESKTOP_QUERY);
+
+  // The bottom sheet can be minimised to free up the map (phones only).
+  const [minState, setMin] = useState(false);
+  const min = minState && !desktop;
+
+  // Secondary tools live in a menu on phones so the sheet starts with the
+  // tour itself instead of a wall of buttons.
+  const [showTools, setShowTools] = useState(false);
+  const pick = (fn: () => void) => () => {
+    setShowTools(false);
+    fn();
+  };
+
+  // Publish the sheet's current height as a CSS variable so the map controls
+  // (zoom, locate, scale) and "fit route" can stay clear of it. The sidebar
+  // sits beside the map, so there it publishes 0.
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const root = document.documentElement;
+    const publish = () =>
+      root.style.setProperty(
+        "--panel-h",
+        desktop ? "0px" : `${Math.round(el.getBoundingClientRect().height)}px`,
+      );
+    publish();
+    const ro = new ResizeObserver(publish);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.style.setProperty("--panel-h", "0px");
+    };
+  }, [desktop]);
 
   // Drag the grabber: pull down to minimise, up to expand (tap also toggles).
   const dragRef = useRef<{ y: number; moved: boolean } | null>(null);
@@ -252,25 +299,27 @@ export default function RoutePanel({
   };
 
   return (
-    <div className={`panel ${min ? "min" : ""}`}>
-      <div
-        className="panel-handle"
-        onPointerDown={onHandleDown}
-        onPointerMove={onHandleMove}
-        onPointerUp={onHandleUp}
-        title="Ziehen oder tippen zum Ein-/Ausklappen"
-      >
-        <span className="panel-handle-bar" />
-        <button
-          className="panel-handle-chevron"
-          data-open={!min}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => setMin((m) => !m)}
-          aria-label={min ? "Bedienfeld aufklappen" : "Bedienfeld minimieren"}
+    <div ref={rootRef} className={`panel ${min ? "min" : ""}`}>
+      {!desktop && (
+        <div
+          className="panel-handle"
+          onPointerDown={onHandleDown}
+          onPointerMove={onHandleMove}
+          onPointerUp={onHandleUp}
+          title="Ziehen oder tippen zum Ein-/Ausklappen"
         >
-          <Icon name="chevron" size={20} />
-        </button>
-      </div>
+          <span className="panel-handle-bar" />
+          <button
+            className="panel-handle-chevron"
+            data-open={!min}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => setMin((m) => !m)}
+            aria-label={min ? "Bedienfeld aufklappen" : "Bedienfeld minimieren"}
+          >
+            <Icon name="chevron" size={20} />
+          </button>
+        </div>
+      )}
 
       {min ? (
         <button className="panel-minbar" onClick={() => setMin(false)}>
@@ -282,38 +331,55 @@ export default function RoutePanel({
                 {days.length > 1 ? ` · ${days.length} Tage` : ""}
               </>
             ) : (
-              "Route planen — antippen zum Aufklappen"
+              "Tour planen – antippen zum Aufklappen"
             )}
           </span>
         </button>
       ) : (
        <>
       <div className="panel-row top">
+        {/* One primary action; the other tools share the quiet secondary style
+            (desktop) or sit behind "Mehr" (phones). */}
         <button className="quickplan-btn" onClick={onOpenQuickPlan}>
-          <Icon name="zap" size={16} /> Route planen
+          <Icon name="zap" size={16} /> Tour planen
         </button>
-        <button className="quickplan-btn genius" onClick={onOpenTourGenius}>
-          <Icon name="compass" size={16} /> Tour-Genius
-        </button>
-        <button className="quickplan-btn passes" onClick={onOpenPassPlanner}>
-          <Icon name="mountain" size={16} /> Pässeplaner
-        </button>
-        <button className="quickplan-btn secondary" onClick={onOpenRoutes}>
-          <Icon name="folder" size={16} /> Routen
-        </button>
+        {desktop ? (
+          <>
+            <button className="quickplan-btn secondary" onClick={onOpenTourGenius}>
+              <Icon name="compass" size={16} /> Tour-Genius
+            </button>
+            <button className="quickplan-btn secondary" onClick={onOpenPassPlanner}>
+              <Icon name="mountain" size={16} /> Pässeplaner
+            </button>
+            <button className="quickplan-btn secondary" onClick={onOpenRoutes}>
+              <Icon name="folder" size={16} /> Touren
+            </button>
+          </>
+        ) : (
+          <button
+            className="quickplan-btn secondary tools-btn"
+            onClick={() => setShowTools(true)}
+            aria-haspopup="dialog"
+          >
+            <Icon name="menu" size={16} /> Mehr
+          </button>
+        )}
+      </div>
+
+      <div className="panel-row profile">
         <span className="default-label">Neuer Abschnitt:</span>
         <ProfileToggle value={defaultProfile} onChange={onDefaultProfileChange} />
-        {waypoints.length >= 2 && (
+        {desktop && waypoints.length >= 2 && (
           <>
             <button className="clear-btn" onClick={onReverse} title="Richtung umkehren">
-              <Icon name="down" size={14} /> Umkehren
+              <Icon name="swap" size={14} /> Umkehren
             </button>
             <button className="clear-btn" onClick={onRoundTrip} title="Zurück zum Start (Rundtour)">
               <Icon name="loop" size={14} /> Rundtour
             </button>
           </>
         )}
-        {waypoints.length > 0 && (
+        {desktop && waypoints.length > 0 && (
           <button className="clear-btn" onClick={onClear}>
             Zurücksetzen
           </button>
@@ -323,7 +389,7 @@ export default function RoutePanel({
       <div className="panel-row summary">
         {waypoints.length === 0 && (
           <span className="hint">
-            Ort suchen oder auf die Karte tippen, um Start, Stopps und Ziel zu setzen.
+            Ort suchen oder auf die Karte tippen, um Start, Zwischenziele und Ziel zu setzen.
           </span>
         )}
         {waypoints.length === 1 && (
@@ -338,17 +404,21 @@ export default function RoutePanel({
         )}
         {route && !loading && !error && (
           <span className="stats">
-            {days.length > 1 && <strong>{days.length} Tage</strong>}
-            {days.length > 1 && <span className="dot">·</span>}
-            <strong>{route.distanceKm.toFixed(1)} km</strong>
-            <span className="dot">·</span>
-            <strong>{formatDuration(route.durationMin)}</strong>
-            <button className="details-btn" onClick={onOpenDetails}>
-              <Icon name="chart" size={15} /> Details
-            </button>
-            <button className="details-btn" onClick={onOpenShare}>
-              <Icon name="users" size={15} /> Teilen
-            </button>
+            <span className="stats-nums">
+              {days.length > 1 && <strong>{days.length} Tage</strong>}
+              {days.length > 1 && <span className="dot">·</span>}
+              <strong>{route.distanceKm.toFixed(1)} km</strong>
+              <span className="dot">·</span>
+              <strong>{formatDuration(route.durationMin)}</strong>
+            </span>
+            <span className="stats-actions">
+              <button className="details-btn" onClick={onOpenDetails}>
+                <Icon name="chart" size={15} /> Details
+              </button>
+              <button className="details-btn" onClick={onOpenShare}>
+                <Icon name="share" size={15} /> Teilen
+              </button>
+            </span>
           </span>
         )}
       </div>
@@ -426,7 +496,7 @@ export default function RoutePanel({
                       onClick={() => onOpenHotel(placeName(overnight), overnight.dayDate)}
                       title="Hotels an diesem Übernachtungsort suchen"
                     >
-                      <Icon name="bed" size={15} /> Hotels
+                      <Icon name="bed" size={15} /> Hotels suchen
                     </button>
                   )}
                 </div>
@@ -469,11 +539,66 @@ export default function RoutePanel({
 
       {waypoints.length >= 2 && (
         <p className="edit-hint">
-          „Tag hinzufügen" beendet den Tag am letzten Punkt. Streckenlinie ziehen
-          fügt einen Zwischenpunkt ein.
+          „Tag hinzufügen“ beendet den Tag am letzten Punkt. Streckenlinie ziehen
+          fügt ein Zwischenziel ein.
         </p>
       )}
        </>
+      )}
+
+      {showTools && (
+        <Modal title="Werkzeuge" onClose={() => setShowTools(false)} className="modal-tools">
+          <div className="modal-body tools-list">
+            <button className="tools-item" onClick={pick(onOpenTourGenius)}>
+              <Icon name="compass" size={20} />
+              <span>
+                <strong>Tour-Genius</strong>
+                <small>Touren automatisch generieren</small>
+              </span>
+            </button>
+            <button className="tools-item" onClick={pick(onOpenPassPlanner)}>
+              <Icon name="mountain" size={20} />
+              <span>
+                <strong>Pässeplaner</strong>
+                <small>Tour über ausgewählte Pässe</small>
+              </span>
+            </button>
+            <button className="tools-item" onClick={pick(onOpenRoutes)}>
+              <Icon name="folder" size={20} />
+              <span>
+                <strong>Meine Touren</strong>
+                <small>Speichern, laden, importieren</small>
+              </span>
+            </button>
+            {waypoints.length >= 2 && (
+              <>
+                <button className="tools-item" onClick={pick(onReverse)}>
+                  <Icon name="swap" size={20} />
+                  <span>
+                    <strong>Umkehren</strong>
+                    <small>Richtung der Tour umdrehen</small>
+                  </span>
+                </button>
+                <button className="tools-item" onClick={pick(onRoundTrip)}>
+                  <Icon name="loop" size={20} />
+                  <span>
+                    <strong>Rundtour</strong>
+                    <small>Zurück zum Start anhängen</small>
+                  </span>
+                </button>
+              </>
+            )}
+            {waypoints.length > 0 && (
+              <button className="tools-item danger" onClick={pick(onClear)}>
+                <Icon name="x" size={20} />
+                <span>
+                  <strong>Zurücksetzen</strong>
+                  <small>Alle Punkte entfernen</small>
+                </span>
+              </button>
+            )}
+          </div>
+        </Modal>
       )}
     </div>
   );

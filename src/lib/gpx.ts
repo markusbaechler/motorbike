@@ -105,7 +105,7 @@ export function buildGpx(
   }
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="Motorbike Routenplaner" xmlns="http://www.topografix.com/GPX/1/1">
+<gpx version="1.1" creator="Pudgilly Riders Routenplaner" xmlns="http://www.topografix.com/GPX/1/1">
   <metadata><name>${esc(name)}</name></metadata>
 ${wpts}
 ${body}

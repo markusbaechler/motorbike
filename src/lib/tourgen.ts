@@ -20,6 +20,14 @@ import type { RouteProfile } from "../types";
 
 export type TourDuration = "half" | "full";
 
+// Coarse progress for the UI: how many routed candidates are done so far.
+export interface TourProgress {
+  done: number;
+  total: number;
+  label: string;
+}
+export type ProgressFn = (p: TourProgress) => void;
+
 export interface TourStop {
   lat: number;
   lng: number;
@@ -232,6 +240,14 @@ function funScore(c: TourCandidate, target: number, tMin: number): number {
   );
 }
 
+// Report each settled job (fulfilled or rejected) to the progress callback.
+function withProgress<T>(jobs: Promise<T>[], label: string, onProgress?: ProgressFn): Promise<T>[] {
+  if (!onProgress) return jobs;
+  let done = 0;
+  onProgress({ done, total: jobs.length, label });
+  return jobs.map((j) => j.finally(() => onProgress({ done: ++done, total: jobs.length, label })));
+}
+
 // De-duplicate near-identical candidates (same length & climb) so the variants
 // the rider browses are genuinely different routes. Returns up to 6.
 function dedupe(pool: TourCandidate[]): TourCandidate[] {
@@ -253,6 +269,7 @@ export async function findTours(
   duration: TourDuration,
   profile: RouteProfile,
   signal?: AbortSignal,
+  onProgress?: ProgressFn,
 ): Promise<TourCandidate[]> {
   const target = TARGET_KM[duration];
   const baseRadiusM = ((target / DETOUR) * 1000) / (2 * Math.PI);
@@ -392,6 +409,9 @@ export async function findTours(
       analysis: analyse([r.feature]),
     });
 
+    let done = 0;
+    const label = "Pass-Schlaufen";
+    onProgress?.({ done, total: seeds.length, label });
     const settled = await Promise.allSettled(
       seeds.map((s) =>
         optimizeLoop({
@@ -405,7 +425,9 @@ export async function findTours(
           corridorKm: CORRIDOR_KM[duration],
           trialsPerRound: 3,
           maxPool: 12,
-        }).then(toCand),
+        })
+          .then(toCand)
+          .finally(() => onProgress?.({ done: ++done, total: seeds.length, label })),
       ),
     );
     if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
@@ -448,7 +470,7 @@ export async function findTours(
       });
     }
     for (const ps of passSets) jobs.push(buildStops(ps.stops, ps.passes));
-    const settled = await Promise.allSettled(jobs);
+    const settled = await Promise.allSettled(withProgress(jobs, "Varianten", onProgress));
     if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
     return settled
       .filter((s): s is PromiseFulfilledResult<TourCandidate> => s.status === "fulfilled")
@@ -527,6 +549,7 @@ export async function findToursToDest(
   duration: TourDuration,
   profile: RouteProfile,
   signal?: AbortSignal,
+  onProgress?: ProgressFn,
 ): Promise<TourCandidate[]> {
   const a: Coord = [start.lng, start.lat];
   const b: Coord = [dest.lng, dest.lat];
@@ -608,7 +631,7 @@ export async function findToursToDest(
     }
   }
 
-  const settled = await Promise.allSettled(jobs);
+  const settled = await Promise.allSettled(withProgress(jobs, "Varianten", onProgress));
   if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
   const ok = settled
     .filter((s): s is PromiseFulfilledResult<TourCandidate> => s.status === "fulfilled")

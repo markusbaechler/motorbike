@@ -28,7 +28,15 @@ export type IconName =
   | "fog"
   | "compass"
   | "mountain"
-  | "loop";
+  | "loop"
+  | "swap"
+  | "check"
+  | "link"
+  | "print"
+  | "share"
+  | "scenery"
+  | "arrowLeft"
+  | "menu";
 
 const PATHS: Record<IconName, ReactNode> = {
   search: (
@@ -175,6 +183,60 @@ const PATHS: Record<IconName, ReactNode> = {
     <>
       <path d="M17 4a8 8 0 1 1-7 4" />
       <polyline points="17 9 17 4 12 4" />
+    </>
+  ),
+  // Reverse the direction of travel (two arrows chasing each other).
+  swap: (
+    <>
+      <polyline points="17 1 21 5 17 9" />
+      <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+      <polyline points="7 23 3 19 7 15" />
+      <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+    </>
+  ),
+  check: <polyline points="20 6 9 17 4 12" />,
+  link: (
+    <>
+      <path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3" />
+      <path d="M9 17H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3" />
+      <line x1="8" y1="12" x2="16" y2="12" />
+    </>
+  ),
+  print: (
+    <>
+      <polyline points="6 9 6 2 18 2 18 9" />
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+      <rect x="6" y="14" width="12" height="8" />
+    </>
+  ),
+  share: (
+    <>
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <line x1="8.6" y1="13.5" x2="15.4" y2="17.5" />
+      <line x1="15.4" y1="6.5" x2="8.6" y2="10.5" />
+    </>
+  ),
+  // Scenery: rolling hills with a sun.
+  scenery: (
+    <>
+      <path d="M2 20c3-5 5-7 7-7s3 2 5 2 4-5 8-5" />
+      <path d="M2 20h20" />
+      <circle cx="7" cy="6" r="2.5" />
+    </>
+  ),
+  arrowLeft: (
+    <>
+      <line x1="19" y1="12" x2="5" y2="12" />
+      <polyline points="12 19 5 12 12 5" />
+    </>
+  ),
+  menu: (
+    <>
+      <line x1="4" y1="7" x2="20" y2="7" />
+      <line x1="4" y1="12" x2="20" y2="12" />
+      <line x1="4" y1="17" x2="20" y2="17" />
     </>
   ),
   mountain: (

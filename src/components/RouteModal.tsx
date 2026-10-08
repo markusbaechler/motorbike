@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import Icon from "./Icon";
+import Modal from "./Modal";
 import ElevationChart from "./ElevationChart";
 import { analyse, type RouteAnalysis } from "../lib/analysis";
 import { buildGpx, downloadGpx } from "../lib/gpx";
@@ -135,7 +136,7 @@ export default function RouteModal({ waypoints, route, weather, onClose }: Props
   );
 
   const exportWhole = (mode: "waypoints" | "route" | "track") =>
-    downloadGpx("motorradtour", buildGpx("Motorradtour", waypoints, route.geojson.features, mode));
+    downloadGpx("tour", buildGpx("Tour", waypoints, route.geojson.features, mode));
 
   const exportDay = (startIdx: number, endIdx: number, day: number) => {
     const features = route.geojson.features.filter((f) => {
@@ -169,15 +170,8 @@ export default function RouteModal({ waypoints, route, weather, onClose }: Props
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-head">
-          <h2>Routen-Details</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Schließen">
-            <Icon name="x" size={18} />
-          </button>
-        </div>
-
+    <>
+      <Modal title="Tour-Details" onClose={onClose} className="modal-lg">
         <div className="modal-body">
           {/* Hero rating */}
           <section className="rating-hero">
@@ -203,8 +197,8 @@ export default function RouteModal({ waypoints, route, weather, onClose }: Props
           {/* Criteria */}
           <section className="modal-section card">
             <ScoreBar icon="zap" label="Kurvenreichtum" value={analysis.scores.curves} />
-            <ScoreBar icon="flag" label="Bergigkeit & Pässe" value={analysis.scores.mountains} />
-            <ScoreBar icon="chart" label="Landschaft (kleine Straßen)" value={analysis.scores.scenic} />
+            <ScoreBar icon="mountain" label="Bergigkeit & Pässe" value={analysis.scores.mountains} />
+            <ScoreBar icon="scenery" label="Landschaft (kleine Strassen)" value={analysis.scores.scenic} />
           </section>
 
           {/* Statistics */}
@@ -213,7 +207,7 @@ export default function RouteModal({ waypoints, route, weather, onClose }: Props
             {analysis.hasRoadData ? (
               stats(analysis)
             ) : (
-              <p className="modal-note">Straßentyp-Daten für diese Route nicht verfügbar.</p>
+              <p className="modal-note">Strassentyp-Daten für diese Route nicht verfügbar.</p>
             )}
           </section>
 
@@ -271,13 +265,13 @@ export default function RouteModal({ waypoints, route, weather, onClose }: Props
             <button
               className="export-btn"
               style={{ width: "100%" }}
-              onClick={() => openRoadbook("Motorradtour", waypoints, route, weather)}
+              onClick={() => openRoadbook("Tour", waypoints, route, weather)}
             >
-              <Icon name="chart" size={16} /> Roadbook drucken / als PDF
+              <Icon name="print" size={16} /> Roadbook drucken / als PDF
             </button>
             <p className="modal-note">
               Druckfertige Tagesübersicht (Etappen, Zeiten, Übernachtung, Wetter). Im
-              Druckdialog „Als PDF speichern" wählen.
+              Druckdialog „Als PDF speichern“ wählen.
             </p>
           </section>
 
@@ -325,33 +319,30 @@ export default function RouteModal({ waypoints, route, weather, onClose }: Props
             )}
           </section>
         </div>
-      </div>
+      </Modal>
 
-      {/* Criteria explanation popup */}
+      {/* Criteria explanation popup (nested dialog on top of the details) */}
       {showInfo && (
-        <div className="modal-backdrop info-backdrop" onClick={(e) => { e.stopPropagation(); setShowInfo(false); }}>
-          <div className="modal info-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-head">
-              <h2>So wird bewertet</h2>
-              <button className="modal-close" onClick={() => setShowInfo(false)} aria-label="Schließen">
-                <Icon name="x" size={18} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <ul className="info-list">
-                <li><strong>Gesamt</strong> = Kurven 40 % + Bergigkeit 30 % + Landschaft 30 %.</li>
-                <li><strong>Kurvenreichtum</strong>: echte Richtungswechsel ({">"}25°) pro km. Schon ~2 Kurven/km = Maximum.</li>
-                <li><strong>Bergigkeit & Pässe</strong>: höchster Punkt (Passhöhe), Anzahl Pässe und Höhenmeter pro km.</li>
-                <li><strong>Landschaft</strong>: Anteil kleiner Neben-/Landstraßen, abzüglich Autobahnanteil.</li>
-              </ul>
-              <p className="modal-note">
-                Es handelt sich um eine berechnete Einschätzung aus Geometrie, Höhenprofil und
-                Straßentypen – kein externes Landschafts-Rating.
-              </p>
-            </div>
+        <Modal
+          title="So wird bewertet"
+          onClose={() => setShowInfo(false)}
+          className="info-modal"
+          backdropClassName="info-backdrop"
+        >
+          <div className="modal-body">
+            <ul className="info-list">
+              <li><strong>Gesamt</strong> = Kurven 40 % + Bergigkeit 30 % + Landschaft 30 %.</li>
+              <li><strong>Kurvenreichtum</strong>: echte Richtungswechsel ({">"}25°) pro km. Schon ~2 Kurven/km = Maximum.</li>
+              <li><strong>Bergigkeit & Pässe</strong>: höchster Punkt (Passhöhe), Anzahl Pässe und Höhenmeter pro km.</li>
+              <li><strong>Landschaft</strong>: Anteil kleiner Neben-/Landstrassen, abzüglich Autobahnanteil.</li>
+            </ul>
+            <p className="modal-note">
+              Es handelt sich um eine berechnete Einschätzung aus Geometrie, Höhenprofil und
+              Strassentypen – kein externes Landschafts-Rating.
+            </p>
           </div>
-        </div>
+        </Modal>
       )}
-    </div>
+    </>
   );
 }

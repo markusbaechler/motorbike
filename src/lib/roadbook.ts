@@ -167,7 +167,7 @@ export function openRoadbook(
       ${whole.hasElevation ? svgProfile(whole.profile, whole.minEle, whole.maxEle) : ""}
     </div>
     ${dayBlocks}
-    <p class="foot">Erstellt mit Motorbike Routenplaner</p>
+    <p class="foot">Erstellt mit dem Routenplaner der Pudgilly Riders · pudgilly.ch</p>
   </body></html>`;
 
   const w = window.open("", "_blank");

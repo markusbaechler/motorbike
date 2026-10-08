@@ -1,8 +1,12 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Icon from "./Icon";
+import Modal from "./Modal";
 import PlaceInput from "./PlaceInput";
+import { PROFILE_HINT, PROFILE_LABEL } from "./RoutePanel";
 import { searchPlaces, type GeoResult } from "../lib/geocoding";
 import type { RouteProfile } from "../types";
+
+const isAbort = (e: unknown) => (e as Error | null)?.name === "AbortError";
 
 export interface QuickStop {
   name?: string;
@@ -130,23 +134,36 @@ export default function QuickPlanModal({
     setDays((ds) => ds.map((d) => ({ ...d, stops: d.stops.map((s) => ({ ...s, legProfile: p })) })));
   };
 
+  // Closing the dialog cancels the geocoding so a late answer can't replace the
+  // route behind the rider's back.
+  const ctrlRef = useRef<AbortController | null>(null);
+  useEffect(() => () => ctrlRef.current?.abort(), []);
+  const close = () => {
+    ctrlRef.current?.abort();
+    ctrlRef.current = null;
+    onClose();
+  };
+
   const resolve = async (
     slot: Slot,
+    signal: AbortSignal,
     prev?: { lat: number; lng: number },
   ): Promise<GeoResult | null> => {
     if (slot.picked) return slot.picked;
     if (slot.value.trim().length < 2) return null;
-    const found = await searchPlaces(slot.value.trim(), undefined, prev);
-    if (!found[0]) throw new Error(`Kein Ort gefunden für „${slot.value.trim()}".`);
+    const found = await searchPlaces(slot.value.trim(), signal, prev);
+    if (!found[0]) throw new Error(`Kein Ort gefunden für „${slot.value.trim()}“.`);
     return found[0];
   };
 
   const submit = async () => {
+    const ctrl = new AbortController();
+    ctrlRef.current = ctrl;
     setBusy(true);
     setError(null);
     try {
       const flat: QuickStop[] = [];
-      const startPlace = await resolve(start);
+      const startPlace = await resolve(start, ctrl.signal);
       if (!startPlace) throw new Error("Bitte einen Start angeben.");
       flat.push({ name: startPlace.name, lng: startPlace.lng, lat: startPlace.lat, legProfile: start.legProfile });
       let prev = { lat: startPlace.lat, lng: startPlace.lng };
@@ -155,7 +172,7 @@ export default function QuickPlanModal({
         const day = days[di];
         const resolvedDay: { place: GeoResult; legProfile: RouteProfile }[] = [];
         for (const slot of day.stops) {
-          const place = await resolve(slot, prev);
+          const place = await resolve(slot, ctrl.signal, prev);
           if (place) {
             resolvedDay.push({ place, legProfile: slot.legProfile });
             prev = { lat: place.lat, lng: place.lng };
@@ -178,11 +195,16 @@ export default function QuickPlanModal({
       }
 
       if (flat.length < 2) throw new Error("Bitte mindestens Start und Ziel angeben.");
+      if (ctrl.signal.aborted) return;
       onApply(flat);
     } catch (e) {
+      if (isAbort(e) || ctrl.signal.aborted) return;
       setError((e as Error).message);
     } finally {
-      setBusy(false);
+      if (ctrlRef.current === ctrl) {
+        ctrlRef.current = null;
+        setBusy(false);
+      }
     }
   };
 
@@ -214,17 +236,11 @@ export default function QuickPlanModal({
   );
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-head">
-          <h2>{initialStops ? "Route bearbeiten" : "Route planen"}</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Schließen"><Icon name="x" size={18} /></button>
-        </div>
-
+    <Modal title={initialStops ? "Tour bearbeiten" : "Tour planen"} onClose={close}>
         <div className="modal-body">
           <p className="modal-note" style={{ marginTop: 0 }}>
             Pro Tag ein Block. Jeder Tag startet an der Übernachtung des Vortags.
-            „+ Tag" fügt einen weiteren Tag an.
+            „+ Tag“ fügt einen weiteren Tag an.
           </p>
 
           {days.map((day, di) => {
@@ -307,27 +323,33 @@ export default function QuickPlanModal({
           <button className="add-day-btn" onClick={addDay}><Icon name="plus" size={16} /> Tag hinzufügen</button>
 
           <div className="qp-profile">
-            <span className="default-label">Profil (alle Etappen):</span>
+            <span className="default-label">Fahrstil (alle Abschnitte):</span>
             <span className="toggle">
               {(["kurvig", "kurvig_plus", "schnell"] as RouteProfile[]).map((p) => (
                 <button
                   key={p}
                   className={`toggle-btn ${profile === p ? "active" : ""} ${p}`}
                   onClick={() => chooseProfile(p)}
+                  title={PROFILE_HINT[p]}
+                  aria-label={PROFILE_HINT[p]}
+                  aria-pressed={profile === p}
                 >
-                  {p === "kurvig" ? "Fun 1" : p === "kurvig_plus" ? "Fun 2" : "Schnell"}
+                  {PROFILE_LABEL[p]}
                 </button>
               ))}
             </span>
           </div>
+          <p className="modal-note toggle-legend">
+            Fun 1: kurvig über kleine Strassen · Fun 2: maximal kurvig, auch Umwege · Schnell:
+            direkt, auch Autobahn. Pro Abschnitt später im Panel änderbar.
+          </p>
 
           {error && <p className="error">⚠ {error}</p>}
 
           <button className="export-btn primary" disabled={busy} onClick={submit}>
-            {busy ? "Route wird erstellt …" : "Route erstellen"}
+            {busy ? "Tour wird erstellt …" : "Tour erstellen"}
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

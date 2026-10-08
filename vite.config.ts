@@ -22,23 +22,24 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.svg", "apple-touch-icon.png"],
+      includeAssets: ["favicon.svg", "apple-touch-icon.png", "logo.png"],
       manifest: {
-        name: "Motorbike – Routenplaner",
-        short_name: "Motorbike",
+        name: "Pudgilly Riders – Routenplaner",
+        short_name: "Routenplaner",
         description:
-          "Plane kurvige Motorradtouren – Etappen, Pässe, GPX-Export fürs Navi.",
+          "Kurvige Motorradtouren planen: Tag für Tag, mit Pässen, Übernachtungen und GPX fürs Navi.",
+        lang: "de-CH",
         theme_color: "#100f12",
         background_color: "#100f12",
         display: "standalone",
-        orientation: "portrait",
+        // Relative on purpose: the same build runs under pudgilly.ch/planer/,
+        // on GitHub Pages and on a subdomain without any change.
         start_url: "./",
         scope: "./",
         icons: [
           { src: "pwa-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
           { src: "pwa-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
           { src: "maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
-          { src: "icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
         ],
       },
       workbox: {

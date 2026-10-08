@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
 import Icon from "./Icon";
+import Modal from "./Modal";
+import ConfirmDialog from "./ConfirmDialog";
 import {
   deleteRoute,
   exportRouteFile,
@@ -18,6 +20,14 @@ interface Props {
   onClose: () => void;
 }
 
+// A question waiting for the rider's answer before work is thrown away, or a
+// small edit that needs its own dialog.
+type Pending =
+  | { kind: "load"; name: string; waypoints: Waypoint[]; saveAs?: string; closeAfter: boolean }
+  | { kind: "delete"; route: SavedRoute }
+  | { kind: "rename"; route: SavedRoute }
+  | null;
+
 function meta(r: SavedRoute): string {
   const days = computeDays(r.waypoints).length || (r.waypoints.length >= 1 ? 1 : 0);
   const date = new Date(r.updatedAt).toLocaleDateString("de-CH");
@@ -28,32 +38,53 @@ export default function RoutesModal({ currentWaypoints, onLoad, onClose }: Props
   const [routes, setRoutes] = useState<SavedRoute[]>(() => listRoutes());
   const [name, setName] = useState("");
   const [info, setInfo] = useState<string | null>(null);
+  const [pending, setPending] = useState<Pending>(null);
+  const [renameValue, setRenameValue] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const renameRef = useRef<HTMLInputElement>(null);
 
   const refresh = () => setRoutes(listRoutes());
   const canSave = currentWaypoints.length >= 2;
+  // Loading replaces the tour on the map; ask first when there is one.
+  const hasWork = currentWaypoints.length >= 2;
 
   const doSave = () => {
-    const n = name.trim() || `Route ${new Date().toLocaleDateString("de-CH")}`;
+    const n = name.trim() || `Tour ${new Date().toLocaleDateString("de-CH")}`;
     saveRoute(n, currentWaypoints);
     setName("");
-    setInfo(`„${n}" gespeichert.`);
+    setInfo(`„${n}“ gespeichert.`);
     refresh();
   };
 
-  const doRename = (r: SavedRoute) => {
-    const n = window.prompt("Neuer Name:", r.name);
-    if (n && n.trim()) {
-      renameRoute(r.id, n.trim());
-      refresh();
-    }
+  const startRename = (r: SavedRoute) => {
+    setRenameValue(r.name);
+    setPending({ kind: "rename", route: r });
   };
 
-  const doDelete = (r: SavedRoute) => {
-    if (window.confirm(`„${r.name}" wirklich löschen?`)) {
-      deleteRoute(r.id);
+  const applyRename = () => {
+    if (pending?.kind !== "rename") return;
+    const n = renameValue.trim();
+    if (n) {
+      renameRoute(pending.route.id, n.slice(0, 80));
       refresh();
     }
+    setPending(null);
+  };
+
+  const applyLoad = (p: Extract<Pending, { kind: "load" }>) => {
+    onLoad(p.waypoints);
+    if (p.saveAs) {
+      saveRoute(p.saveAs, p.waypoints);
+      setInfo(`„${p.saveAs}“ importiert und geladen.`);
+      refresh();
+    }
+    setPending(null);
+    if (p.closeAfter) onClose();
+  };
+
+  const requestLoad = (p: Extract<Pending, { kind: "load" }>) => {
+    if (hasWork) setPending(p);
+    else applyLoad(p);
   };
 
   const onImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,10 +92,7 @@ export default function RoutesModal({ currentWaypoints, onLoad, onClose }: Props
     if (!file) return;
     try {
       const { name: n, waypoints } = parseRouteFile(await file.text());
-      onLoad(waypoints);
-      saveRoute(n, waypoints);
-      setInfo(`„${n}" importiert und geladen.`);
-      refresh();
+      requestLoad({ kind: "load", name: n, waypoints, saveAs: n, closeAfter: false });
     } catch (err) {
       setInfo((err as Error).message);
     }
@@ -72,34 +100,29 @@ export default function RoutesModal({ currentWaypoints, onLoad, onClose }: Props
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-head">
-          <h2>Meine Routen</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Schließen">
-            <Icon name="x" size={18} />
-          </button>
-        </div>
-
+    <>
+      <Modal title="Meine Touren" onClose={onClose}>
         <div className="modal-body">
           {/* Save current */}
           <section className="modal-section">
-            <h3>Aktuelle Route speichern</h3>
+            <h3>Aktuelle Tour speichern</h3>
             <div className="qp-row">
               <input
                 className="day-name-input"
                 type="text"
                 placeholder="Name (z. B. Alpentour Juli)"
+                aria-label="Name der Tour"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={!canSave}
+                maxLength={80}
               />
               <button className="export-btn primary" disabled={!canSave} onClick={doSave}>
                 <Icon name="save" size={17} /> Speichern
               </button>
             </div>
             {!canSave && (
-              <p className="modal-note">Erst eine Route mit mindestens zwei Punkten anlegen.</p>
+              <p className="modal-note">Erst eine Tour mit mindestens zwei Punkten anlegen.</p>
             )}
             {info && <p className="modal-note">{info}</p>}
           </section>
@@ -108,7 +131,7 @@ export default function RoutesModal({ currentWaypoints, onLoad, onClose }: Props
           <section className="modal-section">
             <h3>Gespeichert ({routes.length})</h3>
             {routes.length === 0 ? (
-              <p className="modal-note">Noch keine Routen gespeichert.</p>
+              <p className="modal-note">Noch keine Touren gespeichert.</p>
             ) : (
               <ul className="route-list">
                 {routes.map((r) => (
@@ -118,16 +141,31 @@ export default function RoutesModal({ currentWaypoints, onLoad, onClose }: Props
                       <span className="route-meta">{meta(r)}</span>
                     </div>
                     <div className="route-actions">
-                      <button className="export-btn" onClick={() => { onLoad(r.waypoints); onClose(); }}>
+                      <button
+                        className="export-btn"
+                        onClick={() =>
+                          requestLoad({ kind: "load", name: r.name, waypoints: r.waypoints, closeAfter: true })
+                        }
+                      >
                         Laden
                       </button>
-                      <button className="wp-btn" onClick={() => doRename(r)} aria-label="Umbenennen">
+                      <button className="wp-btn" onClick={() => startRename(r)} aria-label="Umbenennen" title="Umbenennen">
                         <Icon name="pencil" size={15} />
                       </button>
-                      <button className="wp-btn" onClick={() => exportRouteFile(r.name, r.waypoints)} aria-label="Als Datei">
+                      <button
+                        className="wp-btn"
+                        onClick={() => exportRouteFile(r.name, r.waypoints)}
+                        aria-label="Als Datei exportieren"
+                        title="Als Datei exportieren"
+                      >
                         <Icon name="download" size={15} />
                       </button>
-                      <button className="wp-btn remove" onClick={() => doDelete(r)} aria-label="Löschen">
+                      <button
+                        className="wp-btn remove"
+                        onClick={() => setPending({ kind: "delete", route: r })}
+                        aria-label="Löschen"
+                        title="Löschen"
+                      >
                         <Icon name="trash" size={15} />
                       </button>
                     </div>
@@ -144,9 +182,9 @@ export default function RoutesModal({ currentWaypoints, onLoad, onClose }: Props
               <button
                 className="export-btn"
                 disabled={!canSave}
-                onClick={() => exportRouteFile(name.trim() || "route", currentWaypoints)}
+                onClick={() => exportRouteFile(name.trim() || "tour", currentWaypoints)}
               >
-                Aktuelle Route exportieren
+                Aktuelle Tour exportieren
               </button>
               <button className="export-btn" onClick={() => fileRef.current?.click()}>
                 Datei importieren
@@ -164,7 +202,75 @@ export default function RoutesModal({ currentWaypoints, onLoad, onClose }: Props
             </p>
           </section>
         </div>
-      </div>
-    </div>
+      </Modal>
+
+      {pending?.kind === "load" && (
+        <ConfirmDialog
+          title="Aktuelle Tour ersetzen?"
+          confirmLabel="Ersetzen"
+          onConfirm={() => applyLoad(pending)}
+          onCancel={() => setPending(null)}
+        >
+          Die Tour auf der Karte ({currentWaypoints.length} Punkte) wird durch „{pending.name}“
+          ersetzt. Nicht gespeicherte Änderungen gehen verloren.
+        </ConfirmDialog>
+      )}
+
+      {pending?.kind === "delete" && (
+        <ConfirmDialog
+          title="Tour löschen?"
+          confirmLabel="Löschen"
+          danger
+          onConfirm={() => {
+            deleteRoute(pending.route.id);
+            setPending(null);
+            refresh();
+          }}
+          onCancel={() => setPending(null)}
+        >
+          „{pending.route.name}“ wird endgültig gelöscht.
+        </ConfirmDialog>
+      )}
+
+      {pending?.kind === "rename" && (
+        <Modal
+          title="Tour umbenennen"
+          onClose={() => setPending(null)}
+          className="modal-confirm"
+          backdropClassName="confirm-backdrop"
+          initialFocus={renameRef}
+        >
+          <form
+            className="modal-body"
+            onSubmit={(e) => {
+              e.preventDefault();
+              applyRename();
+            }}
+          >
+            <label className="default-label" htmlFor="rename-input">
+              Name
+            </label>
+            <input
+              id="rename-input"
+              ref={renameRef}
+              className="day-name-input"
+              type="text"
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              maxLength={80}
+              style={{ width: "100%", marginTop: 6 }}
+            />
+            <div className="confirm-actions">
+              <button type="button" className="export-btn" onClick={() => setPending(null)}>
+                Abbrechen
+              </button>
+              <button type="submit" className="export-btn primary" disabled={!renameValue.trim()}>
+                Speichern
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </>
   );
 }

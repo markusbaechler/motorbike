@@ -1,3 +1,4 @@
+import { BOOKING_AID } from "../config";
 import type { BookingPrefs } from "./storage";
 
 // Add n days to an ISO yyyy-mm-dd date string.
@@ -10,8 +11,9 @@ export function addDays(iso: string, n: number): string {
 
 /**
  * Build a Booking.com search deep link with pre-filled location, dates and
- * traveller preferences. No API/affiliation required; an optional affiliate id
- * (aid) can be added to earn commission.
+ * traveller preferences. No API/affiliation required. The club's affiliate id
+ * comes from the build (VITE_BOOKING_AID); an id stored on the device by an
+ * older version is still honoured as a fallback.
  */
 export function buildBookingUrl(
   place: string,
@@ -27,6 +29,7 @@ export function buildBookingUrl(
   p.set("group_children", String(prefs.children));
   p.set("no_rooms", String(prefs.rooms));
   p.set("lang", "de");
-  if (prefs.affiliateId?.trim()) p.set("aid", prefs.affiliateId.trim());
+  const aid = BOOKING_AID ?? prefs.affiliateId?.trim();
+  if (aid) p.set("aid", aid);
   return `https://www.booking.com/searchresults.html?${p.toString()}`;
 }

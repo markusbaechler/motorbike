@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Icon from "./Icon";
+import Modal from "./Modal";
 import PlaceInput from "./PlaceInput";
 import { searchPlaces, type GeoResult } from "../lib/geocoding";
 import {
@@ -27,6 +28,8 @@ interface Props {
   onClose: () => void;
 }
 
+const isAbort = (e: unknown) => (e as Error | null)?.name === "AbortError";
+
 export default function PassPlannerModal({ onReady, onClose }: Props) {
   const [startVal, setStartVal] = useState("");
   const [startPick, setStartPick] = useState<GeoResult | undefined>();
@@ -38,26 +41,40 @@ export default function PassPlannerModal({ onReady, onClose }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Closing the dialog cancels a running lookup so it can't open the pass
+  // picker after the rider already left.
+  const ctrlRef = useRef<AbortController | null>(null);
+  useEffect(() => () => ctrlRef.current?.abort(), []);
+  const close = () => {
+    ctrlRef.current?.abort();
+    ctrlRef.current = null;
+    onClose();
+  };
+
   // Resolve a typed-but-not-picked field via the geocoder.
   const resolve = async (
     val: string,
     pick: GeoResult | undefined,
     label: string,
+    signal: AbortSignal,
   ): Promise<GeoResult> => {
     if (pick) return pick;
     if (val.trim().length < 2) throw new Error(`Bitte einen ${label} angeben.`);
-    const found = await searchPlaces(val.trim());
-    if (!found[0]) throw new Error(`Kein Ort gefunden für „${val.trim()}".`);
+    const found = await searchPlaces(val.trim(), signal);
+    if (!found[0]) throw new Error(`Kein Ort gefunden für „${val.trim()}“.`);
     return found[0];
   };
 
   const go = async () => {
+    const ctrl = new AbortController();
+    ctrlRef.current = ctrl;
     setBusy(true);
     setError(null);
     try {
-      const start = await resolve(startVal, startPick, "Startort");
-      const end = roundTrip ? null : await resolve(destVal, destPick, "Zielort");
+      const start = await resolve(startVal, startPick, "Startort", ctrl.signal);
+      const end = roundTrip ? null : await resolve(destVal, destPick, "Zielort", ctrl.signal);
       const all = await ensureEuroPasses();
+      if (ctrl.signal.aborted) return;
       const passes = passesInCorridor(all, {
         start: { lat: start.lat, lng: start.lng },
         end: end ? { lat: end.lat, lng: end.lng } : null,
@@ -69,92 +86,95 @@ export default function PassPlannerModal({ onReady, onClose }: Props) {
       }
       onReady({ start, end, passes, autoFill });
     } catch (e) {
+      if (isAbort(e) || ctrl.signal.aborted) return;
       setError((e as Error).message);
     } finally {
-      setBusy(false);
+      if (ctrlRef.current === ctrl) {
+        ctrlRef.current = null;
+        setBusy(false);
+      }
     }
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal modal-pass" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-head">
-          <h2><Icon name="mountain" size={20} /> Pässeplaner</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Schließen">
-            <Icon name="x" size={18} />
-          </button>
-        </div>
+    <Modal
+      title={
+        <>
+          <Icon name="mountain" size={20} /> Pässeplaner
+        </>
+      }
+      onClose={close}
+      className="modal-pass"
+    >
+      <div className="modal-body">
+        <p className="modal-note" style={{ marginTop: 0 }}>
+          Start wählen → Pässe auf der Karte als Muss / Kann markieren → Tour
+          erstellen.
+        </p>
 
-        <div className="modal-body">
-          <p className="modal-note" style={{ marginTop: 0 }}>
-            Start wählen → Pässe auf der Karte als Need / Nice markieren → Route
-            erstellen.
-          </p>
+        <label className="tg-label">Startort</label>
+        <PlaceInput
+          value={startVal}
+          placeholder="z. B. Wassen, Uri"
+          onChange={(v) => { setStartVal(v); setStartPick(undefined); }}
+          onPick={(r) => { setStartVal(r.name); setStartPick(r); }}
+        />
 
-          <label className="tg-label">Startort</label>
-          <PlaceInput
-            value={startVal}
-            placeholder="z. B. Wassen, Uri"
-            onChange={(v) => { setStartVal(v); setStartPick(undefined); }}
-            onPick={(r) => { setStartVal(r.name); setStartPick(r); }}
+        <label className="check-row">
+          <input
+            type="checkbox"
+            checked={roundTrip}
+            onChange={(e) => setRoundTrip(e.target.checked)}
           />
+          <span>Rundtour (zurück zum Start)</span>
+        </label>
 
-          <label className="check-row">
-            <input
-              type="checkbox"
-              checked={roundTrip}
-              onChange={(e) => setRoundTrip(e.target.checked)}
+        {!roundTrip && (
+          <>
+            <label className="tg-label">Zielort</label>
+            <PlaceInput
+              value={destVal}
+              placeholder="z. B. Bozen"
+              bias={startPick ? { lat: startPick.lat, lng: startPick.lng } : undefined}
+              onChange={(v) => { setDestVal(v); setDestPick(undefined); }}
+              onPick={(r) => { setDestVal(r.name); setDestPick(r); }}
             />
-            <span>Rundtour (zurück zum Start)</span>
-          </label>
+          </>
+        )}
 
-          {!roundTrip && (
-            <>
-              <label className="tg-label">Zielort</label>
-              <PlaceInput
-                value={destVal}
-                placeholder="z. B. Bozen"
-                bias={startPick ? { lat: startPick.lat, lng: startPick.lng } : undefined}
-                onChange={(v) => { setDestVal(v); setDestPick(undefined); }}
-                onPick={(r) => { setDestVal(r.name); setDestPick(r); }}
-              />
-            </>
-          )}
-
-          <label className="tg-label">Belag</label>
-          <span className="toggle">
-            <button
-              className={`toggle-btn ${surface === "asphalt" ? "active" : ""}`}
-              onClick={() => setSurface("asphalt")}
-            >
-              Nur Asphalt
-            </button>
-            <button
-              className={`toggle-btn ${surface === "all" ? "active" : ""}`}
-              onClick={() => setSurface("all")}
-            >
-              Inkl. Unbefestigt
-            </button>
-          </span>
-
-          <label className="check-row">
-            <input
-              type="checkbox"
-              checked={autoFill}
-              onChange={(e) => setAutoFill(e.target.checked)}
-            />
-            <span>Pässe auf dem Weg automatisch ergänzen</span>
-          </label>
-
-          {error && <p className="error">⚠ {error}</p>}
-
-          <button className="export-btn primary" disabled={busy} onClick={go}>
-            {busy ? "Pässe werden gesucht …" : (
-              <><Icon name="mountain" size={17} /> Pässe anzeigen</>
-            )}
+        <label className="tg-label">Belag</label>
+        <span className="toggle">
+          <button
+            className={`toggle-btn ${surface === "asphalt" ? "active" : ""}`}
+            onClick={() => setSurface("asphalt")}
+          >
+            Nur Asphalt
           </button>
-        </div>
+          <button
+            className={`toggle-btn ${surface === "all" ? "active" : ""}`}
+            onClick={() => setSurface("all")}
+          >
+            Inkl. Unbefestigt
+          </button>
+        </span>
+
+        <label className="check-row">
+          <input
+            type="checkbox"
+            checked={autoFill}
+            onChange={(e) => setAutoFill(e.target.checked)}
+          />
+          <span>Pässe auf dem Weg automatisch ergänzen</span>
+        </label>
+
+        {error && <p className="error">⚠ {error}</p>}
+
+        <button className="export-btn primary" disabled={busy} onClick={go}>
+          {busy ? "Pässe werden gesucht …" : (
+            <><Icon name="mountain" size={17} /> Pässe anzeigen</>
+          )}
+        </button>
       </div>
-    </div>
+    </Modal>
   );
 }

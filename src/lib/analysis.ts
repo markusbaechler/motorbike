@@ -27,7 +27,7 @@ export interface RouteAnalysis {
   scores: {
     curves: number; // 0–10 Kurvenreichtum
     mountains: number; // 0–10 Bergigkeit
-    scenic: number; // 0–10 Landschaft / kleine Straßen
+    scenic: number; // 0–10 Landschaft / kleine Strassen
     overall: number; // 0–10 Gesamt-Attraktivität
   };
 }

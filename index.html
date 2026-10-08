@@ -1,25 +1,39 @@
 <!doctype html>
-<html lang="de">
+<html lang="de-CH">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
-    />
+    <!-- Pinch-zoom stays enabled (accessibility); the map handles its own gestures. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#100f12" />
+    <meta
+      name="description"
+      content="Der Routenplaner der Pudgilly Riders: kurvige Motorradtouren planen, Tag für Tag, mit Pässen, Übernachtungen und GPX fürs Navi."
+    />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Motorbike" />
+    <meta name="apple-mobile-web-app-title" content="Routenplaner" />
+
+    <!-- Link preview when the planner URL is shared (WhatsApp, iMessage …) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Pudgilly Riders" />
+    <meta property="og:title" content="Routenplaner · Pudgilly Riders" />
+    <meta
+      property="og:description"
+      content="Kurvige Motorradtouren planen: Tag für Tag, mit Pässen, Übernachtungen und GPX fürs Navi."
+    />
+    <meta property="og:image" content="https://pudgilly.ch/og-image.jpg" />
+    <meta property="og:locale" content="de_CH" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <title>Motorbike – Routenplaner</title>
+    <title>Routenplaner · Pudgilly Riders</title>
   </head>
   <body>
     <div id="root"></div>

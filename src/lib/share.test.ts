@@ -22,4 +22,28 @@ describe("share encode/decode", () => {
   it("returns null for garbage input", () => {
     expect(decodeRoute("§§not-valid§§")).toBeNull();
   });
+
+  it("rejects well-formed links with unusable coordinates", () => {
+    const rows = [
+      [8.5, 46.5, "k", 0, "A", "", ""],
+      ["8.9", 46.9, "s", 0, "B", "", ""],
+    ];
+    expect(decodeRoute(btoa(JSON.stringify({ v: 1, w: rows })))).toBeNull();
+    const outOfRange = [[8.5, 46.5, "k", 0, "", "", ""], [200, 46.9, "k", 0, "", "", ""]];
+    expect(decodeRoute(btoa(JSON.stringify({ v: 1, w: outOfRange })))).toBeNull();
+  });
+
+  it("rejects payloads whose waypoint list is not an array", () => {
+    expect(decodeRoute(btoa(JSON.stringify({ v: 1, w: "nope" })))).toBeNull();
+    expect(decodeRoute(btoa(JSON.stringify({ v: 1, w: [[1, 2], "x"] })))).toBeNull();
+  });
+
+  it("falls back to a known profile and drops invalid dates", () => {
+    const rows = [[8.5, 46.5, "zz", 1, "A", "Tag", "15.10.2026"], [9, 47, "p", 0, "", "", ""]];
+    const out = decodeRoute(btoa(JSON.stringify({ v: 1, w: rows })))!;
+    expect(out[0].legProfile).toBe("kurvig");
+    expect(out[0].dayEnd).toBe(true);
+    expect(out[0].dayDate).toBeUndefined();
+    expect(out[1].legProfile).toBe("kurvig_plus");
+  });
 });

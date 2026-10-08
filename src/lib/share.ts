@@ -1,4 +1,5 @@
 import type { RouteProfile, Waypoint } from "../types";
+import { sanitizeWaypoints } from "./validate";
 
 // Compact, URL-safe encoding of a route's waypoints (no server needed).
 // Only waypoints are stored (not the dense geometry), so links stay short.
@@ -40,21 +41,26 @@ export function encodeRoute(waypoints: Waypoint[]): string {
   return b64urlEncode(JSON.stringify({ v: 1, w }));
 }
 
-let decodeId = 1;
+// Returns null for anything that isn't a complete, well-formed route: the link
+// may be truncated, hand-edited or from a future format we don't understand.
 export function decodeRoute(code: string): Waypoint[] | null {
   try {
-    const data = JSON.parse(b64urlDecode(code)) as { v: number; w: Row[] };
+    const data = JSON.parse(b64urlDecode(code)) as { v?: unknown; w?: unknown };
     if (!data || !Array.isArray(data.w)) return null;
-    return data.w.map((r) => ({
-      id: `sh-${decodeId++}`,
-      lng: r[0],
-      lat: r[1],
-      legProfile: CODE_TO_PROF[r[2]] ?? "kurvig",
-      dayEnd: r[3] === 1 || undefined,
-      name: r[4] || undefined,
-      dayName: r[5] || undefined,
-      dayDate: r[6] || undefined,
-    }));
+    const rows = data.w.map((r: unknown) =>
+      Array.isArray(r)
+        ? {
+            lng: r[0],
+            lat: r[1],
+            legProfile: CODE_TO_PROF[String(r[2])],
+            dayEnd: r[3] === 1,
+            name: r[4] || undefined,
+            dayName: r[5] || undefined,
+            dayDate: r[6] || undefined,
+          }
+        : null,
+    );
+    return sanitizeWaypoints(rows, "sh");
   } catch {
     return null;
   }

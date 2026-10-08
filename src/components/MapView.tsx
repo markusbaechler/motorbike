@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import Icon from "./Icon";
 import { DEFAULT_CENTER, DEFAULT_ZOOM, MAP_STYLE_URL } from "../config";
 import { computeDays, dayNumbers } from "../lib/days";
 import type { FocusPoint } from "../App";
@@ -28,6 +29,8 @@ interface Props {
   focus: FocusPoint | null;
   fitSignal: number;
   onAddWaypoint: (lng: number, lat: number) => void;
+  // Context menu "Start hier": the point becomes the new first waypoint.
+  onPrependWaypoint: (lng: number, lat: number) => void;
   onMoveWaypoint: (id: string, lng: number, lat: number) => void;
   onInsertWaypoint: (legIndex: number, lng: number, lat: number) => void;
   // Pässeplaner: when non-null the map shows clickable pass dots and the normal
@@ -38,6 +41,13 @@ interface Props {
 }
 
 const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
+
+// Current height of the bottom sheet (RoutePanel publishes it as --panel-h),
+// so "fit into view" keeps the whole route visible above the sheet.
+function panelHeight(): number {
+  const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--panel-h"));
+  return Number.isFinite(v) ? v : 0;
+}
 
 function markerColor(index: number, total: number): string {
   if (index === 0) return "#34d399";
@@ -51,6 +61,7 @@ export default function MapView({
   focus,
   fitSignal,
   onAddWaypoint,
+  onPrependWaypoint,
   onMoveWaypoint,
   onInsertWaypoint,
   passPoints = null,
@@ -71,13 +82,29 @@ export default function MapView({
   const passPopupRef = useRef<maplibregl.Popup | null>(null);
 
   const addRef = useRef(onAddWaypoint);
+  const prependRef = useRef(onPrependWaypoint);
   const moveRef = useRef(onMoveWaypoint);
   const insertRef = useRef(onInsertWaypoint);
   const setPassMarkRef = useRef(onSetPassMark);
   addRef.current = onAddWaypoint;
+  prependRef.current = onPrependWaypoint;
   moveRef.current = onMoveWaypoint;
   insertRef.current = onInsertWaypoint;
   setPassMarkRef.current = onSetPassMark;
+
+  // Right-click / long-press menu: "Start hier", "Zwischenziel hier", "Ziel hier".
+  // Position in container pixels; null when closed.
+  const [ctx, setCtx] = useState<{ x: number; y: number; lng: number; lat: number } | null>(null);
+  const ctxOpenRef = useRef(false);
+  ctxOpenRef.current = ctx !== null;
+  useEffect(() => {
+    if (!ctx) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setCtx(null);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [ctx]);
 
   const waypointsRef = useRef(waypoints);
   waypointsRef.current = waypoints;
@@ -161,10 +188,23 @@ export default function MapView({
         suppressClickRef.current = false;
         return;
       }
+      // A click while the context menu is open only closes the menu.
+      if (ctxOpenRef.current) {
+        setCtx(null);
+        return;
+      }
       // In Pässeplaner mode the map is for picking passes, not adding stops.
       if (passModeRef.current) return;
       addRef.current(e.lngLat.lng, e.lngLat.lat);
     });
+
+    map.on("contextmenu", (e) => {
+      e.preventDefault();
+      e.originalEvent.preventDefault();
+      if (passModeRef.current) return;
+      setCtx({ x: e.point.x, y: e.point.y, lng: e.lngLat.lng, lat: e.lngLat.lat });
+    });
+    map.on("movestart", () => setCtx(null));
 
     // Hover affordance over the route line.
     map.on("mouseenter", "route-line", () => {
@@ -251,6 +291,8 @@ export default function MapView({
       const isOvernight = !!wp.dayEnd && !isLast;
 
       const el = document.createElement("div");
+      // Hover tooltip with the place name (desktop); map-placed points have none.
+      el.title = wp.name ? wp.name.split(",")[0].trim() : "";
       if (isOvernight) {
         // Highlight overnight stops with a bed marker (inline SVG, not emoji).
         el.className = "wp-marker bed";
@@ -324,8 +366,8 @@ export default function MapView({
           `<div class="pass-pop">
              <div class="pass-pop-name">${esc(p.name)}${h}</div>
              <div class="pass-pop-btns">
-               <button type="button" data-mark="need" class="pp-btn pp-need${cur === "need" ? " on" : ""}">Need-to</button>
-               <button type="button" data-mark="nice" class="pp-btn pp-nice${cur === "nice" ? " on" : ""}">Nice-to</button>
+               <button type="button" data-mark="need" class="pp-btn pp-need${cur === "need" ? " on" : ""}" title="Muss dabei sein">Muss</button>
+               <button type="button" data-mark="nice" class="pp-btn pp-nice${cur === "nice" ? " on" : ""}" title="Kann dabei sein, wenn es passt">Kann</button>
                ${cur !== "none" ? '<button type="button" data-mark="none" class="pp-btn pp-rm">Entfernen</button>' : ""}
              </div>
            </div>`,
@@ -364,7 +406,13 @@ export default function MapView({
         b.extend([passEndpoints.start.lng, passEndpoints.start.lat]);
         if (passEndpoints.end) b.extend([passEndpoints.end.lng, passEndpoints.end.lat]);
       }
-      map.fitBounds(b, { padding: { top: 120, bottom: 160, left: 50, right: 50 }, maxZoom: 11 });
+      // Keep the passes clear of the floating selection bar at the top.
+      const bar = document.querySelector(".pass-select")?.getBoundingClientRect();
+      const top = bar ? Math.round(bar.bottom) + 24 : 120;
+      map.fitBounds(b, {
+        padding: { top, bottom: 40 + panelHeight(), left: 40, right: 40 },
+        maxZoom: 11,
+      });
     }
     fitPassCountRef.current = pts.length;
   }, [passPoints, passEndpoints]);
@@ -409,12 +457,42 @@ export default function MapView({
     const bounds = new maplibregl.LngLatBounds();
     wps.forEach((w) => bounds.extend([w.lng, w.lat]));
     map.fitBounds(bounds, {
-      padding: { top: 90, bottom: 320, left: 50, right: 50 },
+      padding: { top: 110, bottom: 40 + panelHeight(), left: 50, right: 50 },
       maxZoom: 12,
     });
   }, [fitSignal]);
 
-  return <div className="map" ref={containerRef} />;
+  // Keep the menu inside the map area even near the right/bottom edge.
+  const menuLeft = ctx ? Math.min(ctx.x, (containerRef.current?.clientWidth ?? 9999) - 220) : 0;
+  const menuTop = ctx ? Math.min(ctx.y, (containerRef.current?.clientHeight ?? 9999) - 160) : 0;
+  const choose = (fn: (lng: number, lat: number) => void) => () => {
+    if (ctx) fn(ctx.lng, ctx.lat);
+    setCtx(null);
+  };
+  const insertVia = (lng: number, lat: number) => {
+    const n = waypointsRef.current.length;
+    if (n >= 2) insertRef.current(n - 2, lng, lat);
+    else addRef.current(lng, lat);
+  };
+
+  return (
+    <div className="map-wrap">
+      <div className="map" ref={containerRef} />
+      {ctx && (
+        <div className="map-ctx" role="menu" style={{ left: menuLeft, top: menuTop }}>
+          <button role="menuitem" onClick={choose((lng, lat) => prependRef.current(lng, lat))}>
+            <Icon name="flag" size={16} /> Start hier
+          </button>
+          <button role="menuitem" onClick={choose(insertVia)}>
+            <Icon name="plus" size={16} /> Zwischenziel hier
+          </button>
+          <button role="menuitem" onClick={choose((lng, lat) => addRef.current(lng, lat))}>
+            <Icon name="check" size={16} /> Ziel hier
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // Add a clearly-readable label layer for mountain passes / saddles on top of
