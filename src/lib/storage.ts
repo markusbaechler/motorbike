@@ -1,4 +1,5 @@
-import type { Waypoint } from "../types";
+import type { RouteProfile, Waypoint } from "../types";
+import { isRouteProfile, sanitizeWaypoints } from "./validate";
 
 export interface SavedRoute {
   id: string;
@@ -10,10 +11,27 @@ export interface SavedRoute {
 
 const KEY = "motorbike.routes.v1";
 
+// Stored data is treated as untrusted (older versions, manual edits, partial
+// writes): entries that don't parse into a usable route are skipped.
 export function listRoutes(): SavedRoute[] {
   try {
-    const data = JSON.parse(localStorage.getItem(KEY) ?? "[]");
-    return Array.isArray(data) ? (data as SavedRoute[]) : [];
+    const data: unknown = JSON.parse(localStorage.getItem(KEY) ?? "[]");
+    if (!Array.isArray(data)) return [];
+    const out: SavedRoute[] = [];
+    for (const r of data) {
+      if (!r || typeof r !== "object") continue;
+      const o = r as Record<string, unknown>;
+      const waypoints = sanitizeWaypoints(o.waypoints, "r");
+      if (!waypoints || typeof o.id !== "string" || !o.id) continue;
+      out.push({
+        id: o.id,
+        name: typeof o.name === "string" && o.name.trim() ? o.name : "Route",
+        createdAt: typeof o.createdAt === "number" ? o.createdAt : 0,
+        updatedAt: typeof o.updatedAt === "number" ? o.updatedAt : 0,
+        waypoints,
+      });
+    }
+    return out;
   } catch {
     return [];
   }
@@ -66,13 +84,13 @@ export function renameRoute(id: string, name: string): void {
 
 export interface RouteDraft {
   waypoints: Waypoint[];
-  defaultProfile: string;
+  defaultProfile: RouteProfile;
   savedAt: number;
 }
 
 const DRAFT_KEY = "motorbike.draft.v1";
 
-export function saveDraft(waypoints: Waypoint[], defaultProfile: string): void {
+export function saveDraft(waypoints: Waypoint[], defaultProfile: RouteProfile): void {
   try {
     if (waypoints.length === 0) {
       localStorage.removeItem(DRAFT_KEY);
@@ -89,8 +107,14 @@ export function loadDraft(): RouteDraft | null {
   try {
     const raw = localStorage.getItem(DRAFT_KEY);
     if (!raw) return null;
-    const d = JSON.parse(raw) as RouteDraft;
-    return Array.isArray(d.waypoints) && d.waypoints.length > 0 ? d : null;
+    const d = JSON.parse(raw) as Record<string, unknown> | null;
+    const waypoints = sanitizeWaypoints(d?.waypoints, "d");
+    if (!waypoints || waypoints.length === 0) return null;
+    return {
+      waypoints,
+      defaultProfile: isRouteProfile(d?.defaultProfile) ? d.defaultProfile : "kurvig",
+      savedAt: typeof d?.savedAt === "number" ? d.savedAt : 0,
+    };
   } catch {
     return null;
   }
@@ -117,11 +141,20 @@ export function exportRouteFile(name: string, waypoints: Waypoint[]): void {
 }
 
 export function parseRouteFile(text: string): { name: string; waypoints: Waypoint[] } {
-  const d = JSON.parse(text);
-  if (!d || !Array.isArray(d.waypoints)) {
-    throw new Error("Keine gültige Motorbike-Routendatei.");
+  let d: Record<string, unknown> | null = null;
+  try {
+    d = JSON.parse(text) as Record<string, unknown> | null;
+  } catch {
+    throw new Error("Datei ist kein gültiges JSON.");
   }
-  return { name: typeof d.name === "string" ? d.name : "Importierte Route", waypoints: d.waypoints };
+  const waypoints = sanitizeWaypoints(d?.waypoints, "f");
+  if (!waypoints || waypoints.length < 2) {
+    throw new Error("Keine gültige Motorbike-Routendatei (mindestens zwei Punkte nötig).");
+  }
+  return {
+    name: typeof d?.name === "string" && d.name.trim() ? d.name.trim().slice(0, 80) : "Importierte Route",
+    waypoints,
+  };
 }
 
 // --- Recently used places (search convenience) ---

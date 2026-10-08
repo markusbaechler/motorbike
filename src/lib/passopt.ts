@@ -51,6 +51,8 @@ export interface OptimizeParams {
   maxAdds?: number; // cap on auto-added passes
   trialsPerRound?: number; // candidate passes routed per greedy round
   maxPool?: number; // cap on the candidate pool size
+  // Coarse progress (greedy rounds done / planned) for a UI counter.
+  onProgress?: (p: { done: number; total: number; label: string }) => void;
 }
 
 // --- scoring weights (in km-equivalent units; W_KM = 1) ---
@@ -229,6 +231,7 @@ export async function optimizeLoop(params: OptimizeParams): Promise<OptResult> {
     maxAdds = 6,
     trialsPerRound = 4,
     maxPool = 12,
+    onProgress,
   } = params;
 
   const startStop: OptStop = { lat: start.lat, lng: start.lng, name: start.name };
@@ -259,10 +262,13 @@ export async function optimizeLoop(params: OptimizeParams): Promise<OptResult> {
     .sort((a, b) => minDistToSeq(seq, a) - minDistToSeq(seq, b))
     .slice(0, maxPool);
 
+  const label = "Pässe einfügen";
+  onProgress?.({ done: 0, total: maxAdds, label });
   let current = await routeTour(seq, profile, signal);
   const addedKeys = new Set<string>();
 
   for (let round = 0; round < maxAdds && pool.length > 0; round++) {
+    onProgress?.({ done: round, total: maxAdds, label });
     // Rank remaining candidates by straight-line insertion cost; only route the
     // cheapest few this round to keep the number of BRouter calls bounded.
     const ranked = pool
@@ -278,7 +284,9 @@ export async function optimizeLoop(params: OptimizeParams): Promise<OptResult> {
       let routed: Routed;
       try {
         routed = await routeTour(trial, profile, signal);
-      } catch {
+      } catch (e) {
+        // The caller cancelled → stop the whole optimisation, don't keep trying.
+        if (signal?.aborted) throw e;
         continue; // routing failed for this trial — skip it
       }
       // Reject anything that turns the tour into a knot (absolute retracing
@@ -304,6 +312,7 @@ export async function optimizeLoop(params: OptimizeParams): Promise<OptResult> {
     }
   }
 
+  onProgress?.({ done: maxAdds, total: maxAdds, label });
   return {
     stops: current.stops,
     distanceKm: current.distanceKm,
