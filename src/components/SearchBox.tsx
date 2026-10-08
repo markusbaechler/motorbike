@@ -21,6 +21,7 @@ export default function SearchBox({ onSelect }: Props) {
   const items = showRecents ? recents : results;
   const visible = open && items.length > 0;
 
+  const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const controllerRef = useRef<AbortController>();
 
@@ -48,7 +49,8 @@ export default function SearchBox({ onSelect }: Props) {
         const found = await searchPlaces(query.trim(), controller.signal);
         if (controller.signal.aborted) return;
         setResults(found);
-        setOpen(true);
+        // Don't pop the list under a field the rider already left.
+        if (document.activeElement === inputRef.current) setOpen(true);
       } catch (err) {
         if ((err as Error).name !== "AbortError") setResults([]);
       } finally {
@@ -108,6 +110,7 @@ export default function SearchBox({ onSelect }: Props) {
       <div className="searchbox-input">
         <Icon name="search" size={20} className="search-icon" />
         <input
+          ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}

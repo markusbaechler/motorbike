@@ -25,6 +25,7 @@ export default function PlaceInput({ value, placeholder, bias, onChange, onPick 
   const [active, setActive] = useState(-1);
   const listId = useId();
   const typed = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const controllerRef = useRef<AbortController>();
 
@@ -34,7 +35,13 @@ export default function PlaceInput({ value, placeholder, bias, onChange, onPick 
   };
 
   useEffect(() => {
-    if (!typed.current) return;
+    if (!typed.current) {
+      // Value set by the parent (pre-fill, resolved name): no lookup, and any
+      // list still open belongs to the previous text.
+      stopLookup();
+      setOpen(false);
+      return;
+    }
     typed.current = false;
     stopLookup();
     setActive(-1);
@@ -50,7 +57,8 @@ export default function PlaceInput({ value, placeholder, bias, onChange, onPick 
         const found = await searchPlaces(value.trim(), controller.signal, bias);
         if (controller.signal.aborted) return;
         setResults(found);
-        setOpen(true);
+        // Don't pop the list under a field the rider already left.
+        if (document.activeElement === inputRef.current) setOpen(true);
       } catch (err) {
         if ((err as Error).name !== "AbortError") setResults([]);
       }
@@ -103,6 +111,7 @@ export default function PlaceInput({ value, placeholder, bias, onChange, onPick 
   return (
     <div className="place-input">
       <input
+        ref={inputRef}
         type="text"
         value={value}
         placeholder={placeholder}
