@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
 import Icon from "./Icon";
+import Modal from "./Modal";
+import ConfirmDialog from "./ConfirmDialog";
 import {
   deleteRoute,
   exportRouteFile,
@@ -18,6 +20,12 @@ interface Props {
   onClose: () => void;
 }
 
+// A question waiting for the rider's answer before work is thrown away.
+type Pending =
+  | { kind: "load"; name: string; waypoints: Waypoint[]; saveAs?: string; closeAfter: boolean }
+  | { kind: "delete"; route: SavedRoute }
+  | null;
+
 function meta(r: SavedRoute): string {
   const days = computeDays(r.waypoints).length || (r.waypoints.length >= 1 ? 1 : 0);
   const date = new Date(r.updatedAt).toLocaleDateString("de-CH");
@@ -28,16 +36,19 @@ export default function RoutesModal({ currentWaypoints, onLoad, onClose }: Props
   const [routes, setRoutes] = useState<SavedRoute[]>(() => listRoutes());
   const [name, setName] = useState("");
   const [info, setInfo] = useState<string | null>(null);
+  const [pending, setPending] = useState<Pending>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const refresh = () => setRoutes(listRoutes());
   const canSave = currentWaypoints.length >= 2;
+  // Loading replaces the route on the map; ask first when there is one.
+  const hasWork = currentWaypoints.length >= 2;
 
   const doSave = () => {
     const n = name.trim() || `Route ${new Date().toLocaleDateString("de-CH")}`;
     saveRoute(n, currentWaypoints);
     setName("");
-    setInfo(`„${n}" gespeichert.`);
+    setInfo(`„${n}“ gespeichert.`);
     refresh();
   };
 
@@ -49,11 +60,20 @@ export default function RoutesModal({ currentWaypoints, onLoad, onClose }: Props
     }
   };
 
-  const doDelete = (r: SavedRoute) => {
-    if (window.confirm(`„${r.name}" wirklich löschen?`)) {
-      deleteRoute(r.id);
+  const applyLoad = (p: Extract<Pending, { kind: "load" }>) => {
+    onLoad(p.waypoints);
+    if (p.saveAs) {
+      saveRoute(p.saveAs, p.waypoints);
+      setInfo(`„${p.saveAs}“ importiert und geladen.`);
       refresh();
     }
+    setPending(null);
+    if (p.closeAfter) onClose();
+  };
+
+  const requestLoad = (p: Extract<Pending, { kind: "load" }>) => {
+    if (hasWork) setPending(p);
+    else applyLoad(p);
   };
 
   const onImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,10 +81,7 @@ export default function RoutesModal({ currentWaypoints, onLoad, onClose }: Props
     if (!file) return;
     try {
       const { name: n, waypoints } = parseRouteFile(await file.text());
-      onLoad(waypoints);
-      saveRoute(n, waypoints);
-      setInfo(`„${n}" importiert und geladen.`);
-      refresh();
+      requestLoad({ kind: "load", name: n, waypoints, saveAs: n, closeAfter: false });
     } catch (err) {
       setInfo((err as Error).message);
     }
@@ -72,15 +89,8 @@ export default function RoutesModal({ currentWaypoints, onLoad, onClose }: Props
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-head">
-          <h2>Meine Routen</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Schließen">
-            <Icon name="x" size={18} />
-          </button>
-        </div>
-
+    <>
+      <Modal title="Meine Routen" onClose={onClose}>
         <div className="modal-body">
           {/* Save current */}
           <section className="modal-section">
@@ -90,6 +100,7 @@ export default function RoutesModal({ currentWaypoints, onLoad, onClose }: Props
                 className="day-name-input"
                 type="text"
                 placeholder="Name (z. B. Alpentour Juli)"
+                aria-label="Name der Route"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={!canSave}
@@ -118,7 +129,12 @@ export default function RoutesModal({ currentWaypoints, onLoad, onClose }: Props
                       <span className="route-meta">{meta(r)}</span>
                     </div>
                     <div className="route-actions">
-                      <button className="export-btn" onClick={() => { onLoad(r.waypoints); onClose(); }}>
+                      <button
+                        className="export-btn"
+                        onClick={() =>
+                          requestLoad({ kind: "load", name: r.name, waypoints: r.waypoints, closeAfter: true })
+                        }
+                      >
                         Laden
                       </button>
                       <button className="wp-btn" onClick={() => doRename(r)} aria-label="Umbenennen">
@@ -127,7 +143,11 @@ export default function RoutesModal({ currentWaypoints, onLoad, onClose }: Props
                       <button className="wp-btn" onClick={() => exportRouteFile(r.name, r.waypoints)} aria-label="Als Datei">
                         <Icon name="download" size={15} />
                       </button>
-                      <button className="wp-btn remove" onClick={() => doDelete(r)} aria-label="Löschen">
+                      <button
+                        className="wp-btn remove"
+                        onClick={() => setPending({ kind: "delete", route: r })}
+                        aria-label="Löschen"
+                      >
                         <Icon name="trash" size={15} />
                       </button>
                     </div>
@@ -164,7 +184,35 @@ export default function RoutesModal({ currentWaypoints, onLoad, onClose }: Props
             </p>
           </section>
         </div>
-      </div>
-    </div>
+      </Modal>
+
+      {pending?.kind === "load" && (
+        <ConfirmDialog
+          title="Aktuelle Route ersetzen?"
+          confirmLabel="Ersetzen"
+          onConfirm={() => applyLoad(pending)}
+          onCancel={() => setPending(null)}
+        >
+          Die Route auf der Karte ({currentWaypoints.length} Punkte) wird durch „{pending.name}“
+          ersetzt. Nicht gespeicherte Änderungen gehen verloren.
+        </ConfirmDialog>
+      )}
+
+      {pending?.kind === "delete" && (
+        <ConfirmDialog
+          title="Route löschen?"
+          confirmLabel="Löschen"
+          danger
+          onConfirm={() => {
+            deleteRoute(pending.route.id);
+            setPending(null);
+            refresh();
+          }}
+          onCancel={() => setPending(null)}
+        >
+          „{pending.route.name}“ wird endgültig gelöscht.
+        </ConfirmDialog>
+      )}
+    </>
   );
 }

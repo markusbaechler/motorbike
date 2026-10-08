@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Icon, { type IconName } from "./Icon";
 import { computeDays, dayStats, dayNumbers } from "../lib/days";
 import type { BookingPrefs } from "../lib/storage";
@@ -146,6 +146,23 @@ export default function RoutePanel({
   // The whole bottom sheet can be minimised to free up the map.
   const [min, setMin] = useState(false);
 
+  // Publish the sheet's current height as a CSS variable so the map controls
+  // (zoom, locate, scale) and "fit route" can stay clear of it.
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const root = document.documentElement;
+    const publish = () => root.style.setProperty("--panel-h", `${Math.round(el.getBoundingClientRect().height)}px`);
+    publish();
+    const ro = new ResizeObserver(publish);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.style.setProperty("--panel-h", "0px");
+    };
+  }, []);
+
   // Drag the grabber: pull down to minimise, up to expand (tap also toggles).
   const dragRef = useRef<{ y: number; moved: boolean } | null>(null);
   const onHandleDown = (e: React.PointerEvent) => {
@@ -252,7 +269,7 @@ export default function RoutePanel({
   };
 
   return (
-    <div className={`panel ${min ? "min" : ""}`}>
+    <div ref={rootRef} className={`panel ${min ? "min" : ""}`}>
       <div
         className="panel-handle"
         onPointerDown={onHandleDown}
@@ -338,17 +355,21 @@ export default function RoutePanel({
         )}
         {route && !loading && !error && (
           <span className="stats">
-            {days.length > 1 && <strong>{days.length} Tage</strong>}
-            {days.length > 1 && <span className="dot">·</span>}
-            <strong>{route.distanceKm.toFixed(1)} km</strong>
-            <span className="dot">·</span>
-            <strong>{formatDuration(route.durationMin)}</strong>
-            <button className="details-btn" onClick={onOpenDetails}>
-              <Icon name="chart" size={15} /> Details
-            </button>
-            <button className="details-btn" onClick={onOpenShare}>
-              <Icon name="users" size={15} /> Teilen
-            </button>
+            <span className="stats-nums">
+              {days.length > 1 && <strong>{days.length} Tage</strong>}
+              {days.length > 1 && <span className="dot">·</span>}
+              <strong>{route.distanceKm.toFixed(1)} km</strong>
+              <span className="dot">·</span>
+              <strong>{formatDuration(route.durationMin)}</strong>
+            </span>
+            <span className="stats-actions">
+              <button className="details-btn" onClick={onOpenDetails}>
+                <Icon name="chart" size={15} /> Details
+              </button>
+              <button className="details-btn" onClick={onOpenShare}>
+                <Icon name="users" size={15} /> Teilen
+              </button>
+            </span>
           </span>
         )}
       </div>
@@ -469,7 +490,7 @@ export default function RoutePanel({
 
       {waypoints.length >= 2 && (
         <p className="edit-hint">
-          „Tag hinzufügen" beendet den Tag am letzten Punkt. Streckenlinie ziehen
+          „Tag hinzufügen“ beendet den Tag am letzten Punkt. Streckenlinie ziehen
           fügt einen Zwischenpunkt ein.
         </p>
       )}

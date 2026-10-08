@@ -28,7 +28,7 @@ export default class ErrorBoundary extends Component<Props, State> {
           <div className="crash-card">
             <h1>Da ist etwas schiefgelaufen</h1>
             <p>
-              Die App ist auf einen unerwarteten Fehler gestoßen. Deine
+              Die App ist auf einen unerwarteten Fehler gestossen. Deine
               gespeicherten Routen bleiben erhalten.
             </p>
             <pre className="crash-detail">{this.state.error.message}</pre>

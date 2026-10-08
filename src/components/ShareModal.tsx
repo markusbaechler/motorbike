@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import Icon from "./Icon";
+import Modal from "./Modal";
 import { buildShareUrl } from "../lib/share";
 import type { Waypoint } from "../types";
 
@@ -39,38 +40,30 @@ export default function ShareModal({ waypoints, onClose }: Props) {
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-head">
-          <h2>Route teilen</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Schließen">
-            <Icon name="x" size={18} />
+    <Modal title="Route teilen" onClose={onClose}>
+      <div className="modal-body">
+        <p className="modal-note" style={{ marginTop: 0 }}>
+          Der Link enthält die ganze Tour (Stopps, Profile, Tage) – kein Konto nötig.
+          Wer ihn öffnet, sieht die Route direkt im Planer.
+        </p>
+
+        {qr && (
+          <div className="share-qr">
+            <img src={qr} alt="QR-Code zur Route" />
+          </div>
+        )}
+
+        <div className="share-url">{url}</div>
+
+        <button className="export-btn primary" onClick={copy}>
+          <Icon name="folder" size={16} /> {copied ? "Link kopiert ✓" : "Link kopieren"}
+        </button>
+        {typeof navigator !== "undefined" && "share" in navigator && (
+          <button className="export-btn" style={{ width: "100%", marginTop: 8 }} onClick={nativeShare}>
+            Teilen …
           </button>
-        </div>
-        <div className="modal-body">
-          <p className="modal-note" style={{ marginTop: 0 }}>
-            Der Link enthält die ganze Tour (Stopps, Profile, Tage) – kein Konto nötig.
-            Wer ihn öffnet, sieht die Route direkt im Planer.
-          </p>
-
-          {qr && (
-            <div className="share-qr">
-              <img src={qr} alt="QR-Code zur Route" />
-            </div>
-          )}
-
-          <div className="share-url">{url}</div>
-
-          <button className="export-btn primary" onClick={copy}>
-            <Icon name="folder" size={16} /> {copied ? "Link kopiert ✓" : "Link kopieren"}
-          </button>
-          {typeof navigator !== "undefined" && "share" in navigator && (
-            <button className="export-btn" style={{ width: "100%", marginTop: 8 }} onClick={nativeShare}>
-              Teilen …
-            </button>
-          )}
-        </div>
+        )}
       </div>
-    </div>
+    </Modal>
   );
 }

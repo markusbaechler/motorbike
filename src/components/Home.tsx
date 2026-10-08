@@ -1,28 +1,52 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Icon from "./Icon";
 
 interface Props {
   savedCount: number;
   canInstall: boolean;
   iosInstall: boolean;
+  // Auto-saved route from the last session (only offered while the map is empty).
+  draft: { points: number; days: number } | null;
+  // True when a route is being planned right now (Home opened from the map).
+  hasRoute: boolean;
   onInstall: () => void;
   onPlan: () => void;
   onGenius: () => void;
   onPasses: () => void;
   onRoutes: () => void;
+  onResume: () => void;
+  onBack: () => void;
 }
 
 export default function Home({
   savedCount,
   canInstall,
   iosInstall,
+  draft,
+  hasRoute,
   onInstall,
   onPlan,
   onGenius,
   onPasses,
   onRoutes,
+  onResume,
+  onBack,
 }: Props) {
   const [showIosHint, setShowIosHint] = useState(false);
+
+  // Escape returns to the map when Home was opened over a route in progress.
+  useEffect(() => {
+    if (!hasRoute) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onBack();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [hasRoute, onBack]);
+
+  // The most likely next step gets the primary button.
+  const continueFirst = hasRoute || !!draft;
+
   return (
     <div className="home">
       <img
@@ -43,7 +67,20 @@ export default function Home({
         </p>
 
         <div className="home-actions">
-          <button className="home-cta primary" onClick={onPlan}>
+          {hasRoute && (
+            <button className="home-cta primary" onClick={onBack}>
+              <Icon name="flag" size={20} /> Zurück zur Route
+            </button>
+          )}
+          {!hasRoute && draft && (
+            <button className="home-cta primary resume" onClick={onResume}>
+              <Icon name="flag" size={20} /> Letzte Route fortsetzen
+              <span className="home-cta-sub">
+                {draft.points} Punkte{draft.days > 1 ? ` · ${draft.days} Tage` : ""}
+              </span>
+            </button>
+          )}
+          <button className={`home-cta ${continueFirst ? "" : "primary"}`} onClick={onPlan}>
             <Icon name="zap" size={20} /> Neue Tour planen
           </button>
           <button className="home-cta genius" onClick={onGenius}>
@@ -64,7 +101,11 @@ export default function Home({
             </button>
           )}
           {iosInstall && (
-            <button className="home-cta install" onClick={() => setShowIosHint((v) => !v)}>
+            <button
+              className="home-cta install"
+              onClick={() => setShowIosHint((v) => !v)}
+              aria-expanded={showIosHint}
+            >
               <Icon name="download" size={19} /> Als App installieren
             </button>
           )}
@@ -72,7 +113,7 @@ export default function Home({
           {showIosHint && (
             <p className="ios-hint">
               In Safari: unten auf <strong>Teilen</strong> (Quadrat mit Pfeil) tippen →
-              <strong> „Zum Home-Bildschirm"</strong>. Dann startet Motorbike wie eine App.
+              <strong> „Zum Home-Bildschirm“</strong>. Dann startet Motorbike wie eine App.
             </p>
           )}
         </div>

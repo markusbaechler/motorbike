@@ -39,6 +39,13 @@ interface Props {
 
 const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
+// Current height of the bottom sheet (RoutePanel publishes it as --panel-h),
+// so "fit into view" keeps the whole route visible above the sheet.
+function panelHeight(): number {
+  const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--panel-h"));
+  return Number.isFinite(v) ? v : 0;
+}
+
 function markerColor(index: number, total: number): string {
   if (index === 0) return "#34d399";
   if (index === total - 1) return "#fb7185";
@@ -364,7 +371,13 @@ export default function MapView({
         b.extend([passEndpoints.start.lng, passEndpoints.start.lat]);
         if (passEndpoints.end) b.extend([passEndpoints.end.lng, passEndpoints.end.lat]);
       }
-      map.fitBounds(b, { padding: { top: 120, bottom: 160, left: 50, right: 50 }, maxZoom: 11 });
+      // Keep the passes clear of the floating selection bar at the top.
+      const bar = document.querySelector(".pass-select")?.getBoundingClientRect();
+      const top = bar ? Math.round(bar.bottom) + 24 : 120;
+      map.fitBounds(b, {
+        padding: { top, bottom: 40 + panelHeight(), left: 40, right: 40 },
+        maxZoom: 11,
+      });
     }
     fitPassCountRef.current = pts.length;
   }, [passPoints, passEndpoints]);
@@ -409,7 +422,7 @@ export default function MapView({
     const bounds = new maplibregl.LngLatBounds();
     wps.forEach((w) => bounds.extend([w.lng, w.lat]));
     map.fitBounds(bounds, {
-      padding: { top: 90, bottom: 320, left: 50, right: 50 },
+      padding: { top: 110, bottom: 40 + panelHeight(), left: 50, right: 50 },
       maxZoom: 12,
     });
   }, [fitSignal]);
