@@ -182,12 +182,13 @@ async function brouterProfileChain(profile: RouteProfile): Promise<string[]> {
 
 // BRouter's per-profile travel time is unrealistic for motorcycles (the moped
 // profile in particular assumes very low speeds). We estimate the duration
-// from distance using realistic average speeds per mode (tuned to match real
-// navigation apps like Beeline, which factor in curves/elevation/stops).
+// from distance using realistic average speeds per mode. Calibrated on club
+// experience: a curvy 129 km after-work loop takes about 2 h 30 (≈ 52 km/h);
+// the earlier values (42 / 36 / 82) were felt to be too pessimistic.
 const AVG_SPEED_KMH: Record<RouteProfile, number> = {
-  kurvig: 42,
-  kurvig_plus: 36,
-  schnell: 82,
+  kurvig: 52,
+  kurvig_plus: 45,
+  schnell: 90,
 };
 
 interface Leg {

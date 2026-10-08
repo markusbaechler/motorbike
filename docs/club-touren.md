@@ -16,7 +16,9 @@ erscheinen an drei Orten:
 2. «Teilen» → «Link kopieren». Der Link enthält alle Punkte, Fahrstile, Tage
    und neu auch Distanz und Fahrzeit.
 3. Pages CMS → **Club-Touren** → neuer Eintrag: Kürzel, Name, Region, Anspruch,
-   Beschreibung, Highlights, **Planer-Link** einfügen, optional Bild.
+   Beschreibung, Highlights, **Planer-Link** einfügen, optional Bild. Passt die
+   Automatik nicht, zusätzlich «Dauer (Anzeige)» (z. B. Feierabendrunde) und
+   «Fahrzeit (Stunden)» (z. B. 2.5) ausfüllen.
 4. Speichern. Der Website-Build läuft automatisch; danach steht die Tour auf
    `/touren/` und im Planer.
 5. Optional: beim passenden Termin unter **Events** das Feld «Club-Tour» mit
@@ -40,17 +42,23 @@ Build mit Warnung verworfen.
   "description": "Klassiker über Gotthard und Nufenen, mit Übernachtung in Andermatt.",
   "highlights": ["Gotthard", "Nufenen", "Tremola"],
   "planerLink": "https://pudgilly.ch/planer/#r=eyJ2IjoxLCJ3IjpbWy4uLl1dLCJzIjpbMjQ1LDMyMF19",
-  "image": "/galerie/gotthard.jpg"
+  "image": "/galerie/gotthard.jpg",
+  "dauer": "Wochenende",
+  "fahrzeit": "5.5"
 }
 ```
+
+`dauer` und `fahrzeit` sind freiwillig (CMS-Felder «Dauer (Anzeige)» und
+«Fahrzeit (Stunden)»); leer gelassen gilt die Automatik aus dem Planer-Link.
+Der Beispiel-Link oben ist ein Platzhalter (`[[...]]`), kein gültiger Link.
 
 Aus dem Planer-Link liest der Build (`src/data/touren.ts`):
 
 | Feld | Herkunft |
 | --- | --- |
 | Punkte, Etappenorte | Zeilen des Links (`w`), Ortsname bis zum ersten Komma |
-| Tage | 1 + Anzahl markierte Tagesabschlüsse (ohne Ziel) |
-| Distanz, Fahrzeit | `s: [km, min]`, vom Planer beim Teilen eingebettet (seit Paket 5). Fehlt es, werden sie nicht angezeigt. |
+| Tage | 1 + Anzahl markierte Tagesabschlüsse (ohne Ziel); Anzeige ersetzt durch `dauer`, falls gesetzt |
+| Distanz, Fahrzeit | `s: [km, min]`, vom Planer beim Teilen eingebettet (seit Paket 5). Fehlt es, werden sie nicht angezeigt. `fahrzeit` (Stunden, z. B. `2.5` oder `2,5`) geht vor; unlesbare Werte geben eine Build-Warnung. |
 | Planer-Button | immer `/planer/#r=…`, egal welche Adresse im CMS steht |
 
 `src/pages/touren.json.ts` schreibt `dist/touren.json`:
@@ -70,6 +78,7 @@ Aus dem Planer-Link liest der Build (`src/data/touren.ts`):
       "distanceKm": 245,
       "durationMin": 320,
       "days": 2,
+      "daysLabel": "Wochenende",
       "code": "eyJ2IjoxLCJ3IjpbWy4uLl1dfQ",
       "url": "https://pudgilly.ch/touren/#gotthard-runde",
       "next": { "date": "2027-07-03", "label": "Sa 3. Juli" }
@@ -79,7 +88,8 @@ Aus dem Planer-Link liest der Build (`src/data/touren.ts`):
 ```
 
 Der Planer (`src/lib/clubtours.ts`) prüft jeden Eintrag streng: ohne gültiges
-`code` (mindestens zwei Punkte), `slug` und `title` fällt die Tour weg. Die
+`code` (mindestens zwei Punkte), `slug` und `title` fällt die Tour weg.
+`daysLabel` wird, falls vorhanden, statt «1 Tag» / «2 Tage» angezeigt. Die
 Liste wird pro Sitzung einmal geladen; ein Fehler lässt sich wiederholen. Auf
 der alten Adresse (GitHub Pages) ist der Einstieg ausgeblendet, weil der Feed
 dort wegen der Browser-Herkunftsregel nicht lesbar ist.

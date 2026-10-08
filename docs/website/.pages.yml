@@ -31,6 +31,14 @@ content:
         label: Planer-Link
         type: string
         description: Im Routenplaner die Tour öffnen → «Teilen» → «Link kopieren» und hier einfügen. Daraus liest die Website Punkte, Tage, Kilometer und Fahrzeit.
+      - name: dauer
+        label: Dauer (Anzeige)
+        type: string
+        description: Ersetzt die automatische Angabe «1 Tag» bzw. «2 Tage», z. B. Feierabendrunde, Halbtag oder 2 Tage mit Übernachtung. Leer lassen für die Automatik.
+      - name: fahrzeit
+        label: Fahrzeit (Stunden)
+        type: string
+        description: Ersetzt die Fahrzeit aus dem Planer-Link, z. B. 2.5 für 2 h 30 min. Leer lassen für den Wert aus dem Planer.
       - name: image
         label: Bild (optional)
         type: image
