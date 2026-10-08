@@ -26,7 +26,7 @@ const facts = (t: (typeof items)[number]) =>
     t.region,
     t.distanceKm ? `${t.distanceKm} km` : undefined,
     t.durationLabel,
-    `${t.days} Tag${t.days === 1 ? '' : 'e'}`,
+    t.daysLabel,
   ].filter(Boolean);
 
 const steps = [

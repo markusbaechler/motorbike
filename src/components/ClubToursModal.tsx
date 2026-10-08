@@ -24,7 +24,7 @@ function meta(t: ClubTour): string {
   if (t.region) parts.push(t.region);
   if (t.distanceKm) parts.push(`${Math.round(t.distanceKm)} km`);
   if (t.durationMin) parts.push(fmtDuration(t.durationMin));
-  parts.push(`${t.days} Tag${t.days === 1 ? "" : "e"}`);
+  parts.push(t.daysLabel ?? `${t.days} Tag${t.days === 1 ? "" : "e"}`);
   parts.push(`${t.waypoints.length} Punkte`);
   return parts.join(" · ");
 }

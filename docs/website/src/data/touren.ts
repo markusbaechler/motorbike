@@ -14,6 +14,10 @@ export interface RawTour {
   /** Link aus dem Routenplaner («Teilen → Link kopieren»), enthält die ganze Tour */
   planerLink: string;
   image?: string;
+  /** Freier Text statt «1 Tag» / «2 Tage», z. B. «Feierabendrunde» (optional) */
+  dauer?: string | null;
+  /** Fahrzeit in Stunden, z. B. "2.5"; ersetzt den Wert aus dem Planer-Link (optional) */
+  fahrzeit?: string | number | null;
 }
 
 export interface ClubTour {
@@ -30,6 +34,8 @@ export interface ClubTour {
   plannerUrl: string;
   points: number;
   days: number;
+  /** Anzeige zur Dauer: Feld «Dauer» aus dem CMS, sonst "1 Tag" / "2 Tage" */
+  daysLabel: string;
   /** Benannte Punkte der Tour in Kurzform, z. B. ["Wassen", "Andermatt", "Airolo"] */
   stops: string[];
   distanceKm?: number;
@@ -95,6 +101,13 @@ function stops(rows: Row[]): string[] {
   return [...out.slice(0, 7), '…', out[out.length - 1]];
 }
 
+// "2.5" oder "2,5" (Stunden) -> 150 Minuten; leer oder unbrauchbar -> undefined
+function hoursToMinutes(v: unknown): number | undefined {
+  if (v === undefined || v === null || v === '') return undefined;
+  const h = typeof v === 'number' ? v : parseFloat(String(v).trim().replace(',', '.'));
+  return Number.isFinite(h) && h > 0 ? Math.round(h * 60) : undefined;
+}
+
 function durationLabel(min: number): string {
   const h = Math.floor(min / 60);
   const m = Math.round(min % 60);
@@ -117,6 +130,14 @@ const parsedTours: ClubTour[] = (data as RawTour[]).flatMap((raw): ClubTour[] =>
   const { code, rows, stats } = parsed;
   const events = upcomingEvents.filter((e) => e.tour && slugify(e.tour) === slug);
   const level = LEVELS.includes(raw.level as TourLevel) ? (raw.level as TourLevel) : undefined;
+  // Jeder markierte Tagesabschluss (ausser am Ziel) beginnt einen weiteren Tag.
+  const days = 1 + rows.slice(0, -1).filter((r) => r[3] === 1).length;
+  // Fahrzeit: Feld «Fahrzeit (Stunden)» aus dem CMS geht vor, sonst der Wert aus dem Planer-Link.
+  const ownMinutes = hoursToMinutes(raw.fahrzeit);
+  if (ownMinutes === undefined && raw.fahrzeit !== undefined && raw.fahrzeit !== null && raw.fahrzeit !== '') {
+    console.warn(`[touren] «${title}»: Fahrzeit «${raw.fahrzeit}» nicht lesbar (erwartet Stunden, z. B. 2.5) – Wert aus dem Planer wird verwendet.`);
+  }
+  const durationMin = ownMinutes ?? stats?.[1];
   return [
     {
       slug,
@@ -129,12 +150,12 @@ const parsedTours: ClubTour[] = (data as RawTour[]).flatMap((raw): ClubTour[] =>
       code,
       plannerUrl: `/planer/#r=${code}`,
       points: rows.length,
-      // Jeder markierte Tagesabschluss (ausser am Ziel) beginnt einen weiteren Tag.
-      days: 1 + rows.slice(0, -1).filter((r) => r[3] === 1).length,
+      days,
+      daysLabel: raw.dauer?.trim() || `${days} Tag${days === 1 ? '' : 'e'}`,
       stops: stops(rows),
       distanceKm: stats?.[0],
-      durationMin: stats?.[1],
-      durationLabel: stats ? durationLabel(stats[1]) : undefined,
+      durationMin,
+      durationLabel: durationMin ? durationLabel(durationMin) : undefined,
       events,
       next: events[0],
     },

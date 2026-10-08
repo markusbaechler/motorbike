@@ -29,6 +29,8 @@ describe("club tours", () => {
           highlights: ["Gotthard", "", 5, "Furka"],
           distanceKm: 123,
           durationMin: 201,
+          days: 2,
+          daysLabel: "Wochenende",
           code,
           next: { date: "2027-07-03", label: "Sa 3. Juli" },
         },
@@ -38,6 +40,7 @@ describe("club tours", () => {
     expect(tours[0]).toMatchObject({
       slug: "gotthard",
       days: 2,
+      daysLabel: "Wochenende",
       highlights: ["Gotthard", "Furka"],
       distanceKm: 123,
       next: { date: "2027-07-03", label: "Sa 3. Juli" },
@@ -58,6 +61,7 @@ describe("club tours", () => {
     expect(tours.map((t) => t.title)).toEqual(["OK"]);
     expect(tours[0].distanceKm).toBeUndefined();
     expect(tours[0].days).toBe(2);
+    expect(tours[0].daysLabel).toBeUndefined();
   });
 
   it("returns nothing for garbage", () => {

@@ -18,6 +18,8 @@ export interface ClubTour {
   distanceKm?: number;
   durationMin?: number;
   days: number;
+  // Free text from the CMS replacing "1 Tag" / "2 Tage", e.g. "Feierabendrunde".
+  daysLabel?: string;
   waypoints: Waypoint[];
   // Share-link payload (the part after "#r="), kept for building links.
   code: string;
@@ -69,6 +71,7 @@ export function parseClubTours(data: unknown): ClubTour[] {
       distanceKm: pos(o.distanceKm),
       durationMin: pos(o.durationMin),
       days: computeDays(waypoints).length || 1,
+      daysLabel: str(o.daysLabel, 40),
       waypoints,
       code,
       next: nextDate && nextLabel ? { date: nextDate, label: nextLabel } : undefined,

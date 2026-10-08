@@ -18,6 +18,7 @@ export const GET: APIRoute = () => {
       distanceKm: t.distanceKm,
       durationMin: t.durationMin,
       days: t.days,
+      daysLabel: t.daysLabel,
       code: t.code,
       url: `https://pudgilly.ch/touren/#${t.slug}`,
       next: t.next ? { date: t.next.date, label: t.next.shortLabel } : null,
