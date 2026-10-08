@@ -10,6 +10,12 @@ PWA-Installation direkt von pudgilly.ch, Service Worker mit Scope `/planer/`),
 Hosting in der Schweiz, kein GitHub-Hinweis mehr in der Datenschutzerklärung,
 Tourlinks `pudgilly.ch/planer/#r=…`.
 
+## Stand
+
+| Datum | Was |
+| --- | --- |
+| 08.10.2026 | Schritt 1 umgesetzt (pudgilly-riders PR #2, gemerged), Planer läuft unter `https://pudgilly.ch/planer/`, `/touren/` leitet um. Schritt 2 umgesetzt: `PLANER_MOVED_TO` gesetzt, alte Adresse zeigt die Umzugskarte. Schritt 3: `WEBSITE_DISPATCH_TOKEN` hinterlegt. `BOOKING_AID` nicht gesetzt (keine Partner-ID). |
+
 ## Wie der Umzug technisch läuft
 
 | Baustein | Wo | Was |
