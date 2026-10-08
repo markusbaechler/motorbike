@@ -61,7 +61,7 @@ export default function TourGeniusPreview({
           <Icon name="x" size={15} /> Verwerfen
         </button>
         <button className="tg-pv-btn primary" onClick={onAccept}>
-          <Icon name="loop" size={15} /> Übernehmen
+          <Icon name="check" size={15} /> Übernehmen
         </button>
       </div>
     </div>

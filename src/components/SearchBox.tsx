@@ -117,7 +117,7 @@ export default function SearchBox({ onSelect }: Props) {
           onFocus={onFocus}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           onKeyDown={onKeyDown}
-          placeholder="Ort suchen – Start, Stopp, Ziel …"
+          placeholder="Ort suchen – Start, Zwischenziel, Ziel …"
           aria-label="Ort suchen"
           role="combobox"
           aria-autocomplete="list"

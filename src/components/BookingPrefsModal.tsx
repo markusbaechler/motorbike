@@ -32,14 +32,15 @@ function Stepper({
   );
 }
 
+// The club's Booking.com affiliate id is set at build time (config.ts), so
+// this dialog only asks for travellers and rooms.
 export default function BookingPrefsModal({ prefs, onSave, onClose }: Props) {
   const [adults, setAdults] = useState(prefs.adults);
   const [children, setChildren] = useState(prefs.children);
   const [rooms, setRooms] = useState(prefs.rooms);
-  const [affiliateId, setAffiliateId] = useState(prefs.affiliateId ?? "");
 
   const save = () => {
-    onSave({ adults, children, rooms, affiliateId: affiliateId.trim() || undefined });
+    onSave({ adults, children, rooms, affiliateId: prefs.affiliateId });
     onClose();
   };
 
@@ -47,29 +48,15 @@ export default function BookingPrefsModal({ prefs, onSave, onClose }: Props) {
     <Modal title="Reisende & Zimmer" onClose={onClose}>
       <div className="modal-body">
         <p className="modal-note" style={{ marginTop: 0 }}>
-          Gilt für alle Übernachtungen der Tour – wird gespeichert.
+          Gilt für alle Übernachtungen der Tour – wird auf diesem Gerät gespeichert.
         </p>
         <Stepper label="Erwachsene" value={adults} min={1} onChange={setAdults} />
         <Stepper label="Kinder" value={children} min={0} onChange={setChildren} />
         <Stepper label="Zimmer" value={rooms} min={1} onChange={setRooms} />
 
-        <div className="modal-section" style={{ marginTop: 12 }}>
-          <label className="default-label" htmlFor="aid">
-            Booking.com Affiliate-ID (optional)
-          </label>
-          <input
-            id="aid"
-            className="day-name-input"
-            type="text"
-            placeholder="z. B. 1234567"
-            value={affiliateId}
-            onChange={(e) => setAffiliateId(e.target.value)}
-            style={{ width: "100%", marginTop: 6 }}
-          />
-          <p className="modal-note">Nur nötig, wenn du an Buchungen mitverdienen willst.</p>
-        </div>
-
-        <button className="export-btn primary" onClick={save}>Speichern</button>
+        <button className="export-btn primary" style={{ marginTop: 14 }} onClick={save}>
+          Speichern
+        </button>
       </div>
     </Modal>
   );

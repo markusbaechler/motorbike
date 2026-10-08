@@ -331,8 +331,8 @@ export default function MapView({
           `<div class="pass-pop">
              <div class="pass-pop-name">${esc(p.name)}${h}</div>
              <div class="pass-pop-btns">
-               <button type="button" data-mark="need" class="pp-btn pp-need${cur === "need" ? " on" : ""}">Need-to</button>
-               <button type="button" data-mark="nice" class="pp-btn pp-nice${cur === "nice" ? " on" : ""}">Nice-to</button>
+               <button type="button" data-mark="need" class="pp-btn pp-need${cur === "need" ? " on" : ""}" title="Muss dabei sein">Muss</button>
+               <button type="button" data-mark="nice" class="pp-btn pp-nice${cur === "nice" ? " on" : ""}" title="Kann dabei sein, wenn es passt">Kann</button>
                ${cur !== "none" ? '<button type="button" data-mark="none" class="pp-btn pp-rm">Entfernen</button>' : ""}
              </div>
            </div>`,

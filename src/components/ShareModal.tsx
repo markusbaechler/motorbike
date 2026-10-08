@@ -33,18 +33,22 @@ export default function ShareModal({ waypoints, onClose }: Props) {
 
   const nativeShare = async () => {
     try {
-      await navigator.share?.({ title: "Motorradtour", text: "Meine Route in Motorbike", url });
+      await navigator.share?.({
+        title: "Tour · Pudgilly Riders Routenplaner",
+        text: "Meine Tour im Routenplaner der Pudgilly Riders",
+        url,
+      });
     } catch {
       /* cancelled */
     }
   };
 
   return (
-    <Modal title="Route teilen" onClose={onClose}>
+    <Modal title="Tour teilen" onClose={onClose}>
       <div className="modal-body">
         <p className="modal-note" style={{ marginTop: 0 }}>
-          Der Link enthält die ganze Tour (Stopps, Profile, Tage) – kein Konto nötig.
-          Wer ihn öffnet, sieht die Route direkt im Planer.
+          Der Link enthält die ganze Tour (Punkte, Fahrstile, Tage) – kein Konto nötig.
+          Wer ihn öffnet, sieht die Tour direkt im Planer.
         </p>
 
         {qr && (
@@ -56,7 +60,7 @@ export default function ShareModal({ waypoints, onClose }: Props) {
         <div className="share-url">{url}</div>
 
         <button className="export-btn primary" onClick={copy}>
-          <Icon name="folder" size={16} /> {copied ? "Link kopiert ✓" : "Link kopieren"}
+          <Icon name={copied ? "check" : "link"} size={16} /> {copied ? "Link kopiert" : "Link kopieren"}
         </button>
         {typeof navigator !== "undefined" && "share" in navigator && (
           <button className="export-btn" style={{ width: "100%", marginTop: 8 }} onClick={nativeShare}>

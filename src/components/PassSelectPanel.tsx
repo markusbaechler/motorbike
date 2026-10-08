@@ -13,8 +13,9 @@ interface Props {
 
 /**
  * Floating bar shown during pass selection. The rider taps a pass dot and
- * picks Need-to / Nice-to in its popup; this bar shows the tally and turns
- * the picks into a route. "Abbrechen" also stops a running optimisation.
+ * picks "Muss" (need) / "Kann" (nice) in its popup; this bar shows the tally
+ * and turns the picks into a tour. "Abbrechen" also stops a running
+ * optimisation.
  */
 export default function PassSelectPanel({
   total,
@@ -31,7 +32,7 @@ export default function PassSelectPanel({
       <div className="pass-select-info">
         <strong>{total} Pässe im Korridor</strong>
         <span className="pass-select-hint">
-          Pass antippen → <b className="need">Need-to</b> / <b className="nice">Nice-to</b> wählen
+          Pass antippen → <b className="need">Muss</b> / <b className="nice">Kann</b> wählen
         </span>
         <span className="pass-select-counts">
           <i className="pass-dot need" /> {needCount}
@@ -49,7 +50,7 @@ export default function PassSelectPanel({
           aria-live="polite"
         >
           {busy ? (progress ?? "Route wird optimiert …") : (
-            <><Icon name="flag" size={16} /> Route erstellen ({picked})</>
+            <><Icon name="flag" size={16} /> Tour erstellen ({picked})</>
           )}
         </button>
       </div>

@@ -108,7 +108,7 @@ export default function PassPlannerModal({ onReady, onClose }: Props) {
     >
       <div className="modal-body">
         <p className="modal-note" style={{ marginTop: 0 }}>
-          Start wählen → Pässe auf der Karte als Need / Nice markieren → Route
+          Start wählen → Pässe auf der Karte als Muss / Kann markieren → Tour
           erstellen.
         </p>
 

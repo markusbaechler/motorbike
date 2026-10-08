@@ -35,10 +35,17 @@ interface Props {
   onClear: () => void;
 }
 
-const PROFILE_LABEL: Record<RouteProfile, string> = {
+export const PROFILE_LABEL: Record<RouteProfile, string> = {
   kurvig: "Fun 1",
   kurvig_plus: "Fun 2",
   schnell: "Schnell",
+};
+
+// What the three riding styles mean (tooltip + screen readers).
+export const PROFILE_HINT: Record<RouteProfile, string> = {
+  kurvig: "Fun 1: kurvig über kleine Strassen und Pässe, zuverlässig",
+  kurvig_plus: "Fun 2: maximal kurvig, nimmt auch Umwege in Kauf",
+  schnell: "Schnell: direkt, auch über die Autobahn",
 };
 
 function formatDuration(minutes: number): string {
@@ -88,6 +95,9 @@ function ProfileToggle({
           key={p}
           className={`toggle-btn ${value === p ? "active" : ""} ${p}`}
           onClick={() => onChange(p)}
+          title={PROFILE_HINT[p]}
+          aria-label={PROFILE_HINT[p]}
+          aria-pressed={value === p}
         >
           {PROFILE_LABEL[p]}
         </button>
@@ -299,31 +309,32 @@ export default function RoutePanel({
                 {days.length > 1 ? ` · ${days.length} Tage` : ""}
               </>
             ) : (
-              "Route planen — antippen zum Aufklappen"
+              "Tour planen – antippen zum Aufklappen"
             )}
           </span>
         </button>
       ) : (
        <>
       <div className="panel-row top">
+        {/* One primary action; the other tools share the quiet secondary style. */}
         <button className="quickplan-btn" onClick={onOpenQuickPlan}>
-          <Icon name="zap" size={16} /> Route planen
+          <Icon name="zap" size={16} /> Tour planen
         </button>
-        <button className="quickplan-btn genius" onClick={onOpenTourGenius}>
+        <button className="quickplan-btn secondary" onClick={onOpenTourGenius}>
           <Icon name="compass" size={16} /> Tour-Genius
         </button>
-        <button className="quickplan-btn passes" onClick={onOpenPassPlanner}>
+        <button className="quickplan-btn secondary" onClick={onOpenPassPlanner}>
           <Icon name="mountain" size={16} /> Pässeplaner
         </button>
         <button className="quickplan-btn secondary" onClick={onOpenRoutes}>
-          <Icon name="folder" size={16} /> Routen
+          <Icon name="folder" size={16} /> Touren
         </button>
         <span className="default-label">Neuer Abschnitt:</span>
         <ProfileToggle value={defaultProfile} onChange={onDefaultProfileChange} />
         {waypoints.length >= 2 && (
           <>
             <button className="clear-btn" onClick={onReverse} title="Richtung umkehren">
-              <Icon name="down" size={14} /> Umkehren
+              <Icon name="swap" size={14} /> Umkehren
             </button>
             <button className="clear-btn" onClick={onRoundTrip} title="Zurück zum Start (Rundtour)">
               <Icon name="loop" size={14} /> Rundtour
@@ -340,7 +351,7 @@ export default function RoutePanel({
       <div className="panel-row summary">
         {waypoints.length === 0 && (
           <span className="hint">
-            Ort suchen oder auf die Karte tippen, um Start, Stopps und Ziel zu setzen.
+            Ort suchen oder auf die Karte tippen, um Start, Zwischenziele und Ziel zu setzen.
           </span>
         )}
         {waypoints.length === 1 && (
@@ -367,7 +378,7 @@ export default function RoutePanel({
                 <Icon name="chart" size={15} /> Details
               </button>
               <button className="details-btn" onClick={onOpenShare}>
-                <Icon name="users" size={15} /> Teilen
+                <Icon name="share" size={15} /> Teilen
               </button>
             </span>
           </span>
@@ -447,7 +458,7 @@ export default function RoutePanel({
                       onClick={() => onOpenHotel(placeName(overnight), overnight.dayDate)}
                       title="Hotels an diesem Übernachtungsort suchen"
                     >
-                      <Icon name="bed" size={15} /> Hotels
+                      <Icon name="bed" size={15} /> Hotels suchen
                     </button>
                   )}
                 </div>
@@ -491,7 +502,7 @@ export default function RoutePanel({
       {waypoints.length >= 2 && (
         <p className="edit-hint">
           „Tag hinzufügen“ beendet den Tag am letzten Punkt. Streckenlinie ziehen
-          fügt einen Zwischenpunkt ein.
+          fügt ein Zwischenziel ein.
         </p>
       )}
        </>

@@ -136,7 +136,7 @@ export default function RouteModal({ waypoints, route, weather, onClose }: Props
   );
 
   const exportWhole = (mode: "waypoints" | "route" | "track") =>
-    downloadGpx("motorradtour", buildGpx("Motorradtour", waypoints, route.geojson.features, mode));
+    downloadGpx("tour", buildGpx("Tour", waypoints, route.geojson.features, mode));
 
   const exportDay = (startIdx: number, endIdx: number, day: number) => {
     const features = route.geojson.features.filter((f) => {
@@ -171,7 +171,7 @@ export default function RouteModal({ waypoints, route, weather, onClose }: Props
 
   return (
     <>
-      <Modal title="Routen-Details" onClose={onClose} className="modal-lg">
+      <Modal title="Tour-Details" onClose={onClose} className="modal-lg">
         <div className="modal-body">
           {/* Hero rating */}
           <section className="rating-hero">
@@ -197,8 +197,8 @@ export default function RouteModal({ waypoints, route, weather, onClose }: Props
           {/* Criteria */}
           <section className="modal-section card">
             <ScoreBar icon="zap" label="Kurvenreichtum" value={analysis.scores.curves} />
-            <ScoreBar icon="flag" label="Bergigkeit & Pässe" value={analysis.scores.mountains} />
-            <ScoreBar icon="chart" label="Landschaft (kleine Strassen)" value={analysis.scores.scenic} />
+            <ScoreBar icon="mountain" label="Bergigkeit & Pässe" value={analysis.scores.mountains} />
+            <ScoreBar icon="scenery" label="Landschaft (kleine Strassen)" value={analysis.scores.scenic} />
           </section>
 
           {/* Statistics */}
@@ -265,9 +265,9 @@ export default function RouteModal({ waypoints, route, weather, onClose }: Props
             <button
               className="export-btn"
               style={{ width: "100%" }}
-              onClick={() => openRoadbook("Motorradtour", waypoints, route, weather)}
+              onClick={() => openRoadbook("Tour", waypoints, route, weather)}
             >
-              <Icon name="chart" size={16} /> Roadbook drucken / als PDF
+              <Icon name="print" size={16} /> Roadbook drucken / als PDF
             </button>
             <p className="modal-note">
               Druckfertige Tagesübersicht (Etappen, Zeiten, Übernachtung, Wetter). Im

@@ -10,6 +10,8 @@ interface Props {
   // Extra class on the backdrop (e.g. "info-backdrop" for a nested dialog).
   backdropClassName?: string;
   closeLabel?: string;
+  // Element to focus on open instead of the dialog box (e.g. a single input).
+  initialFocus?: React.RefObject<HTMLElement>;
 }
 
 // Open dialogs, innermost last. Only the top-most one reacts to Escape so a
@@ -31,6 +33,7 @@ export default function Modal({
   className = "",
   backdropClassName = "",
   closeLabel = "Schliessen",
+  initialFocus,
 }: Props) {
   const boxRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
@@ -43,7 +46,8 @@ export default function Modal({
     const opener = document.activeElement as HTMLElement | null;
     // Focus the dialog itself (not the first input: on phones that would pop
     // the keyboard over half the sheet). Tab then moves into the content.
-    boxRef.current?.focus();
+    // Dialogs that are just one field (rename) ask for the field instead.
+    (initialFocus?.current ?? boxRef.current)?.focus();
 
     const onKey = (e: KeyboardEvent) => {
       if (stack[stack.length - 1] !== token) return;

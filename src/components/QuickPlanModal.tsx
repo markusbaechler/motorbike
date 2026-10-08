@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Icon from "./Icon";
 import Modal from "./Modal";
 import PlaceInput from "./PlaceInput";
+import { PROFILE_HINT, PROFILE_LABEL } from "./RoutePanel";
 import { searchPlaces, type GeoResult } from "../lib/geocoding";
 import type { RouteProfile } from "../types";
 
@@ -235,7 +236,7 @@ export default function QuickPlanModal({
   );
 
   return (
-    <Modal title={initialStops ? "Route bearbeiten" : "Route planen"} onClose={close}>
+    <Modal title={initialStops ? "Tour bearbeiten" : "Tour planen"} onClose={close}>
         <div className="modal-body">
           <p className="modal-note" style={{ marginTop: 0 }}>
             Pro Tag ein Block. Jeder Tag startet an der Übernachtung des Vortags.
@@ -322,24 +323,31 @@ export default function QuickPlanModal({
           <button className="add-day-btn" onClick={addDay}><Icon name="plus" size={16} /> Tag hinzufügen</button>
 
           <div className="qp-profile">
-            <span className="default-label">Profil (alle Etappen):</span>
+            <span className="default-label">Fahrstil (alle Abschnitte):</span>
             <span className="toggle">
               {(["kurvig", "kurvig_plus", "schnell"] as RouteProfile[]).map((p) => (
                 <button
                   key={p}
                   className={`toggle-btn ${profile === p ? "active" : ""} ${p}`}
                   onClick={() => chooseProfile(p)}
+                  title={PROFILE_HINT[p]}
+                  aria-label={PROFILE_HINT[p]}
+                  aria-pressed={profile === p}
                 >
-                  {p === "kurvig" ? "Fun 1" : p === "kurvig_plus" ? "Fun 2" : "Schnell"}
+                  {PROFILE_LABEL[p]}
                 </button>
               ))}
             </span>
           </div>
+          <p className="modal-note toggle-legend">
+            Fun 1: kurvig über kleine Strassen · Fun 2: maximal kurvig, auch Umwege · Schnell:
+            direkt, auch Autobahn. Pro Abschnitt später im Panel änderbar.
+          </p>
 
           {error && <p className="error">⚠ {error}</p>}
 
           <button className="export-btn primary" disabled={busy} onClick={submit}>
-            {busy ? "Route wird erstellt …" : "Route erstellen"}
+            {busy ? "Tour wird erstellt …" : "Tour erstellen"}
           </button>
         </div>
     </Modal>
