@@ -125,6 +125,13 @@ button {
   overflow: hidden;
 }
 
+/* The map and its context menu share one positioned box; on wide screens
+   it starts right of the sidebar (see the desktop block at the end). */
+.map-wrap {
+  position: absolute;
+  inset: 0;
+}
+
 .map {
   position: absolute;
   inset: 0;
@@ -353,6 +360,7 @@ button {
   background: transparent;
   color: var(--muted);
   border: none;
+  white-space: nowrap;
   padding: 7px 13px;
   font-size: 0.84rem;
   font-weight: 700;
@@ -1494,14 +1502,19 @@ button {
     gap: 8px;
   }
 
-  /* Profile toggles fill the width with large, thumb-friendly segments */
-  .default-label {
-    flex: 1 1 100%;
+  /* "Tour planen" + "Mehr" share the row; label and riding-style toggle
+     share the next one with large, thumb-friendly segments. */
+  .panel-row.top .quickplan-btn {
+    flex: 1 1 auto;
+    justify-content: center;
   }
-  .panel-row.top .toggle {
-    flex: 1 1 100%;
+  .panel-row.profile .default-label {
+    flex: 0 0 auto;
   }
-  .panel-row.top .toggle-btn {
+  .panel-row.profile .toggle {
+    flex: 1 1 auto;
+  }
+  .panel-row.profile .toggle-btn {
     flex: 1 1 0;
   }
   .clear-btn {
@@ -2548,4 +2561,166 @@ button {
 }
 .toggle-legend {
   margin-top: 8px;
+}
+
+/* --- Map context menu (right-click / long-press): Start, Zwischenziel, Ziel --- */
+.map-ctx {
+  position: absolute;
+  z-index: 20;
+  min-width: 200px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  animation: pop-in 0.12s ease;
+}
+.map-ctx button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.map-ctx button:hover,
+.map-ctx button:focus-visible {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* --- "Mehr" tools menu on phones --- */
+.tools-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tools-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 58px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+}
+.tools-item:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.tools-item .icon {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+.tools-item span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tools-item strong {
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+.tools-item small {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.tools-item.danger .icon {
+  color: var(--danger);
+}
+
+/* ── Desktop (≥ 900 px): sidebar left, map right ──────────────────────
+   Same components as the bottom sheet, only repositioned. The breakpoint is
+   mirrored in lib/useMediaQuery.ts (DESKTOP_QUERY). */
+@media (min-width: 900px) {
+  :root {
+    --sidebar-w: 400px;
+  }
+  /* Pässeplaner mode has no sidebar: the map gets the whole width. */
+  .app.pass-mode {
+    --sidebar-w: 0px;
+  }
+
+  .map-wrap {
+    left: var(--sidebar-w);
+  }
+
+  .topbar {
+    right: auto;
+    width: var(--sidebar-w);
+    z-index: 12;
+    padding: 14px 16px 0;
+  }
+
+  .searchbox {
+    top: 72px;
+    left: 16px;
+    right: auto;
+    width: calc(var(--sidebar-w) - 32px);
+    max-width: none;
+    margin: 0;
+  }
+
+  .panel {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: auto;
+    width: var(--sidebar-w);
+    max-height: none;
+    border-radius: 0;
+    border-top: 0;
+    border-right: 1px solid var(--border-strong);
+    box-shadow: 12px 0 40px rgba(0, 0, 0, 0.35);
+    padding: 134px 16px 20px;
+    gap: 14px;
+  }
+
+  .panel-handle,
+  .panel-minbar {
+    display: none;
+  }
+
+  .panel-row.top .quickplan-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  /* Floating bars centre over the map, not over the whole window. */
+  .tg-preview,
+  .pass-select {
+    left: calc(var(--sidebar-w) + (100vw - var(--sidebar-w)) / 2);
+  }
+
+  /* The sidebar is narrow: per-leg style toggle on its own full-width line,
+     like on phones, instead of squeezing "Fun 1" into two lines. */
+  .segment {
+    flex-wrap: wrap;
+    gap: 6px 8px;
+  }
+  .segment .toggle {
+    flex: 1 1 100%;
+    order: 3;
+  }
+  .segment .toggle-btn {
+    flex: 1 1 0;
+  }
 }

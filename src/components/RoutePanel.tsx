@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import Icon, { type IconName } from "./Icon";
+import Modal from "./Modal";
 import { computeDays, dayStats, dayNumbers } from "../lib/days";
+import { DESKTOP_QUERY, useMediaQuery } from "../lib/useMediaQuery";
 import type { BookingPrefs } from "../lib/storage";
 import { isFair, type WeatherDay } from "../lib/weather";
 import type { RouteProfile, RouteResult, Waypoint } from "../types";
@@ -153,17 +155,35 @@ export default function RoutePanel({
   const toggleDay = (d: number) =>
     setOpenOverrides((o) => ({ ...o, [d]: !isDayOpen(d) }));
 
-  // The whole bottom sheet can be minimised to free up the map.
-  const [min, setMin] = useState(false);
+  // Wide screens show the panel as a sidebar next to the map (no grabber, no
+  // minimise); phones get the bottom sheet.
+  const desktop = useMediaQuery(DESKTOP_QUERY);
+
+  // The bottom sheet can be minimised to free up the map (phones only).
+  const [minState, setMin] = useState(false);
+  const min = minState && !desktop;
+
+  // Secondary tools live in a menu on phones so the sheet starts with the
+  // tour itself instead of a wall of buttons.
+  const [showTools, setShowTools] = useState(false);
+  const pick = (fn: () => void) => () => {
+    setShowTools(false);
+    fn();
+  };
 
   // Publish the sheet's current height as a CSS variable so the map controls
-  // (zoom, locate, scale) and "fit route" can stay clear of it.
+  // (zoom, locate, scale) and "fit route" can stay clear of it. The sidebar
+  // sits beside the map, so there it publishes 0.
   const rootRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = rootRef.current;
     if (!el) return;
     const root = document.documentElement;
-    const publish = () => root.style.setProperty("--panel-h", `${Math.round(el.getBoundingClientRect().height)}px`);
+    const publish = () =>
+      root.style.setProperty(
+        "--panel-h",
+        desktop ? "0px" : `${Math.round(el.getBoundingClientRect().height)}px`,
+      );
     publish();
     const ro = new ResizeObserver(publish);
     ro.observe(el);
@@ -171,7 +191,7 @@ export default function RoutePanel({
       ro.disconnect();
       root.style.setProperty("--panel-h", "0px");
     };
-  }, []);
+  }, [desktop]);
 
   // Drag the grabber: pull down to minimise, up to expand (tap also toggles).
   const dragRef = useRef<{ y: number; moved: boolean } | null>(null);
@@ -280,24 +300,26 @@ export default function RoutePanel({
 
   return (
     <div ref={rootRef} className={`panel ${min ? "min" : ""}`}>
-      <div
-        className="panel-handle"
-        onPointerDown={onHandleDown}
-        onPointerMove={onHandleMove}
-        onPointerUp={onHandleUp}
-        title="Ziehen oder tippen zum Ein-/Ausklappen"
-      >
-        <span className="panel-handle-bar" />
-        <button
-          className="panel-handle-chevron"
-          data-open={!min}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => setMin((m) => !m)}
-          aria-label={min ? "Bedienfeld aufklappen" : "Bedienfeld minimieren"}
+      {!desktop && (
+        <div
+          className="panel-handle"
+          onPointerDown={onHandleDown}
+          onPointerMove={onHandleMove}
+          onPointerUp={onHandleUp}
+          title="Ziehen oder tippen zum Ein-/Ausklappen"
         >
-          <Icon name="chevron" size={20} />
-        </button>
-      </div>
+          <span className="panel-handle-bar" />
+          <button
+            className="panel-handle-chevron"
+            data-open={!min}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => setMin((m) => !m)}
+            aria-label={min ? "Bedienfeld aufklappen" : "Bedienfeld minimieren"}
+          >
+            <Icon name="chevron" size={20} />
+          </button>
+        </div>
+      )}
 
       {min ? (
         <button className="panel-minbar" onClick={() => setMin(false)}>
@@ -316,22 +338,38 @@ export default function RoutePanel({
       ) : (
        <>
       <div className="panel-row top">
-        {/* One primary action; the other tools share the quiet secondary style. */}
+        {/* One primary action; the other tools share the quiet secondary style
+            (desktop) or sit behind "Mehr" (phones). */}
         <button className="quickplan-btn" onClick={onOpenQuickPlan}>
           <Icon name="zap" size={16} /> Tour planen
         </button>
-        <button className="quickplan-btn secondary" onClick={onOpenTourGenius}>
-          <Icon name="compass" size={16} /> Tour-Genius
-        </button>
-        <button className="quickplan-btn secondary" onClick={onOpenPassPlanner}>
-          <Icon name="mountain" size={16} /> Pässeplaner
-        </button>
-        <button className="quickplan-btn secondary" onClick={onOpenRoutes}>
-          <Icon name="folder" size={16} /> Touren
-        </button>
+        {desktop ? (
+          <>
+            <button className="quickplan-btn secondary" onClick={onOpenTourGenius}>
+              <Icon name="compass" size={16} /> Tour-Genius
+            </button>
+            <button className="quickplan-btn secondary" onClick={onOpenPassPlanner}>
+              <Icon name="mountain" size={16} /> Pässeplaner
+            </button>
+            <button className="quickplan-btn secondary" onClick={onOpenRoutes}>
+              <Icon name="folder" size={16} /> Touren
+            </button>
+          </>
+        ) : (
+          <button
+            className="quickplan-btn secondary tools-btn"
+            onClick={() => setShowTools(true)}
+            aria-haspopup="dialog"
+          >
+            <Icon name="menu" size={16} /> Mehr
+          </button>
+        )}
+      </div>
+
+      <div className="panel-row profile">
         <span className="default-label">Neuer Abschnitt:</span>
         <ProfileToggle value={defaultProfile} onChange={onDefaultProfileChange} />
-        {waypoints.length >= 2 && (
+        {desktop && waypoints.length >= 2 && (
           <>
             <button className="clear-btn" onClick={onReverse} title="Richtung umkehren">
               <Icon name="swap" size={14} /> Umkehren
@@ -341,7 +379,7 @@ export default function RoutePanel({
             </button>
           </>
         )}
-        {waypoints.length > 0 && (
+        {desktop && waypoints.length > 0 && (
           <button className="clear-btn" onClick={onClear}>
             Zurücksetzen
           </button>
@@ -506,6 +544,61 @@ export default function RoutePanel({
         </p>
       )}
        </>
+      )}
+
+      {showTools && (
+        <Modal title="Werkzeuge" onClose={() => setShowTools(false)} className="modal-tools">
+          <div className="modal-body tools-list">
+            <button className="tools-item" onClick={pick(onOpenTourGenius)}>
+              <Icon name="compass" size={20} />
+              <span>
+                <strong>Tour-Genius</strong>
+                <small>Touren automatisch generieren</small>
+              </span>
+            </button>
+            <button className="tools-item" onClick={pick(onOpenPassPlanner)}>
+              <Icon name="mountain" size={20} />
+              <span>
+                <strong>Pässeplaner</strong>
+                <small>Tour über ausgewählte Pässe</small>
+              </span>
+            </button>
+            <button className="tools-item" onClick={pick(onOpenRoutes)}>
+              <Icon name="folder" size={20} />
+              <span>
+                <strong>Meine Touren</strong>
+                <small>Speichern, laden, importieren</small>
+              </span>
+            </button>
+            {waypoints.length >= 2 && (
+              <>
+                <button className="tools-item" onClick={pick(onReverse)}>
+                  <Icon name="swap" size={20} />
+                  <span>
+                    <strong>Umkehren</strong>
+                    <small>Richtung der Tour umdrehen</small>
+                  </span>
+                </button>
+                <button className="tools-item" onClick={pick(onRoundTrip)}>
+                  <Icon name="loop" size={20} />
+                  <span>
+                    <strong>Rundtour</strong>
+                    <small>Zurück zum Start anhängen</small>
+                  </span>
+                </button>
+              </>
+            )}
+            {waypoints.length > 0 && (
+              <button className="tools-item danger" onClick={pick(onClear)}>
+                <Icon name="x" size={20} />
+                <span>
+                  <strong>Zurücksetzen</strong>
+                  <small>Alle Punkte entfernen</small>
+                </span>
+              </button>
+            )}
+          </div>
+        </Modal>
       )}
     </div>
   );

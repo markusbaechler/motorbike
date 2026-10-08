@@ -197,6 +197,17 @@ export default function App() {
     ]);
   };
 
+  // "Start hier" from the map's context menu: the point becomes the first
+  // waypoint; the old start turns into a regular stop reached with the
+  // default profile.
+  const prependWaypoint = (lng: number, lat: number) => {
+    setPendingDay(false);
+    setWaypoints((wps) => [
+      { id: makeId(), lng, lat, legProfile: defaultProfile },
+      ...wps.map((w, i) => (i === 0 ? { ...w, legProfile: defaultProfile } : w)),
+    ]);
+  };
+
   // End the current day at the last waypoint (overnight) so the next point
   // added begins a new day.
   const addDay = () =>
@@ -553,7 +564,9 @@ export default function App() {
   }, [waypoints, routeAttempt]);
 
   return (
-    <div className="app">
+    // pass-mode: on wide screens the sidebar is gone, so the map takes the
+    // full width and the floating bars centre over it (see styles.css).
+    <div className={`app ${passSession ? "pass-mode" : ""}`}>
       {/* The Pässeplaner is a dedicated mode: its own floating bar replaces the
           title bar, the search box and the route panel, so the whole map stays
           free for picking passes. */}
@@ -584,6 +597,7 @@ export default function App() {
         focus={focus}
         fitSignal={fitSignal}
         onAddWaypoint={addWaypoint}
+        onPrependWaypoint={prependWaypoint}
         onMoveWaypoint={moveWaypoint}
         onInsertWaypoint={insertWaypoint}
         passPoints={passPoints}
