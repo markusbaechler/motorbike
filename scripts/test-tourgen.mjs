@@ -2,7 +2,7 @@
 // router (BRouter) for Wassen and print the ranked variants, so we can judge
 // whether the top suggestion is actually a sensible day tour.
 //
-// Run with:  node --import ./scripts/ts-resolve-register.mjs scripts/test-tourgen.mjs
+// Run with:  npm run test:tourgen  (= node --loader ./scripts/ts-resolve.mjs scripts/test-tourgen.mjs)
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";

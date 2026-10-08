@@ -5,7 +5,7 @@ name: Deploy PWA to GitHub Pages
 
 on:
   push:
-    branches: ["main", "claude/eloquent-keller-H9SiF"]
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:

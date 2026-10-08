@@ -4,15 +4,18 @@ Diese Liste steuert, welche bekannten Motorrad-Strassen/Pässe der **Tour-Genius
 bevorzugt anfährt: Liegt ein Eintrag in Reichweite des Startorts, baut der Genius
 gezielt eine Schleife darüber.
 
-- **Quelle für die App:** `public/passes.json` (wird zur Laufzeit geladen).
+- **Quelle für die App:** `src/lib/passes.ts` (`DEFAULT_PASSES`, fest in der
+  App enthalten). Eine Änderung braucht einen neuen Build.
 - **Dieses Dokument** ist die menschenlesbare, gepflegte Fassung. Bei Änderungen
   werden beide aktuell gehalten.
 - Koordinaten = ein repräsentativer Punkt auf der Strasse/dem Pass
   (ein paar hundert Meter Genauigkeit genügen, das Routing rastet auf die
   nächste Strasse ein).
+- Der **Pässeplaner** nutzt eine andere, viel grössere Liste mit Belag und
+  Höhe: `public/passes-europe.json` (rund 950 Einträge).
 
 > Änderung gewünscht? Einfach melden („Pass X hinzufügen / Y entfernen / Z
-> korrigieren") – wird in `docs/passes.md` **und** `public/passes.json`
+> korrigieren“) – wird in `docs/passes.md` **und** `src/lib/passes.ts`
 > nachgeführt.
 
 ---
