@@ -2,6 +2,16 @@ name: Deploy PWA to GitHub Pages
 
 # Baut die App und veröffentlicht sie kostenlos über GitHub Pages.
 # Aktivierung: Repo → Settings → Pages → "Source: GitHub Actions".
+#
+# Seit dem Umzug nach pudgilly.ch/planer/ ist GitHub Pages nur noch die
+# Übergangsadresse (siehe docs/umzug-planer.md):
+#   - Variable PLANER_MOVED_TO (z.B. https://pudgilly.ch/planer/) blendet auf
+#     dem Startbildschirm die Umzugskarte ein, deren Link die gespeicherten
+#     Touren mitnimmt.
+#   - Secret WEBSITE_DISPATCH_TOKEN (fine-grained PAT, Contents: read & write
+#     auf markusbaechler/pudgilly-riders) stösst nach jedem Push den
+#     Website-Build an, der den Planer frisch mitbaut. Ohne Secret wird der
+#     Schritt übersprungen.
 
 on:
   push:
@@ -28,6 +38,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+        env:
+          VITE_BOOKING_AID: ${{ vars.BOOKING_AID }}
+          VITE_MOVED_TO: ${{ vars.PLANER_MOVED_TO }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
@@ -41,3 +54,26 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # Website-Build auf pudgilly.ch anstossen (repository_dispatch "planer-updated").
+  notify-website:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch pudgilly-riders build
+        env:
+          TOKEN: ${{ secrets.WEBSITE_DISPATCH_TOKEN }}
+          SHA: ${{ github.sha }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "WEBSITE_DISPATCH_TOKEN nicht gesetzt – Website wird nicht angestossen."
+            exit 0
+          fi
+          curl --fail --silent --show-error \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/markusbaechler/pudgilly-riders/dispatches \
+            -d "{\"event_type\":\"planer-updated\",\"client_payload\":{\"sha\":\"$SHA\"}}"
+          echo "Website-Build angestossen (planer-updated, $SHA)."

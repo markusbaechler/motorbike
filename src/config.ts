@@ -25,3 +25,9 @@ export const SITE_LINKS = {
 // Booking.com affiliate id of the club (optional). Set at build time via
 // VITE_BOOKING_AID so members never have to enter it themselves.
 export const BOOKING_AID: string | undefined = import.meta.env.VITE_BOOKING_AID?.trim() || undefined;
+
+// Set on the OLD hosting (GitHub Pages) once the planner is reachable at its
+// new address: the Home screen then shows a "moved" card with a link that
+// carries the device's saved tours along (see lib/migrate.ts). Empty on the
+// new hosting itself, so the card never shows there.
+export const MOVED_TO: string | undefined = import.meta.env.VITE_MOVED_TO?.trim() || undefined;

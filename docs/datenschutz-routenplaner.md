@@ -1,15 +1,20 @@
 # Datenschutz-Abschnitt für die Website (pudgilly.ch)
 
-Vorschlag für Abschnitt 5 der Datenschutzerklärung (`src/pages/datenschutz.astro`
-im Website-Repo). Er ersetzt den heutigen Absatz «Eingebetteter Routenplaner» und
-nennt die Dienste, die der Planer tatsächlich anspricht. Sobald der Planer unter
-`pudgilly.ch/planer/` läuft, entfällt der Satz zu GitHub Pages.
+Text für Abschnitt 5 der Datenschutzerklärung (`src/pages/datenschutz.astro` im
+Website-Repo). Er ersetzt den früheren Absatz «Eingebetteter Routenplaner» und
+nennt die Dienste, die der Planer tatsächlich anspricht. Fertig als HTML:
+`docs/website/src/pages/datenschutz.astro.snippet.html`.
+
+Das Hosting des Planers (green.ch, Schweiz) ist seit dem Umzug nach
+`pudgilly.ch/planer/` durch Abschnitt 2 «Besuch der Website» abgedeckt. Solange
+die alte Adresse auf GitHub Pages noch erreichbar ist, kann der letzte Absatz
+unten stehen bleiben; danach entfällt er.
 
 ---
 
 ## 5. Routenplaner
 
-Unser Routenplaner läuft vollständig in deinem Browser. Es gibt kein Konto, und
+Unser Routenplaner unter pudgilly.ch/planer läuft vollständig in deinem Browser. Es gibt kein Konto, und
 die von dir geplanten Touren werden nur lokal auf deinem Gerät gespeichert
 (Browser-Speicher). Sie verlassen dein Gerät nur, wenn du eine Tour selbst teilst
 oder exportierst.
@@ -37,6 +42,7 @@ und das Datum der Übernachtung:
 Deinen Standort verwendet der Planer nur, wenn du das im Browser ausdrücklich
 erlaubst (Knopf «Standort» auf der Karte); er wird nicht gespeichert.
 
-Der Planer wird derzeit bei GitHub Pages gehostet (GitHub Inc., USA). Beim
-Aufruf wird deine IP-Adresse an GitHub übermittelt. Details in der
+Übergangsweise ist der Planer zusätzlich unter seiner alten Adresse bei GitHub
+Pages erreichbar (GitHub Inc., USA). Beim Aufruf dieser alten Adresse wird deine
+IP-Adresse an GitHub übermittelt. Details in der
 [Datenschutzerklärung von GitHub](https://docs.github.com/de/site-policy/privacy-policies/github-general-privacy-statement).
