@@ -1,4 +1,5 @@
 import type { RouteProfile, RouteResult, Waypoint } from "../types";
+import { withSlot } from "./queue";
 
 // BRouter – free, key-less public routing server. Routing runs from the
 // user's browser. https://brouter.de/
@@ -197,27 +198,45 @@ interface Leg {
 }
 
 // --- Network robustness -----------------------------------------------------
-// The public BRouter server is free but occasionally slow or briefly
-// unavailable. Wrap requests with a timeout and a few retries (exponential
-// backoff) on timeouts, network errors and transient server errors (5xx/429),
-// so a hiccup doesn't surface as a hard failure.
+// The public BRouter server is free but shared: it is occasionally slow,
+// briefly unavailable, and it throttles per IP (403 "Please, retry later!"
+// from the proxy in front of it, sometimes 429). Every request therefore goes
+// through the small queue in lib/queue.ts, gets a timeout, and is retried with
+// exponential backoff on timeouts, network errors, 5xx and throttling.
 const REQUEST_TIMEOUT_MS = 20000;
-const MAX_TRIES = 3;
+const MAX_TRIES = 4;
 
-const backoff = (attempt: number) =>
-  new Promise((r) => setTimeout(r, 600 * 2 ** attempt));
+const abortError = () => new DOMException("Aborted", "AbortError");
+const backoff = (attempt: number) => new Promise((r) => setTimeout(r, 700 * 2 ** attempt));
+
+/** Throttled or down: worth waiting and retrying, never worth a fallback profile. */
+export const isOverloaded = (status: number): boolean =>
+  status === 403 || status === 429 || status >= 500;
+
+export const overloadMessage = (status: number): string =>
+  `Routing-Dienst ist gerade ausgelastet (HTTP ${status}). Kurz warten und erneut versuchen.`;
+
+async function fetchWithTimeout(url: string, signal?: AbortSignal): Promise<Response> {
+  const ctrl = new AbortController();
+  const onAbort = () => ctrl.abort();
+  signal?.addEventListener("abort", onAbort, { once: true });
+  const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(url, { signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener("abort", onAbort);
+  }
+}
 
 async function brouterFetch(url: string, signal?: AbortSignal): Promise<Response> {
   let lastErr: Error | null = null;
   for (let attempt = 0; attempt < MAX_TRIES; attempt++) {
-    if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
-    const ctrl = new AbortController();
-    const onAbort = () => ctrl.abort();
-    signal?.addEventListener("abort", onAbort, { once: true });
-    const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
+    if (signal?.aborted) throw abortError();
     try {
-      const res = await fetch(url, { signal: ctrl.signal });
-      if ((res.status >= 500 || res.status === 429) && attempt < MAX_TRIES - 1) {
+      // The queue slot covers the request only, not the backoff sleep.
+      const res = await withSlot(() => fetchWithTimeout(url, signal), signal);
+      if (isOverloaded(res.status) && attempt < MAX_TRIES - 1) {
         lastErr = new Error(`HTTP ${res.status}`);
         await backoff(attempt);
         continue;
@@ -225,7 +244,7 @@ async function brouterFetch(url: string, signal?: AbortSignal): Promise<Response
       return res;
     } catch (e) {
       // The caller aborted (e.g. waypoints changed) → propagate, don't retry.
-      if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+      if (signal?.aborted || (e as Error).name === "AbortError") throw abortError();
       // Otherwise it was our timeout or a network error → retry.
       lastErr = e as Error;
       if (attempt < MAX_TRIES - 1) {
@@ -233,25 +252,94 @@ async function brouterFetch(url: string, signal?: AbortSignal): Promise<Response
         continue;
       }
       throw lastErr;
-    } finally {
-      clearTimeout(timer);
-      signal?.removeEventListener("abort", onAbort);
     }
   }
   throw lastErr ?? new Error("Routing fehlgeschlagen");
 }
 
-async function fetchLeg(
-  from: Waypoint,
-  to: Waypoint,
-  profile: RouteProfile,
-  legIndex: number,
-  signal?: AbortSignal,
-): Promise<Leg> {
-  const lonlats =
-    `${from.lng.toFixed(6)},${from.lat.toFixed(6)}|` +
-    `${to.lng.toFixed(6)},${to.lat.toFixed(6)}`;
+// --- Leg cache ---------------------------------------------------------------
+// Every edit re-routes the whole tour, but only the legs next to the edited
+// point actually change. Finished legs are kept by "lonlats|profile" and a leg
+// that is being fetched is shared between callers, so dragging a point or a
+// retry after an error costs one or two requests instead of ten.
+interface CachedLeg {
+  feature: GeoJSON.Feature;
+  distanceKm: number;
+  durationMin: number;
+  profile: RouteProfile;
+}
 
+const LEG_CACHE_MAX = 400;
+const legDone = new Map<string, CachedLeg>();
+
+interface Inflight {
+  promise: Promise<CachedLeg>;
+  ctrl: AbortController;
+  refs: number;
+}
+const legInflight = new Map<string, Inflight>();
+
+function cachedLeg(
+  key: string,
+  factory: (signal: AbortSignal) => Promise<CachedLeg>,
+  signal?: AbortSignal,
+): Promise<CachedLeg> {
+  const hit = legDone.get(key);
+  if (hit) {
+    // Refresh insertion order so the cache drops the least recently used leg.
+    legDone.delete(key);
+    legDone.set(key, hit);
+    return Promise.resolve(hit);
+  }
+  let entry = legInflight.get(key);
+  if (!entry) {
+    const ctrl = new AbortController();
+    const e: Inflight = { ctrl, refs: 0, promise: Promise.resolve() as unknown as Promise<CachedLeg> };
+    e.promise = factory(ctrl.signal)
+      .then((leg) => {
+        legDone.set(key, leg);
+        while (legDone.size > LEG_CACHE_MAX) legDone.delete(legDone.keys().next().value!);
+        return leg;
+      })
+      .finally(() => {
+        if (legInflight.get(key) === e) legInflight.delete(key);
+      });
+    legInflight.set(key, e);
+    entry = e;
+  }
+  const shared = entry;
+  shared.refs++;
+  return new Promise<CachedLeg>((resolve, reject) => {
+    // The request itself is only cancelled once every caller has let go.
+    const onAbort = () => {
+      shared.refs--;
+      if (shared.refs <= 0) shared.ctrl.abort();
+      reject(abortError());
+    };
+    if (signal?.aborted) {
+      onAbort();
+      return;
+    }
+    signal?.addEventListener("abort", onAbort, { once: true });
+    shared.promise.then(
+      (leg) => {
+        signal?.removeEventListener("abort", onAbort);
+        resolve(leg);
+      },
+      (err: unknown) => {
+        signal?.removeEventListener("abort", onAbort);
+        reject(err);
+      },
+    );
+  });
+}
+
+/** Test hook: forget every cached leg. */
+export function clearLegCache(): void {
+  legDone.clear();
+}
+
+async function routeLeg(lonlats: string, profile: RouteProfile, signal: AbortSignal): Promise<CachedLeg> {
   let lastError = "unbekannter Fehler";
 
   const chain = await brouterProfileChain(profile);
@@ -270,6 +358,10 @@ async function fetchLeg(
     }
 
     if (!res.ok) {
+      // Throttled or down even after the retries: the fallback profile would
+      // only be the next request into the same wall, and a stock profile
+      // would silently replace the curvy route.
+      if (isOverloaded(res.status)) throw new Error(overloadMessage(res.status));
       // BRouter returns a helpful message in the body for 400s.
       const body = (await res.text()).replace(/\s+/g, " ").trim();
       lastError = `HTTP ${res.status} – ${body.slice(0, 160)}`;
@@ -284,8 +376,8 @@ async function fetchLeg(
     }
 
     const props = (feature.properties ?? {}) as Record<string, string>;
-    // Tag the leg with its logical profile (for colouring) and index (drag).
-    feature.properties = { ...feature.properties, profile, legIndex };
+    // Tag the leg with its logical profile (for colouring).
+    feature.properties = { ...feature.properties, profile };
 
     const distanceKm = Number(props["track-length"] ?? 0) / 1000;
     return {
@@ -296,7 +388,31 @@ async function fetchLeg(
     };
   }
 
-  throw new Error(`Etappe ${legIndex + 1}: ${lastError}`);
+  throw new Error(lastError);
+}
+
+async function fetchLeg(
+  from: Waypoint,
+  to: Waypoint,
+  profile: RouteProfile,
+  legIndex: number,
+  signal?: AbortSignal,
+): Promise<Leg> {
+  const lonlats =
+    `${from.lng.toFixed(6)},${from.lat.toFixed(6)}|` +
+    `${to.lng.toFixed(6)},${to.lat.toFixed(6)}`;
+  let leg: CachedLeg;
+  try {
+    leg = await cachedLeg(`${lonlats}|${profile}`, (s) => routeLeg(lonlats, profile, s), signal);
+  } catch (e) {
+    if ((e as Error).name === "AbortError") throw e;
+    throw new Error(`Etappe ${legIndex + 1}: ${(e as Error).message}`);
+  }
+  // The cached feature is shared; the index (drag handling) is per position.
+  return {
+    ...leg,
+    feature: { ...leg.feature, properties: { ...leg.feature.properties, legIndex } },
+  };
 }
 
 /**
@@ -330,6 +446,7 @@ export async function fetchMultiPoint(
       continue;
     }
     if (!res.ok) {
+      if (isOverloaded(res.status)) throw new Error(overloadMessage(res.status));
       const body = (await res.text()).replace(/\s+/g, " ").trim();
       lastError = `HTTP ${res.status} – ${body.slice(0, 160)}`;
       continue;
@@ -355,8 +472,10 @@ export async function fetchMultiPoint(
 
 /**
  * Route through all waypoints in order, computing each leg with that leg's
- * own profile, then combining them. Legs are fetched in parallel. Requires at
- * least two waypoints.
+ * own profile, then combining them. Legs are requested together (the queue
+ * paces them) and every finished leg lands in the cache even when another
+ * one fails, so a retry only fetches what is missing. Requires at least two
+ * waypoints.
  */
 export async function fetchRoute(
   waypoints: Waypoint[],
@@ -373,7 +492,11 @@ export async function fetchRoute(
     );
   }
 
-  const legs = await Promise.all(legPromises);
+  const settled = await Promise.allSettled(legPromises);
+  if (signal?.aborted) throw abortError();
+  const failed = settled.find((r): r is PromiseRejectedResult => r.status === "rejected");
+  if (failed) throw failed.reason;
+  const legs = settled.map((r) => (r as PromiseFulfilledResult<Leg>).value);
 
   return {
     geojson: {

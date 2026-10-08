@@ -291,8 +291,9 @@ export default function MapView({
       const isOvernight = !!wp.dayEnd && !isLast;
 
       const el = document.createElement("div");
-      // Hover tooltip with the place name (desktop); map-placed points have none.
-      el.title = wp.name ? wp.name.split(",")[0].trim() : "";
+      // Hover tooltip with the place name (desktop); map-placed points show
+      // their coordinates.
+      el.title = wp.name ? wp.name.split(",")[0].trim() : `${wp.lat.toFixed(3)}, ${wp.lng.toFixed(3)}`;
       if (isOvernight) {
         // Highlight overnight stops with a bed marker (inline SVG, not emoji).
         el.className = "wp-marker bed";

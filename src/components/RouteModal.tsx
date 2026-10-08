@@ -36,8 +36,8 @@ function ratingLabel(score: number): string {
 }
 
 function placeName(wp: Waypoint): string {
-  const n = wp.name ?? `${wp.lat.toFixed(3)}, ${wp.lng.toFixed(3)}`;
-  return n.split(",")[0].trim();
+  if (!wp.name) return `${wp.lat.toFixed(3)}, ${wp.lng.toFixed(3)}`;
+  return wp.name.split(",")[0].trim();
 }
 
 // Circular gauge for the overall score.
