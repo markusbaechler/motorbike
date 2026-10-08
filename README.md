@@ -76,7 +76,8 @@ npm run test:passopt # Pässe-Optimierer gegen den echten Router
 
 Build-Variablen (siehe `.env.example`): `VITE_BOOKING_AID` setzt die
 Booking.com-Partner-ID des Clubs in die Hotel-Links; ohne Wert funktionieren die
-Links genauso, nur ohne Provision.
+Links genauso, nur ohne Provision. `VITE_MOVED_TO` wird nur auf der alten
+Adresse (GitHub Pages) gesetzt und blendet die Umzugskarte ein.
 
 ## Tech-Stack
 
@@ -85,6 +86,13 @@ für die Installierbarkeit, Vitest für Tests.
 
 ## Deployment
 
-GitHub Actions baut bei jedem Push auf `main` und veröffentlicht `dist/` auf
-GitHub Pages (`.github/workflows/deploy.yml`). Der Base-Pfad ist relativ, die
-App läuft deshalb auch unter einem Unterpfad oder in einer anderen Umgebung.
+Der Planer ist Teil von [pudgilly.ch](https://pudgilly.ch) und läuft unter
+`https://pudgilly.ch/planer/`: der Workflow des Website-Repos
+(`markusbaechler/pudgilly-riders`) checkt dieses Repo aus, baut es und legt
+`dist/` nach `dist/planer/`, bevor die Website per rsync deployt wird. Der
+Base-Pfad ist relativ, deshalb läuft derselbe Build unter jedem Unterpfad.
+
+`.github/workflows/deploy.yml` in diesem Repo veröffentlicht zusätzlich auf
+GitHub Pages (Übergangsadresse mit Umzugskarte) und stösst, wenn das Secret
+`WEBSITE_DISPATCH_TOKEN` gesetzt ist, den Website-Build an. Ablauf, Variablen
+und die fertigen Website-Dateien: `docs/umzug-planer.md` und `docs/website/`.

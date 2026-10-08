@@ -1,6 +1,18 @@
 import { useEffect, useState } from "react";
 import Icon from "./Icon";
 import { APP_NAME, CLUB_NAME, SITE_LINKS } from "../config";
+import { buildMigrationUrl, collectMigration, hasAnythingToMigrate } from "../lib/migrate";
+
+// "Später" on the moved card hides it for this browser session only; the
+// footer keeps a link to the new address so it is never lost.
+const LATER_KEY = "motorbike.moved.later";
+const laterChosen = (): boolean => {
+  try {
+    return sessionStorage.getItem(LATER_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
 
 interface Props {
   savedCount: number;
@@ -10,6 +22,8 @@ interface Props {
   draft: { points: number; days: number } | null;
   // True when a tour is being planned right now (Home opened from the map).
   hasRoute: boolean;
+  // New address of the planner (old hosting only): shows the "moved" card.
+  movedTo?: string;
   onInstall: () => void;
   onPlan: () => void;
   onGenius: () => void;
@@ -25,6 +39,7 @@ export default function Home({
   iosInstall,
   draft,
   hasRoute,
+  movedTo,
   onInstall,
   onPlan,
   onGenius,
@@ -34,6 +49,19 @@ export default function Home({
   onBack,
 }: Props) {
   const [showIosHint, setShowIosHint] = useState(false);
+  const [movedLater, setMovedLater] = useState(laterChosen);
+  const chooseLater = () => {
+    try {
+      sessionStorage.setItem(LATER_KEY, "1");
+    } catch {
+      /* private mode: just hide it for this render */
+    }
+    setMovedLater(true);
+  };
+  // Computed on each render: cheap, and always reflects the current storage.
+  const migrationData = movedTo ? collectMigration() : null;
+  const migrationUrl = movedTo && migrationData ? buildMigrationUrl(movedTo, migrationData) : "";
+  const movedHost = movedTo ? movedTo.replace(/^https?:\/\//, "").replace(/\/$/, "") : "";
 
   // Escape returns to the map when Home was opened over a tour in progress.
   useEffect(() => {
@@ -67,6 +95,30 @@ export default function Home({
         <p className="home-tagline">
           Kurvige Touren planen: Tag für Tag, mit Pässen, Übernachtungen und GPX fürs Navi.
         </p>
+
+        {movedTo && !movedLater && (
+          <section className="moved-card" aria-labelledby="moved-title">
+            <strong id="moved-title">Der Routenplaner ist umgezogen</strong>
+            <p>
+              Neu unter <a href={movedTo} target="_top">{movedHost}</a>. Diese Adresse hier
+              bleibt nur noch übergangsweise erreichbar.
+              {migrationData && hasAnythingToMigrate(migrationData)
+                ? " Gespeicherte Touren liegen nur in diesem Browser – der Link nimmt sie mit."
+                : ""}
+            </p>
+            <div className="moved-actions">
+              <a className="home-cta primary moved-go" href={migrationUrl} target="_top">
+                <Icon name="arrowRight" size={20} /> Jetzt wechseln
+                {migrationData && hasAnythingToMigrate(migrationData) && (
+                  <span className="home-cta-sub">nimmt deine Touren mit</span>
+                )}
+              </a>
+              <button className="home-cta moved-later" onClick={chooseLater}>
+                Später
+              </button>
+            </div>
+          </section>
+        )}
 
         <div className="home-actions">
           {hasRoute && (
@@ -146,6 +198,12 @@ export default function Home({
           <a href={SITE_LINKS.impressum} target="_top">Impressum</a>
           <span aria-hidden="true">·</span>
           <a href={SITE_LINKS.datenschutz} target="_top">Datenschutz</a>
+          {movedTo && (
+            <>
+              <span aria-hidden="true">·</span>
+              <a href={migrationUrl} target="_top">Neue Adresse</a>
+            </>
+          )}
         </nav>
       </div>
     </div>

@@ -20,7 +20,9 @@ import Home from "./components/Home";
 import ShareModal from "./components/ShareModal";
 import SearchBox from "./components/SearchBox";
 import ConfirmDialog from "./components/ConfirmDialog";
+import Icon from "./components/Icon";
 import { readSharedRoute } from "./lib/share";
+import { applyMigration, readMigrationFromHash, type MigrationResult } from "./lib/migrate";
 import {
   getBookingPrefs,
   saveBookingPrefs,
@@ -35,12 +37,32 @@ import { addDays, buildBookingUrl } from "./lib/booking";
 import { computeDays } from "./lib/days";
 import { fetchWeather, type WeatherDay } from "./lib/weather";
 import { fetchRoute } from "./lib/routing";
-import { APP_NAME, CLUB_NAME } from "./config";
+import { APP_NAME, CLUB_NAME, MOVED_TO } from "./config";
 import type { GeoResult } from "./lib/geocoding";
 import type { RouteProfile, RouteResult, Waypoint } from "./types";
 
 let nextId = 1;
 const makeId = () => `wp-${nextId++}`;
+
+// The "moved" card only makes sense while the new address is another origin:
+// storage is per origin, so a same-origin move would have nothing to carry.
+const movedTo: string | undefined = (() => {
+  if (!MOVED_TO) return undefined;
+  try {
+    const t = new URL(MOVED_TO, window.location.href);
+    return t.origin === window.location.origin ? undefined : t.href;
+  } catch {
+    return undefined;
+  }
+})();
+
+function migrationText(r: MigrationResult): string {
+  const parts: string[] = [];
+  if (r.routesAdded > 0) parts.push(`${r.routesAdded} ${r.routesAdded === 1 ? "Tour" : "Touren"} übernommen`);
+  if (r.routesSkipped > 0) parts.push(`${r.routesSkipped} schon vorhanden`);
+  if (r.draftRestored) parts.push("letzte Tour wiederhergestellt");
+  return parts.length ? `Umzug abgeschlossen: ${parts.join(", ")}.` : "Umzug abgeschlossen – nichts Neues zu übernehmen.";
+}
 
 export interface FocusPoint {
   lng: number;
@@ -80,12 +102,24 @@ export default function App() {
   // the app should start clean, not resurrect stray waypoints.
   const [draft, setDraft] = useState<RouteDraft | null>(() => loadDraft());
   const [confirmReset, setConfirmReset] = useState(false);
+  // Outcome of a "#migrate=" import (tours carried over from the old address),
+  // shown once as a toast.
+  const [migration, setMigration] = useState<MigrationResult | null>(null);
   // Cancels a running Pässeplaner optimisation when the session is left.
   const passAbortRef = useRef<AbortController | null>(null);
   const [passProgress, setPassProgress] = useState<string | null>(null);
 
-  // On first launch only a shared route (#r=…) opens directly.
+  // On first launch only a shared route (#r=…) opens directly. A migration
+  // link (#migrate=…, from the old address) is merged into storage and lands on
+  // the Home screen, where the imported tours are now listed.
   useEffect(() => {
+    const mig = readMigrationFromHash();
+    if (mig) {
+      setMigration(applyMigration(mig));
+      setDraft(loadDraft());
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+      return;
+    }
     const shared = readSharedRoute();
     if (shared && shared.length >= 2) {
       setWaypoints(shared.map((w) => ({ ...w, id: makeId() })));
@@ -104,6 +138,12 @@ export default function App() {
     draftTouched.current = true;
     saveDraft(waypoints, defaultProfile);
   }, [waypoints, defaultProfile]);
+
+  useEffect(() => {
+    if (!migration) return;
+    const t = window.setTimeout(() => setMigration(null), 12000);
+    return () => window.clearTimeout(t);
+  }, [migration]);
 
   // PWA install handling (Android/Chrome native prompt; iOS shows a hint).
   type InstallPrompt = { prompt: () => void; userChoice: Promise<unknown> };
@@ -747,6 +787,7 @@ export default function App() {
               : null
           }
           hasRoute={waypoints.length > 0}
+          movedTo={movedTo}
           onResume={resumeDraft}
           onBack={() => setShowHome(false)}
           onInstall={doInstall}
@@ -767,6 +808,15 @@ export default function App() {
             setShowRoutes(true);
           }}
         />
+      )}
+
+      {migration && (
+        <div className={`toast ${showHome ? "on-home" : ""}`} role="status">
+          <span>{migrationText(migration)}</span>
+          <button className="toast-close" onClick={() => setMigration(null)} aria-label="Schliessen">
+            <Icon name="x" size={16} />
+          </button>
+        </div>
       )}
     </div>
   );
