@@ -1,6 +1,6 @@
 :root {
   --bg: #100f12;
-  --surface: #1b1916;
+  --surface: #211e1b;
   --surface-2: #262220;
   --panel: rgba(16, 16, 20, 0.74);
   --border: rgba(255, 255, 255, 0.08);
@@ -12,7 +12,10 @@
   --brand-from: #ff8a1e;
   --brand-to: #f0392b;
   --accent: #ff9d3c;
+  --accent-hover: #ffb15f;
+  --accent-soft: rgba(255, 138, 30, 0.14);
   --accent-ink: #2a1402;
+  --transition: 0.25s ease;
 
   /* Route profile semantics (harmonised warm trio + cool "fast") */
   --kurvig: #f59e0b;
@@ -136,7 +139,8 @@ button {
   transition: bottom 0.15s ease;
 }
 
-/* Floating top bar with the app title */
+/* Floating club chip (top-left): logo + wordmark, tap = Home. Styled like
+   the brand block of the website header (uppercase, letter-spaced). */
 .topbar {
   position: absolute;
   top: 0;
@@ -145,46 +149,37 @@ button {
   z-index: 10;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
+  padding: 10px 12px;
   padding-top: max(10px, env(safe-area-inset-top));
-  background: linear-gradient(to bottom, rgba(8, 12, 22, 0.7) 0%, transparent 100%);
   pointer-events: none;
 }
 
 .topbar img {
-  width: 30px;
   height: 30px;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  width: auto;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
 }
 
-.topbar h1 {
-  font-size: 1.15rem;
-  font-weight: 800;
+.topbar-brand {
   margin: 0;
-  letter-spacing: -0.01em;
   display: flex;
-  align-items: baseline;
-  gap: 7px;
-}
-
-.topbar h1 .brand {
-  background: linear-gradient(135deg, #ffd9a8, #ff7a4d);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.topbar .tag {
-  font-size: 0.62rem;
+  flex-direction: column;
+  line-height: 1.05;
   text-transform: uppercase;
-  letter-spacing: 1.2px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.topbar-brand .brand {
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.topbar-brand .tag {
+  font-size: 0.56rem;
+  letter-spacing: 0.26em;
   color: var(--accent);
   font-weight: 700;
-  padding: 3px 7px;
-  border-radius: var(--pill);
-  background: rgba(255, 138, 30, 0.16);
-  -webkit-text-fill-color: var(--accent);
 }
 
 /* MapLibre control tweaks so they sit clear of the safe areas */
@@ -666,20 +661,22 @@ button {
 }
 
 .hotel-btn {
-  background: #006ce4;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--pill);
+  padding: 8px 14px;
   font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
-  transition: filter 0.15s ease;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
 }
 
 .hotel-btn:hover {
-  filter: brightness(1.1);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .booking-row {
@@ -841,7 +838,9 @@ button {
 }
 
 .quickplan-btn.secondary:hover {
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .route-list {
@@ -1391,7 +1390,7 @@ button {
 /* Floating place-search box under the title bar */
 .searchbox {
   position: absolute;
-  top: max(52px, calc(env(safe-area-inset-top) + 44px));
+  top: max(62px, calc(env(safe-area-inset-top) + 54px));
   left: 12px;
   right: 12px;
   z-index: 11;
@@ -1736,11 +1735,21 @@ button {
   pointer-events: auto;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  background: none;
-  border: none;
+  gap: 9px;
+  padding: 5px 14px 5px 7px;
+  border-radius: var(--pill);
+  background: var(--panel);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-sm);
+  color: var(--text);
   cursor: pointer;
-  padding: 0;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.topbar-home:hover {
+  border-color: var(--accent);
 }
 
 .home {
@@ -1797,15 +1806,26 @@ button {
 }
 
 .home-logo {
-  width: 86px;
-  height: 86px;
-  border-radius: 24px;
-  box-shadow: var(--shadow);
-  margin-bottom: 18px;
+  height: 112px;
+  width: auto;
+  margin-bottom: 14px;
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.65));
+}
+
+/* Small uppercase line above the title, same recipe as .eyebrow on the site */
+.home-eyebrow {
+  display: inline-block;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: var(--accent);
+  margin-bottom: 6px;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
 }
 
 .home-title {
-  font-size: 2.6rem;
+  font-size: 2.4rem;
   font-weight: 800;
   margin: 0;
   letter-spacing: -0.02em;
@@ -1840,11 +1860,11 @@ button {
   justify-content: center;
   gap: 10px;
   width: 100%;
-  min-height: 68px;
-  padding: 12px 18px;
-  border-radius: 16px;
-  font-size: 1.05rem;
-  font-weight: 800;
+  min-height: 58px;
+  padding: 12px 20px;
+  border-radius: var(--pill);
+  font-size: 1rem;
+  font-weight: 700;
   cursor: pointer;
   border: 1px solid var(--border-strong);
   background: rgba(255, 255, 255, 0.06);
@@ -1966,17 +1986,6 @@ button {
 .wp-weather.wet { color: #60a5fa; background: rgba(96, 165, 250, 0.14); }
 
 /* --- Tour-Genius --- */
-.quickplan-btn.genius {
-  background: rgba(255, 157, 60, 0.12);
-  color: var(--accent);
-  border: 1px solid rgba(255, 157, 60, 0.5);
-  box-shadow: none;
-}
-.quickplan-btn.genius:hover {
-  background: rgba(255, 157, 60, 0.2);
-  box-shadow: none;
-}
-
 /* Secondary CTAs that carry a sub-label (Tour-Genius, Pässeplaner). They read
    like the other neutral buttons — only "Neue Tour planen" stays accented — so
    the home screen has a single focal point instead of three coloured boxes. */
@@ -2167,10 +2176,6 @@ button {
 }
 
 /* ── Pässeplaner ─────────────────────────────────────────────────────── */
-.quickplan-btn.passes {
-  border-color: rgba(168, 139, 250, 0.5);
-}
-
 /* Floating pass-selection bar (top, does not cover the map) */
 .pass-select {
   position: absolute;
@@ -2518,4 +2523,29 @@ button {
 }
 @media (prefers-reduced-motion: reduce) {
   .tg-spinner { animation: none; }
+}
+
+/* --- Identity: website links on Home, legend under the riding-style toggle --- */
+.home-footer {
+  margin-top: 22px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.home-footer a {
+  color: var(--muted);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+.home-footer a:hover {
+  color: var(--accent);
+}
+.home-cta.primary .home-cta-sub {
+  color: rgba(255, 255, 255, 0.85);
+}
+.toggle-legend {
+  margin-top: 8px;
 }

@@ -1,8 +1,25 @@
-# 🏍️ Motorbike – Routenplaner
+# 🏍️ Routenplaner der Pudgilly Riders
 
-Installierbare Web-App (PWA) zum Planen **kurviger Motorradtouren**: Etappen
-über mehrere Tage, Pässe, Wetter und Übernachtungen, GPX-Export fürs Navi.
-Läuft komplett im Browser, ohne Konto und ohne eigenen Server.
+Installierbare Web-App (PWA) zum Planen **kurviger Motorradtouren**: Tage,
+Pässe, Wetter und Übernachtungen, GPX-Export fürs Navi. Läuft komplett im
+Browser, ohne Konto und ohne eigenen Server.
+
+Der Planer ist Teil der Website des Motorradclubs **Pudgilly Riders**
+([pudgilly.ch](https://pudgilly.ch), Repo `pudgilly-riders`) und übernimmt
+deren Designsystem (Farben, Schrift, Radien). Der Code-Name des Projekts ist
+weiterhin `motorbike`.
+
+## Begriffe
+
+| Begriff | Bedeutung in der App |
+| --- | --- |
+| **Tour** | Die geplante Ausfahrt als Ganzes: das, was gespeichert, geteilt und exportiert wird |
+| **Route** | Die vom Router berechnete Linie zwischen den Punkten |
+| **Punkt** | Start, Zwischenziel oder Ziel |
+| **Abschnitt** | Strecke zwischen zwei Punkten, mit eigenem Fahrstil |
+| **Tag** | Tagesabschnitt einer mehrtägigen Tour, endet an der Übernachtung |
+| **Fahrstil** | Fun 1 (kurvig), Fun 2 (maximal kurvig), Schnell (direkt) |
+| **Muss / Kann** | Pässe im Pässeplaner, die sicher bzw. nach Möglichkeit angefahren werden |
 
 ## Funktionen
 
@@ -56,6 +73,10 @@ npm test             # Unit-Tests (Vitest)
 npm run test:tourgen # Tour-Genius gegen den echten Router (brouter.de)
 npm run test:passopt # Pässe-Optimierer gegen den echten Router
 ```
+
+Build-Variablen (siehe `.env.example`): `VITE_BOOKING_AID` setzt die
+Booking.com-Partner-ID des Clubs in die Hotel-Links; ohne Wert funktionieren die
+Links genauso, nur ohne Provision.
 
 ## Tech-Stack
 

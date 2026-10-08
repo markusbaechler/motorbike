@@ -35,6 +35,7 @@ import { addDays, buildBookingUrl } from "./lib/booking";
 import { computeDays } from "./lib/days";
 import { fetchWeather, type WeatherDay } from "./lib/weather";
 import { fetchRoute } from "./lib/routing";
+import { APP_NAME, CLUB_NAME } from "./config";
 import type { GeoResult } from "./lib/geocoding";
 import type { RouteProfile, RouteResult, Waypoint } from "./types";
 
@@ -558,11 +559,15 @@ export default function App() {
           free for picking passes. */}
       {!passSession && (
         <header className="topbar">
-          <button className="topbar-home" onClick={() => setShowHome(true)} aria-label="Startseite">
-            <img src="./icon.svg" alt="" />
-            <h1>
-              <span className="brand">Motorbike</span>{" "}
-              <span className="tag">Routenplaner</span>
+          <button
+            className="topbar-home"
+            onClick={() => setShowHome(true)}
+            aria-label="Startseite des Routenplaners"
+          >
+            <img src="./logo.png" alt="" />
+            <h1 className="topbar-brand">
+              <span className="brand">{CLUB_NAME}</span>
+              <span className="tag">{APP_NAME}</span>
             </h1>
           </button>
         </header>
@@ -690,14 +695,14 @@ export default function App() {
 
       {confirmReset && (
         <ConfirmDialog
-          title="Route zurücksetzen?"
+          title="Tour zurücksetzen?"
           confirmLabel="Zurücksetzen"
           danger
           onConfirm={clearAll}
           onCancel={() => setConfirmReset(false)}
         >
           Alle {waypoints.length} Punkte und die Tagesaufteilung werden gelöscht. Unter „Meine
-          Routen“ gespeicherte Routen bleiben erhalten.
+          Touren“ gespeicherte Touren bleiben erhalten.
         </ConfirmDialog>
       )}
 

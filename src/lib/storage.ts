@@ -127,13 +127,14 @@ export function clearDraft(): void {
 // --- File export / import (device transfer & sharing) ---
 
 export function exportRouteFile(name: string, waypoints: Waypoint[]): void {
-  const data = { app: "motorbike", version: 1, name, waypoints };
+  // "app" identifies the format; older exports say "motorbike" and still import.
+  const data = { app: "pudgilly-routenplaner", version: 1, name, waypoints };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  const safe = name.trim().replace(/[^\w\-]+/g, "_") || "route";
+  const safe = name.trim().replace(/[^\w\-]+/g, "_") || "tour";
   a.href = url;
-  a.download = `${safe}.motorbike.json`;
+  a.download = `${safe}.tour.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -149,10 +150,10 @@ export function parseRouteFile(text: string): { name: string; waypoints: Waypoin
   }
   const waypoints = sanitizeWaypoints(d?.waypoints, "f");
   if (!waypoints || waypoints.length < 2) {
-    throw new Error("Keine gültige Motorbike-Routendatei (mindestens zwei Punkte nötig).");
+    throw new Error("Keine gültige Tourdatei (mindestens zwei Punkte nötig).");
   }
   return {
-    name: typeof d?.name === "string" && d.name.trim() ? d.name.trim().slice(0, 80) : "Importierte Route",
+    name: typeof d?.name === "string" && d.name.trim() ? d.name.trim().slice(0, 80) : "Importierte Tour",
     waypoints,
   };
 }
@@ -195,6 +196,8 @@ export interface BookingPrefs {
   adults: number;
   children: number;
   rooms: number;
+  // Legacy: older versions let the user enter an affiliate id. The club id now
+  // comes from the build (see config.ts); a stored value is kept as fallback.
   affiliateId?: string;
 }
 

@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import Icon from "./Icon";
+import { APP_NAME, CLUB_NAME, SITE_LINKS } from "../config";
 
 interface Props {
   savedCount: number;
   canInstall: boolean;
   iosInstall: boolean;
-  // Auto-saved route from the last session (only offered while the map is empty).
+  // Auto-saved tour from the last session (only offered while the map is empty).
   draft: { points: number; days: number } | null;
-  // True when a route is being planned right now (Home opened from the map).
+  // True when a tour is being planned right now (Home opened from the map).
   hasRoute: boolean;
   onInstall: () => void;
   onPlan: () => void;
@@ -34,7 +35,7 @@ export default function Home({
 }: Props) {
   const [showIosHint, setShowIosHint] = useState(false);
 
-  // Escape returns to the map when Home was opened over a route in progress.
+  // Escape returns to the map when Home was opened over a tour in progress.
   useEffect(() => {
     if (!hasRoute) return;
     const onKey = (e: KeyboardEvent) => {
@@ -58,23 +59,24 @@ export default function Home({
       <div className="home-scrim" />
 
       <div className="home-inner">
-        <img className="home-logo" src="./icon.svg" alt="" />
+        <img className="home-logo" src="./logo.png" alt="" />
+        <span className="home-eyebrow">{CLUB_NAME} · seit 1991</span>
         <h1 className="home-title">
-          <span className="brand">Motorbike</span>
+          <span className="brand">{APP_NAME}</span>
         </h1>
         <p className="home-tagline">
-          Plane kurvige Motorradtouren – Etappe für Etappe, ganz nach deinem Fahrstil.
+          Kurvige Touren planen: Tag für Tag, mit Pässen, Übernachtungen und GPX fürs Navi.
         </p>
 
         <div className="home-actions">
           {hasRoute && (
             <button className="home-cta primary" onClick={onBack}>
-              <Icon name="flag" size={20} /> Zurück zur Route
+              <Icon name="arrowLeft" size={20} /> Zurück zur Tour
             </button>
           )}
           {!hasRoute && draft && (
             <button className="home-cta primary resume" onClick={onResume}>
-              <Icon name="flag" size={20} /> Letzte Route fortsetzen
+              <Icon name="flag" size={20} /> Letzte Tour fortsetzen
               <span className="home-cta-sub">
                 {draft.points} Punkte{draft.days > 1 ? ` · ${draft.days} Tage` : ""}
               </span>
@@ -89,10 +91,10 @@ export default function Home({
           </button>
           <button className="home-cta passes" onClick={onPasses}>
             <Icon name="mountain" size={20} /> Pässeplaner
-            <span className="home-cta-sub">Route über ausgewählte Pässe</span>
+            <span className="home-cta-sub">Tour über ausgewählte Pässe</span>
           </button>
           <button className="home-cta" onClick={onRoutes}>
-            <Icon name="folder" size={19} /> Meine Routen
+            <Icon name="folder" size={19} /> Meine Touren
             {savedCount > 0 ? ` (${savedCount})` : ""}
           </button>
           {canInstall && (
@@ -113,7 +115,7 @@ export default function Home({
           {showIosHint && (
             <p className="ios-hint">
               In Safari: unten auf <strong>Teilen</strong> (Quadrat mit Pfeil) tippen →
-              <strong> „Zum Home-Bildschirm“</strong>. Dann startet Motorbike wie eine App.
+              <strong> „Zum Home-Bildschirm“</strong>. Dann startet der Routenplaner wie eine App.
             </p>
           )}
         </div>
@@ -126,8 +128,8 @@ export default function Home({
           </div>
           <div className="home-feat">
             <span className="home-feat-icon bed"><Icon name="bed" size={18} /></span>
-            <strong>Mehrtage</strong>
-            <span>Etappen, Übernachtungen &amp; Hotels</span>
+            <strong>Mehrtägig</strong>
+            <span>Tage, Übernachtungen &amp; Hotels</span>
           </div>
           <div className="home-feat">
             <span className="home-feat-icon gpx"><Icon name="download" size={18} /></span>
@@ -135,6 +137,16 @@ export default function Home({
             <span>Export fürs Navi (Beeline, Garmin …)</span>
           </div>
         </div>
+
+        {/* target=_top: inside the website's iframe these must replace the
+            whole page, not load the site within the planner frame. */}
+        <nav className="home-footer" aria-label="Website">
+          <a href={SITE_LINKS.home} target="_top">pudgilly.ch</a>
+          <span aria-hidden="true">·</span>
+          <a href={SITE_LINKS.impressum} target="_top">Impressum</a>
+          <span aria-hidden="true">·</span>
+          <a href={SITE_LINKS.datenschutz} target="_top">Datenschutz</a>
+        </nav>
       </div>
     </div>
   );

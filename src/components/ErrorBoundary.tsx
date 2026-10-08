@@ -28,8 +28,8 @@ export default class ErrorBoundary extends Component<Props, State> {
           <div className="crash-card">
             <h1>Da ist etwas schiefgelaufen</h1>
             <p>
-              Die App ist auf einen unerwarteten Fehler gestossen. Deine
-              gespeicherten Routen bleiben erhalten.
+              Der Routenplaner ist auf einen unerwarteten Fehler gestossen. Deine
+              gespeicherten Touren bleiben erhalten.
             </p>
             <pre className="crash-detail">{this.state.error.message}</pre>
             <button className="export-btn primary" onClick={() => window.location.reload()}>
