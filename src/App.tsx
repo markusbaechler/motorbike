@@ -633,6 +633,8 @@ export default function App() {
         onAddDay={addDay}
         onRemoveWaypoint={removeWaypoint}
         onReorderWaypoint={reorderWaypoint}
+        onInsertWaypoint={insertWaypoint}
+        onAppendWaypoint={addWaypoint}
         onClear={requestClear}
       />
       )}

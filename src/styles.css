@@ -2724,3 +2724,48 @@ button {
     flex: 1 1 0;
   }
 }
+
+/* --- Inline insert in the point list: "+" per leg, "Punkt anhängen" at the end --- */
+.segment-insert {
+  order: 2;
+  margin-left: auto;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 138, 30, 0.5);
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+}
+.segment-insert:hover,
+.segment-insert.active {
+  background: var(--accent-soft);
+  border-style: solid;
+}
+.wp-insert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 10px 34px;
+}
+.wp-insert .place-input {
+  flex: 1 1 auto;
+}
+.wp-append {
+  align-self: flex-start;
+  margin: 4px 0 2px 34px;
+}
+.wp-append .icon {
+  vertical-align: -2px;
+}
+@media (max-width: 620px) {
+  .wp-insert,
+  .wp-append {
+    margin-left: 0;
+  }
+}

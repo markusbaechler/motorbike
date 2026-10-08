@@ -94,9 +94,11 @@ export default function SearchBox({ onSelect }: Props) {
       e.preventDefault();
       setActive((a) => (a <= 0 ? items.length - 1 : a - 1));
     } else if (e.key === "Enter") {
-      if (active >= 0 && items[active]) {
+      // Highlighted entry, or the first one when nothing is highlighted.
+      const pickIdx = active >= 0 ? active : 0;
+      if (items[pickIdx]) {
         e.preventDefault();
-        choose(items[active]);
+        choose(items[pickIdx]);
       }
     } else if (e.key === "Escape") {
       e.preventDefault();
