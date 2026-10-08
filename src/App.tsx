@@ -15,6 +15,7 @@ import TourGeniusModal from "./components/TourGeniusModal";
 import TourGeniusPreview from "./components/TourGeniusPreview";
 import type { TourCandidate } from "./lib/tourgen";
 import RoutesModal from "./components/RoutesModal";
+import ClubToursModal from "./components/ClubToursModal";
 import BookingPrefsModal from "./components/BookingPrefsModal";
 import Home from "./components/Home";
 import ShareModal from "./components/ShareModal";
@@ -56,6 +57,10 @@ const movedTo: string | undefined = (() => {
   }
 })();
 
+// The club tours feed lives on the website; only the planner served from
+// there can read it (same origin). The old address shows the moved card instead.
+const clubToursEnabled = !movedTo;
+
 function migrationText(r: MigrationResult): string {
   const parts: string[] = [];
   if (r.routesAdded > 0) parts.push(`${r.routesAdded} ${r.routesAdded === 1 ? "Tour" : "Touren"} übernommen`);
@@ -88,6 +93,7 @@ export default function App() {
   const geniusPrev = useRef<Waypoint[]>([]);
   const geniusProfile = useRef<RouteProfile>("kurvig");
   const [showRoutes, setShowRoutes] = useState(false);
+  const [showClubTours, setShowClubTours] = useState(false);
   const [showBookingPrefs, setShowBookingPrefs] = useState(false);
   // Pässeplaner: input dialog + active pass-picking session.
   const [showPassPlanner, setShowPassPlanner] = useState(false);
@@ -692,6 +698,14 @@ export default function App() {
         <RoutesModal
           currentWaypoints={waypoints}
           onLoad={loadRoute}
+          onClubTours={
+            clubToursEnabled
+              ? () => {
+                  setShowRoutes(false);
+                  setShowClubTours(true);
+                }
+              : undefined
+          }
           onClose={() => setShowRoutes(false)}
         />
       )}
@@ -773,7 +787,19 @@ export default function App() {
       )}
 
       {showShare && waypoints.length >= 2 && (
-        <ShareModal waypoints={waypoints} onClose={() => setShowShare(false)} />
+        <ShareModal
+          waypoints={waypoints}
+          stats={route ? { distanceKm: route.distanceKm, durationMin: route.durationMin } : undefined}
+          onClose={() => setShowShare(false)}
+        />
+      )}
+
+      {showClubTours && (
+        <ClubToursModal
+          currentWaypoints={waypoints}
+          onLoad={loadRoute}
+          onClose={() => setShowClubTours(false)}
+        />
       )}
 
       {showHome && (
@@ -807,6 +833,14 @@ export default function App() {
             setShowHome(false);
             setShowRoutes(true);
           }}
+          onClubTours={
+            clubToursEnabled
+              ? () => {
+                  setShowHome(false);
+                  setShowClubTours(true);
+                }
+              : undefined
+          }
         />
       )}
 

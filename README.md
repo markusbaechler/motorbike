@@ -44,6 +44,14 @@ weiterhin `motorbike`.
 Noch nicht enthalten: Sehenswürdigkeiten/POIs entlang der Route, Konten und
 Cloud-Sync.
 
+## Club-Touren
+
+Die Touren des Clubs werden im Pages CMS der Website gepflegt und von der
+Website als `pudgilly.ch/touren.json` veröffentlicht. Der Planer listet sie
+unter «Club-Touren» und lädt sie wie einen geteilten Link; der Teilen-Link
+des Planers ist umgekehrt der «Planer-Link» im CMS. Ablauf und Datenmodell:
+`docs/club-touren.md`.
+
 ## Grundsätze
 
 - **Komplett kostenlos**: ausschliesslich freie, schlüssellose Dienste.
@@ -78,6 +86,8 @@ Build-Variablen (siehe `.env.example`): `VITE_BOOKING_AID` setzt die
 Booking.com-Partner-ID des Clubs in die Hotel-Links; ohne Wert funktionieren die
 Links genauso, nur ohne Provision. `VITE_MOVED_TO` wird nur auf der alten
 Adresse (GitHub Pages) gesetzt und blendet die Umzugskarte ein.
+`VITE_CLUB_TOURS_URL` übersteuert die Quelle der Club-Touren (Standard:
+`https://pudgilly.ch/touren.json`), nützlich für die lokale Entwicklung.
 
 ## Tech-Stack
 

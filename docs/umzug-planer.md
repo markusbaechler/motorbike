@@ -1,5 +1,10 @@
 # Umzug des Routenplaners nach pudgilly.ch/planer/
 
+> Erledigt (Oktober 2026): der Planer läuft unter `pudgilly.ch/planer/`. Die
+> damals unter `docs/website/` gelieferten Dateien sind im Website-Repo
+> eingebaut; der Ordner enthält inzwischen die Dateien für Paket 5
+> (`docs/club-touren.md`). Schritte 2 und 3 unten gelten weiterhin.
+
 Der Planer wird nicht mehr per iframe von GitHub Pages eingebettet, sondern vom
 Website-Workflow mitgebaut und als Teil von pudgilly.ch ausgeliefert
 (`https://pudgilly.ch/planer/`). Der Code bleibt in diesem Repo; die Website
@@ -130,6 +135,5 @@ getrenntem Speicher, genau wie github.io und pudgilly.ch.
 
 ## Danach: Paket 5
 
-Mit dem Planer unter `/planer/` wird `/touren/` frei für die Club-Touren
-(Tourenliste aus dem Pages CMS, Events mit Tour-Link, «In den Planer laden»).
-Dann die Umleitung in `astro.config.mjs` wieder entfernen.
+Mit dem Planer unter `/planer/` ist `/touren/` frei für die Club-Touren, siehe
+`docs/club-touren.md`. Die Umleitung in `astro.config.mjs` entfällt damit.

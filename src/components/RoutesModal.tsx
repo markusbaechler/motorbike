@@ -17,6 +17,8 @@ import type { Waypoint } from "../types";
 interface Props {
   currentWaypoints: Waypoint[];
   onLoad: (waypoints: Waypoint[]) => void;
+  // Switch to the club tours dialog (absent on the old hosting).
+  onClubTours?: () => void;
   onClose: () => void;
 }
 
@@ -34,7 +36,7 @@ function meta(r: SavedRoute): string {
   return `${days} Tag${days === 1 ? "" : "e"} · ${r.waypoints.length} Punkte · ${date}`;
 }
 
-export default function RoutesModal({ currentWaypoints, onLoad, onClose }: Props) {
+export default function RoutesModal({ currentWaypoints, onLoad, onClubTours, onClose }: Props) {
   const [routes, setRoutes] = useState<SavedRoute[]>(() => listRoutes());
   const [name, setName] = useState("");
   const [info, setInfo] = useState<string | null>(null);
@@ -201,6 +203,16 @@ export default function RoutesModal({ currentWaypoints, onLoad, onClose }: Props
               Export/Import als Datei dient zum Sichern oder Übertragen auf ein anderes Gerät.
             </p>
           </section>
+
+          {onClubTours && (
+            <section className="modal-section">
+              <h3>Club-Touren</h3>
+              <button className="export-btn" onClick={onClubTours}>
+                <Icon name="scenery" size={16} /> Vorschläge des Clubs ansehen
+              </button>
+              <p className="modal-note">Touren von der Website, bereit zum Laden und Anpassen.</p>
+            </section>
+          )}
         </div>
       </Modal>
 

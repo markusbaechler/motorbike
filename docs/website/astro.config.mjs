@@ -14,10 +14,4 @@ export default defineConfig({
   // Der Routenplaner liegt nicht in src/pages, sondern wird im Workflow nach
   // dist/planer/ gebaut. Für die Sitemap darum von Hand eintragen.
   integrations: [sitemap({ customPages: ['https://pudgilly.ch/planer/'] })],
-  // Übergangsweise: die alte Planer-Adresse leitet auf die neue um (Astro legt
-  // dafür eine kleine Weiterleitungsseite in dist/touren/ ab). Entfällt, sobald
-  // /touren/ wieder eine eigene Seite ist (Club-Touren).
-  redirects: {
-    '/touren/': '/planer/',
-  },
 });
