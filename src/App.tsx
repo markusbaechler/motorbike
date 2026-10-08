@@ -39,7 +39,7 @@ import { computeDays } from "./lib/days";
 import { fetchWeather, type WeatherDay } from "./lib/weather";
 import { fetchRoute } from "./lib/routing";
 import { APP_NAME, CLUB_NAME, MOVED_TO } from "./config";
-import type { GeoResult } from "./lib/geocoding";
+import { reverseGeocode, type GeoResult } from "./lib/geocoding";
 import type { RouteProfile, RouteResult, Waypoint } from "./types";
 
 let nextId = 1;
@@ -426,7 +426,27 @@ export default function App() {
     previewCandidate(geniusCands[next], geniusProfile.current);
   };
 
-  const geniusAccept = () => setGeniusCands(null); // keep the route as-is
+  // Give points the Tour-Genius placed on the map (ring vias, the far side
+  // of a pass loop) a real name once the rider keeps the tour, one lookup at
+  // a time. Names only ever fill a gap, so an edit meanwhile is never undone.
+  const nameUnnamedPoints = async (list: Waypoint[]) => {
+    for (const w of list) {
+      if (w.name) continue;
+      let name: string | null = null;
+      try {
+        name = await reverseGeocode(w.lat, w.lng);
+      } catch {
+        name = null;
+      }
+      if (!name) continue;
+      setWaypoints((prev) => prev.map((p) => (p.id === w.id && !p.name ? { ...p, name } : p)));
+    }
+  };
+
+  const geniusAccept = () => {
+    setGeniusCands(null); // keep the route as-is
+    void nameUnnamedPoints(waypoints);
+  };
 
   const geniusDiscard = () => {
     setWaypoints(geniusPrev.current);
@@ -577,7 +597,15 @@ export default function App() {
   const [routeAttempt, setRouteAttempt] = useState(0);
   const retryRoute = () => setRouteAttempt((n) => n + 1);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  // Only positions and riding styles matter for routing. Names, day ends and
+  // day labels change without a single new request.
+  const routeKey = waypoints
+    .map((w) => `${w.lng.toFixed(6)},${w.lat.toFixed(6)},${w.legProfile}`)
+    .join("|");
+  const waypointsRef = useRef(waypoints);
+  waypointsRef.current = waypoints;
   useEffect(() => {
+    const waypoints = waypointsRef.current;
     if (waypoints.length < 2) {
       setRoute(null);
       setError(null);
@@ -607,7 +635,7 @@ export default function App() {
       controller.abort();
       clearTimeout(debounceRef.current);
     };
-  }, [waypoints, routeAttempt]);
+  }, [routeKey, routeAttempt]);
 
   return (
     // pass-mode: on wide screens the sidebar is gone, so the map takes the

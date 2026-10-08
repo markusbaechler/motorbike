@@ -52,6 +52,15 @@ unter «Club-Touren» und lädt sie wie einen geteilten Link; der Teilen-Link
 des Planers ist umgekehrt der «Planer-Link» im CMS. Ablauf und Datenmodell:
 `docs/club-touren.md`.
 
+## Umgang mit dem Routing-Dienst
+
+brouter.de ist ein geteilter, kostenloser Server und drosselt pro IP. Darum
+laufen alle Anfragen durch eine Warteschlange (`src/lib/queue.ts`, drei
+gleichzeitig), werden bei 403/429/5xx mit Backoff wiederholt, und fertige
+Etappen bleiben pro `lonlats|profile` im Speicher (`src/lib/routing.ts`):
+Punkt ziehen, Tag setzen oder «Erneut versuchen» lädt nur, was fehlt. Bei
+Drosselung gibt es keinen stillen Wechsel auf ein anderes Profil.
+
 ## Grundsätze
 
 - **Komplett kostenlos**: ausschliesslich freie, schlüssellose Dienste.

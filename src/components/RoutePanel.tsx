@@ -97,14 +97,16 @@ function formatDuration(minutes: number): string {
   return h > 0 ? `${h} h ${m} min` : `${m} min`;
 }
 
+// Full name (hotel search etc.); map-placed points only have coordinates.
 function placeName(wp: Waypoint): string {
   return wp.name ?? `${wp.lat.toFixed(4)}, ${wp.lng.toFixed(4)}`;
 }
 
-// Short display name: just the locality (drops region/country after the comma).
+// Short display name: just the locality (drops region/country after the
+// comma). Coordinates keep both halves, "47.690" alone says nothing.
 function shortName(wp: Waypoint): string {
-  const n = placeName(wp);
-  return n.split(",")[0].trim();
+  if (!wp.name) return `${wp.lat.toFixed(3)}, ${wp.lng.toFixed(3)}`;
+  return wp.name.split(",")[0].trim();
 }
 
 function weatherIcon(code: number): IconName {
