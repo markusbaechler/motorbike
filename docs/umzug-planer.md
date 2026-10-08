@@ -1,9 +1,8 @@
 # Umzug des Routenplaners nach pudgilly.ch/planer/
 
-> Erledigt (Oktober 2026): der Planer läuft unter `pudgilly.ch/planer/`. Die
-> damals unter `docs/website/` gelieferten Dateien sind im Website-Repo
-> eingebaut; der Ordner enthält inzwischen die Dateien für Paket 5
-> (`docs/club-touren.md`). Schritte 2 und 3 unten gelten weiterhin.
+> Umgesetzt, siehe «Stand» unten. Die damals unter `docs/website/` gelieferten
+> Dateien sind im Website-Repo eingebaut; der Ordner enthält inzwischen die
+> Dateien für Paket 5 (`docs/club-touren.md`).
 
 Der Planer wird nicht mehr per iframe von GitHub Pages eingebettet, sondern vom
 Website-Workflow mitgebaut und als Teil von pudgilly.ch ausgeliefert

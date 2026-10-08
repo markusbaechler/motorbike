@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { parseClubTours } from "./clubtours";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { fetchClubTours, parseClubTours } from "./clubtours";
 import { encodeRoute } from "./share";
 import type { Waypoint } from "../types";
 
@@ -64,5 +64,18 @@ describe("club tours", () => {
     expect(parseClubTours(null)).toEqual([]);
     expect(parseClubTours({ tours: "x" })).toEqual([]);
     expect(parseClubTours(42)).toEqual([]);
+  });
+});
+
+describe("club tours feed", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("treats a missing feed (404) as an empty list, other failures as errors", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 404 }));
+    expect(await fetchClubTours(true)).toEqual([]);
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
+    await expect(fetchClubTours(true)).rejects.toThrow("HTTP 500");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ v: 1, tours: [{ slug: "x", title: "X", code }] }) }));
+    expect((await fetchClubTours(true)).map((t) => t.slug)).toEqual(["x"]);
   });
 });

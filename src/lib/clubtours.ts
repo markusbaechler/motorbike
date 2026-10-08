@@ -84,6 +84,8 @@ export function fetchClubTours(force = false): Promise<ClubTour[]> {
   if (!cache || force) {
     cache = fetch(CLUB_TOURS_URL, { headers: { accept: "application/json" } })
       .then((r) => {
+        // No feed yet (website not updated): that is "no tours", not an error.
+        if (r.status === 404) return [];
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
