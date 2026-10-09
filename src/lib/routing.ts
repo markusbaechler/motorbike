@@ -487,9 +487,10 @@ export function splitAtStops(coords: Coord[], stops: Pt[]): Coord[][] {
  * ("messages": road type and length per segment) is split along, so the
  * route details stay right even after single legs are re-routed later.
  */
-export function primeLegs(stops: Pt[], feature: GeoJSON.Feature, profile: RouteProfile): void {
-  if (feature.geometry?.type !== "LineString" || stops.length < 2) return;
+export function primeLegs(stops: Pt[], feature: GeoJSON.Feature, profile: RouteProfile): boolean {
+  if (feature.geometry?.type !== "LineString" || stops.length < 2) return false;
   const coords = feature.geometry.coordinates;
+  if (coords.length < 2) return false;
   const bounds = splitIndices(coords, stops);
 
   // Messages rows end at a track point (micro-degrees); hand each row to the
@@ -527,6 +528,78 @@ export function primeLegs(stops: Pt[], feature: GeoJSON.Feature, profile: RouteP
     });
   }
   while (legDone.size > LEG_CACHE_MAX) legDone.delete(legDone.keys().next().value!);
+  return true;
+}
+
+// --- Combined requests -------------------------------------------------------
+// One request per leg made a 34-point tour cost 33 requests – minutes against
+// a server that allows ~15 a minute. BRouter takes any number of points, and
+// a combined request gives the same line as leg by leg (measured: 98.0 km both
+// ways, 0.2 s instead of 10 requests). So consecutive legs that are not cached
+// yet and share a riding style are routed together and split into legs.
+const MAX_RUN_LEGS = 25;
+
+const isLegKnown = (from: Pt, to: Pt, profile: RouteProfile) => {
+  const key = `${legLonlats(from, to)}|${profile}`;
+  return legDone.has(key) || legInflight.has(key);
+};
+
+/**
+ * Route waypoints[start] … waypoints[end] (end exclusive in legs) in one
+ * request with the riding style's first profile. Refused (4xx other than
+ * throttling) → split in halves; single legs are left to fetchLeg, which has
+ * the full fallback chain and the per-leg error message.
+ */
+async function routeRun(
+  wps: Waypoint[],
+  start: number,
+  end: number,
+  profile: RouteProfile,
+  signal?: AbortSignal,
+): Promise<void> {
+  if (end - start < 2) return;
+  const points = wps.slice(start, end + 1);
+  const brouterProfile = (await brouterProfileChain(profile))[0];
+  const lonlats = points.map((p) => `${p.lng.toFixed(6)},${p.lat.toFixed(6)}`).join("|");
+  let res: Response;
+  try {
+    res = await brouterFetch(
+      `${BROUTER}/brouter?lonlats=${lonlats}&profile=${brouterProfile}&alternativeidx=0&format=geojson`,
+      signal,
+    );
+  } catch (e) {
+    if ((e as Error).name === "AbortError") throw e;
+    return; // network trouble: fetchLeg tries again leg by leg
+  }
+  if (res.ok) {
+    const feature = ((await res.json()) as GeoJSON.FeatureCollection).features?.[0];
+    if (feature && primeLegs(points, feature, profile)) return;
+  }
+  if (isOverloaded(res.status)) return; // fetchLeg reports it per leg
+  // e.g. "target island" for one bad point: keep the rest combined.
+  const mid = start + Math.floor((end - start) / 2);
+  await Promise.all([routeRun(wps, start, mid, profile, signal), routeRun(wps, mid, end, profile, signal)]);
+}
+
+/** Route every run of uncached legs with the same riding style together. */
+async function routeRuns(wps: Waypoint[], signal?: AbortSignal): Promise<void> {
+  const runs: Promise<void>[] = [];
+  let i = 0;
+  while (i < wps.length - 1) {
+    const profile = wps[i + 1].legProfile;
+    let j = i;
+    while (
+      j < wps.length - 1 &&
+      j - i < MAX_RUN_LEGS &&
+      wps[j + 1].legProfile === profile &&
+      !isLegKnown(wps[j], wps[j + 1], profile)
+    ) {
+      j++;
+    }
+    if (j - i >= 2) runs.push(routeRun(wps, i, j, profile, signal));
+    i = Math.max(j, i + 1);
+  }
+  await Promise.all(runs);
 }
 
 /**
@@ -598,6 +671,11 @@ export async function fetchRoute(
   if (waypoints.length < 2) {
     throw new Error("Mindestens zwei Wegpunkte nötig.");
   }
+
+  // Combined requests first; whatever they could not deliver is then routed
+  // leg by leg below (cache hits for everything they did deliver).
+  await routeRuns(waypoints, signal);
+  if (signal?.aborted) throw abortError();
 
   const legPromises: Promise<Leg>[] = [];
   for (let i = 1; i < waypoints.length; i++) {
