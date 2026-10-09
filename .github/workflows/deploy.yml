@@ -27,12 +27,19 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
+# Runner und Actions sind bewusst fest gewählt:
+#   - ubuntu-26.04 statt ubuntu-latest: das Label wechselt ab 19.10.2026 ohnehin
+#     auf 26.04 (actions/runner-images#14748); fest gesetzt gibt es keinen
+#     stillen Wechsel mehr und keinen Hinweis im Log.
+#   - Actions in Versionen, die auf Node.js 24 laufen (Node 20 ist für
+#     Actions abgekündigt). upload-pages-artifact ab v4 lässt versteckte
+#     Dateien (.xyz) weg – dist/ enthält keine.
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: npm
@@ -41,24 +48,24 @@ jobs:
         env:
           VITE_BOOKING_AID: ${{ vars.BOOKING_AID }}
           VITE_MOVED_TO: ${{ vars.PLANER_MOVED_TO }}
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
   # Website-Build auf pudgilly.ch anstossen (repository_dispatch "planer-updated").
   notify-website:
     if: github.event_name == 'push'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Dispatch pudgilly-riders build
         env:
