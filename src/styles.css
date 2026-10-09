@@ -1066,6 +1066,24 @@ button {
   background: rgba(255, 138, 30, 0.18);
 }
 
+/* Kind of a search hit ("Pass", "Ort", "Tunnel" …) after its name. */
+.place-kind {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: var(--pill);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  vertical-align: 1px;
+}
+/* The list still shows hits for an older input while the new one loads. */
+.place-results.stale,
+.search-results.stale {
+  opacity: 0.5;
+}
+
 .add-stop-btn {
   background: transparent;
   color: var(--accent);

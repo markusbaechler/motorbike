@@ -38,7 +38,7 @@ import { addDays, buildBookingUrl } from "./lib/booking";
 import { computeDays } from "./lib/days";
 import { fetchWeather, type WeatherDay } from "./lib/weather";
 import { fetchRoute } from "./lib/routing";
-import { APP_NAME, CLUB_NAME, MOVED_TO } from "./config";
+import { APP_NAME, CLUB_NAME, DEFAULT_CENTER, MOVED_TO } from "./config";
 import { reverseGeocode, type GeoResult } from "./lib/geocoding";
 import { DESKTOP_QUERY, useMediaQuery } from "./lib/useMediaQuery";
 import {
@@ -369,6 +369,14 @@ export default function App() {
     setFocus({ lng: r.lng, lat: r.lat, key: Date.now() });
   };
 
+  // The top search ranks hits near the tour first: the last real stop (on a
+  // round trip the one before the return), else the map's home area. Without
+  // it "Monte Ceneri" also lists streets in Milan and Monza.
+  const biasWp = waypoints[waypoints.length - (isClosedLoop(waypoints) ? 2 : 1)];
+  const searchBias = biasWp
+    ? { lat: biasWp.lat, lng: biasWp.lng }
+    : { lat: DEFAULT_CENTER[1], lng: DEFAULT_CENTER[0] };
+
   // Build the whole route at once from the quick-plan dialog.
   const applyQuickPlan = (stops: QuickStop[]) => {
     setPendingDay(false);
@@ -653,7 +661,7 @@ export default function App() {
         </header>
       )}
 
-      {!passSession && !sidePlanner && <SearchBox onSelect={onSearchSelect} />}
+      {!passSession && !sidePlanner && <SearchBox onSelect={onSearchSelect} bias={searchBias} />}
 
       <MapView
         // The Pässeplaner is a dedicated mode (the SearchBox is hidden too):

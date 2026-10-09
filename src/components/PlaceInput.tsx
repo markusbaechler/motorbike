@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { searchPlaces, type GeoResult } from "../lib/geocoding";
+import { enterAction, searchPlaces, type GeoResult } from "../lib/geocoding";
 
 interface Props {
   value: string;
@@ -22,6 +22,8 @@ interface Props {
  */
 export default function PlaceInput({ value, placeholder, bias, autoFocus, onChange, onPick }: Props) {
   const [results, setResults] = useState<GeoResult[]>([]);
+  // The text the shown results belong to (the list lags behind typing).
+  const [resultsFor, setResultsFor] = useState("");
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const listId = useId();
@@ -55,9 +57,11 @@ export default function PlaceInput({ value, placeholder, bias, autoFocus, onChan
       const controller = new AbortController();
       controllerRef.current = controller;
       try {
-        const found = await searchPlaces(value.trim(), controller.signal, bias);
+        const q = value.trim();
+        const found = await searchPlaces(q, controller.signal, bias);
         if (controller.signal.aborted) return;
         setResults(found);
+        setResultsFor(q);
         // Don't pop the list under a field the rider already left.
         if (document.activeElement === inputRef.current) setOpen(true);
       } catch (err) {
@@ -74,13 +78,47 @@ export default function PlaceInput({ value, placeholder, bias, autoFocus, onChan
     stopLookup();
     onPick(r);
     setResults([]);
+    setResultsFor("");
     setOpen(false);
     setActive(-1);
   };
 
+  // Enter while the list still shows hits for an older input: search the
+  // current text right away and take its first hit.
+  const searchNowAndPick = async () => {
+    stopLookup();
+    const controller = new AbortController();
+    controllerRef.current = controller;
+    const q = value.trim();
+    try {
+      const found = await searchPlaces(q, controller.signal, bias);
+      if (controller.signal.aborted) return;
+      if (found[0]) choose(found[0]);
+      else {
+        setResults([]);
+        setResultsFor(q);
+      }
+    } catch {
+      // Network trouble: keep the typed text; "Tour erstellen" resolves it.
+    }
+  };
+
   const visible = open && results.length > 0;
+  // The list belongs to an older input while the new one is being looked up.
+  const stale = results.length > 0 && resultsFor !== value.trim();
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      // Highlighted suggestion, the first one of an up-to-date list ("Sion"
+      // + Enter is enough), or a fresh search for an outdated list.
+      const action = enterAction({ active: visible ? active : -1, count: results.length, resultsFor, query: value });
+      if (action === "none") return;
+      e.preventDefault();
+      if (action === "pick-active") choose(results[active]);
+      else if (action === "pick-first") choose(results[0]);
+      else void searchNowAndPick();
+      return;
+    }
     if (!visible) {
       if (e.key === "ArrowDown" && results.length > 0) {
         e.preventDefault();
@@ -95,14 +133,6 @@ export default function PlaceInput({ value, placeholder, bias, autoFocus, onChan
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setActive((a) => (a <= 0 ? results.length - 1 : a - 1));
-    } else if (e.key === "Enter") {
-      // Enter takes the highlighted suggestion, or the first one when none is
-      // highlighted (typing "Sion" + Enter is enough).
-      const pickIdx = active >= 0 ? active : 0;
-      if (results[pickIdx]) {
-        e.preventDefault();
-        choose(results[pickIdx]);
-      }
     } else if (e.key === "Escape") {
       // Only swallow Escape while the list is open; otherwise the dialog closes.
       e.preventDefault();
@@ -136,7 +166,7 @@ export default function PlaceInput({ value, placeholder, bias, autoFocus, onChan
         autoComplete="off"
       />
       {visible && (
-        <ul id={listId} role="listbox" className="place-results">
+        <ul id={listId} role="listbox" className={`place-results ${stale ? "stale" : ""}`}>
           {results.map((r, i) => (
             <li
               key={`${r.lat},${r.lng},${i}`}
@@ -152,6 +182,7 @@ export default function PlaceInput({ value, placeholder, bias, autoFocus, onChan
                 onClick={() => choose(r)}
               >
                 {r.name}
+                {r.kind && <span className="place-kind">{r.kind}</span>}
               </button>
             </li>
           ))}
