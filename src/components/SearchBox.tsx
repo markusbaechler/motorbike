@@ -1,15 +1,21 @@
 import { useEffect, useId, useRef, useState } from "react";
 import Icon from "./Icon";
-import { searchPlaces, type GeoResult } from "../lib/geocoding";
+import { enterAction, searchPlaces, type GeoResult } from "../lib/geocoding";
 import { getRecentPlaces, addRecentPlace } from "../lib/storage";
 
 interface Props {
   onSelect: (result: GeoResult) => void;
+  // Rank hits near the tour first (last stop, or the map's home area).
+  bias?: { lat: number; lng: number };
 }
 
-export default function SearchBox({ onSelect }: Props) {
+export default function SearchBox({ onSelect, bias }: Props) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<GeoResult[]>([]);
+  // The text the shown results belong to (the list lags behind typing).
+  const [resultsFor, setResultsFor] = useState("");
+  const biasRef = useRef(bias);
+  biasRef.current = bias;
   const [recents, setRecents] = useState<GeoResult[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -46,9 +52,11 @@ export default function SearchBox({ onSelect }: Props) {
       controllerRef.current = controller;
       setLoading(true);
       try {
-        const found = await searchPlaces(query.trim(), controller.signal);
+        const q = query.trim();
+        const found = await searchPlaces(q, controller.signal, biasRef.current);
         if (controller.signal.aborted) return;
         setResults(found);
+        setResultsFor(q);
         // Don't pop the list under a field the rider already left.
         if (document.activeElement === inputRef.current) setOpen(true);
       } catch (err) {
@@ -69,9 +77,36 @@ export default function SearchBox({ onSelect }: Props) {
     onSelect(r);
     setQuery("");
     setResults([]);
+    setResultsFor("");
     setOpen(false);
     setActive(-1);
   };
+
+  // Enter while the list still shows hits for an older input: search the
+  // current text right away and take its first hit.
+  const searchNowAndPick = async () => {
+    stopLookup();
+    const controller = new AbortController();
+    controllerRef.current = controller;
+    const q = query.trim();
+    setLoading(true);
+    try {
+      const found = await searchPlaces(q, controller.signal, biasRef.current);
+      if (controller.signal.aborted) return;
+      if (found[0]) choose(found[0]);
+      else {
+        setResults([]);
+        setResultsFor(q);
+      }
+    } catch {
+      // Network trouble: leave the field as it is; the rider can retry.
+    } finally {
+      if (!controller.signal.aborted) setLoading(false);
+    }
+  };
+
+  // The list belongs to an older input while the new one is being looked up.
+  const stale = !showRecents && results.length > 0 && resultsFor !== query.trim();
 
   const onFocus = () => {
     setRecents(getRecentPlaces());
@@ -79,6 +114,22 @@ export default function SearchBox({ onSelect }: Props) {
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      // Highlighted entry, the first one of an up-to-date list, or a fresh
+      // search when the list still belongs to an older input.
+      const action = enterAction({
+        active: visible ? active : -1,
+        count: items.length,
+        resultsFor: showRecents ? query.trim() : resultsFor,
+        query,
+      });
+      if (action === "none") return;
+      e.preventDefault();
+      if (action === "pick-active") choose(items[active]);
+      else if (action === "pick-first") choose(items[0]);
+      else void searchNowAndPick();
+      return;
+    }
     if (!visible) {
       if (e.key === "ArrowDown" && items.length > 0) {
         e.preventDefault();
@@ -93,13 +144,6 @@ export default function SearchBox({ onSelect }: Props) {
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setActive((a) => (a <= 0 ? items.length - 1 : a - 1));
-    } else if (e.key === "Enter") {
-      // Highlighted entry, or the first one when nothing is highlighted.
-      const pickIdx = active >= 0 ? active : 0;
-      if (items[pickIdx]) {
-        e.preventDefault();
-        choose(items[pickIdx]);
-      }
     } else if (e.key === "Escape") {
       e.preventDefault();
       setOpen(false);
@@ -132,7 +176,7 @@ export default function SearchBox({ onSelect }: Props) {
       </div>
 
       {visible && (
-        <ul id={listId} role="listbox" className="search-results">
+        <ul id={listId} role="listbox" className={`search-results ${stale ? "stale" : ""}`}>
           {showRecents && (
             <li className="search-recent-head" role="presentation">
               Zuletzt
@@ -155,6 +199,7 @@ export default function SearchBox({ onSelect }: Props) {
               >
                 {showRecents && <Icon name="search" size={14} className="search-recent-icon" />}
                 {r.name}
+                {r.kind && <span className="place-kind">{r.kind}</span>}
               </button>
             </li>
           ))}
