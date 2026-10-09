@@ -40,6 +40,18 @@ import { fetchWeather, type WeatherDay } from "./lib/weather";
 import { fetchRoute } from "./lib/routing";
 import { APP_NAME, CLUB_NAME, MOVED_TO } from "./config";
 import { reverseGeocode, type GeoResult } from "./lib/geocoding";
+import { DESKTOP_QUERY, useMediaQuery } from "./lib/useMediaQuery";
+import {
+  addDayEnd,
+  appendWaypoint,
+  closeLoop,
+  insertWaypoint as insertWaypointAt,
+  isClosedLoop,
+  prependWaypoint as prependWaypointTo,
+  reorderWaypoint as reorderWaypointIn,
+  replaceEnd,
+  reverseWaypoints,
+} from "./lib/waypoints";
 import type { RouteProfile, RouteResult, Waypoint } from "./types";
 
 let nextId = 1;
@@ -85,6 +97,11 @@ export default function App() {
   const [focus, setFocus] = useState<FocusPoint | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [showQuickPlan, setShowQuickPlan] = useState(false);
+  // Wide screens show "Tour planen" in the sidebar instead of a dialog over
+  // the map. While it is open there, the search box (it would add points to
+  // the route behind the form) is hidden and the map can't edit the route.
+  const desktop = useMediaQuery(DESKTOP_QUERY);
+  const sidePlanner = desktop && showQuickPlan;
   const [showTourGenius, setShowTourGenius] = useState(false);
   // Tour-Genius map preview: candidates being previewed (round trips), the
   // currently shown one, and the waypoints to restore if the user discards.
@@ -235,50 +252,46 @@ export default function App() {
   // True right after "+ Tag hinzufügen": the next added point starts a new day.
   const [pendingDay, setPendingDay] = useState(false);
 
+  // Search, map tap and "Punkt anhängen" all land here. On a round trip the
+  // point goes in front of the closing copy of the start (see lib/waypoints).
   const addWaypoint = (lng: number, lat: number, name?: string) => {
     setPendingDay(false);
-    setWaypoints((wps) => [
-      ...wps,
-      { id: makeId(), lng, lat, name, legProfile: defaultProfile },
-    ]);
+    setWaypoints((wps) => appendWaypoint(wps, { id: makeId(), lng, lat, name }, defaultProfile));
+  };
+
+  // "Ziel hier" from the map's context menu: the point becomes the
+  // destination. On a round trip this replaces the closing copy, i.e. the
+  // loop opens on purpose ("Rundtour" closes it again).
+  const setDestination = (lng: number, lat: number) => {
+    setPendingDay(false);
+    setWaypoints((wps) => replaceEnd(wps, { id: makeId(), lng, lat }, defaultProfile));
   };
 
   // "Start hier" from the map's context menu: the point becomes the first
   // waypoint; the old start turns into a regular stop reached with the
-  // default profile.
+  // default profile. A round trip stays closed (its end moves along).
   const prependWaypoint = (lng: number, lat: number) => {
     setPendingDay(false);
-    setWaypoints((wps) => [
-      { id: makeId(), lng, lat, legProfile: defaultProfile },
-      ...wps.map((w, i) => (i === 0 ? { ...w, legProfile: defaultProfile } : w)),
-    ]);
+    setWaypoints((wps) => prependWaypointTo(wps, { id: makeId(), lng, lat }, defaultProfile));
   };
 
-  // End the current day at the last waypoint (overnight) so the next point
-  // added begins a new day.
-  const addDay = () =>
-    setWaypoints((wps) => {
-      if (wps.length < 2) return wps;
-      setPendingDay(true);
-      return wps.map((w, i) => (i === wps.length - 1 ? { ...w, dayEnd: true } : w));
-    });
+  // End the current day at the last real stop (overnight). On an open tour
+  // the next point added then begins a new day (pendingDay). On a round trip
+  // the new day "overnight → back to start" exists right away and every
+  // point added lands in it, so no pending state is needed.
+  const addDay = () => {
+    if (waypoints.length < 2) return;
+    const next = addDayEnd(waypoints);
+    if (next !== waypoints) setWaypoints(next);
+    if (!isClosedLoop(waypoints)) setPendingDay(true);
+  };
 
   // Insert a shaping point into a specific leg (legIndex = index of the leg
   // being reshaped). The new point keeps that leg's profile.
   const insertWaypoint = (legIndex: number, lng: number, lat: number, name?: string) =>
-    setWaypoints((wps) => {
-      const dest = wps[legIndex + 1];
-      const newWp: Waypoint = {
-        id: makeId(),
-        lng,
-        lat,
-        name,
-        legProfile: dest ? dest.legProfile : defaultProfile,
-      };
-      const copy = [...wps];
-      copy.splice(legIndex + 1, 0, newWp);
-      return copy;
-    });
+    setWaypoints((wps) =>
+      insertWaypointAt(wps, legIndex, { id: makeId(), lng, lat, name }, defaultProfile),
+    );
 
   const moveWaypoint = (id: string, lng: number, lat: number) =>
     setWaypoints((wps) =>
@@ -301,15 +314,10 @@ export default function App() {
   const setDayMeta = (id: string, patch: { dayName?: string; dayDate?: string }) =>
     setWaypoints((wps) => wps.map((w) => (w.id === id ? { ...w, ...patch } : w)));
 
+  // Only the place moves; leg profile and day flags stay with the list
+  // position. The ends of a round trip are fixed.
   const reorderWaypoint = (id: string, direction: -1 | 1) =>
-    setWaypoints((wps) => {
-      const i = wps.findIndex((w) => w.id === id);
-      const j = i + direction;
-      if (i < 0 || j < 0 || j >= wps.length) return wps;
-      const copy = [...wps];
-      [copy[i], copy[j]] = [copy[j], copy[i]];
-      return copy;
-    });
+    setWaypoints((wps) => reorderWaypointIn(wps, id, direction));
 
   const clearAll = () => {
     setPendingDay(false);
@@ -323,12 +331,21 @@ export default function App() {
   // Resetting throws the whole route away → ask first once there is one.
   const requestClear = () => (waypoints.length >= 2 ? setConfirmReset(true) : clearAll());
 
+  // Leave the Home screen for another tool. On wide screens the logo (→ Home)
+  // stays reachable while "Tour planen" is open in the sidebar, so starting
+  // something else closes that form instead of leaving it next to the new
+  // tool.
+  const leaveHomeFor = () => {
+    setShowHome(false);
+    setShowQuickPlan(false);
+  };
+
   const resumeDraft = () => {
     if (!draft) return;
     setPendingDay(false);
     setDefaultProfile(draft.defaultProfile);
     setWaypoints(draft.waypoints.map((w) => ({ ...w, id: makeId() })));
-    setShowHome(false);
+    leaveHomeFor();
     setFitSignal((n) => n + 1);
   };
 
@@ -336,38 +353,14 @@ export default function App() {
   // drops day metadata, which doesn't map cleanly when reversed).
   const reverseRoute = () => {
     setPendingDay(false);
-    setWaypoints((wps) => {
-      if (wps.length < 2) return wps;
-      const n = wps.length;
-      const rev = [...wps]
-        .reverse()
-        .map((w) => ({ ...w, dayEnd: undefined, dayName: undefined, dayDate: undefined }));
-      for (let k = 1; k < n; k++) rev[k].legProfile = wps[n - k].legProfile;
-      return rev;
-    });
+    setWaypoints((wps) => reverseWaypoints(wps));
     setFitSignal((nn) => nn + 1);
   };
 
   // Close the route into a loop by appending the start as the final waypoint.
   const makeRoundTrip = () => {
     setPendingDay(false);
-    setWaypoints((wps) => {
-      if (wps.length < 2) return wps;
-      const first = wps[0];
-      const last = wps[wps.length - 1];
-      if (first.lat === last.lat && first.lng === last.lng) return wps;
-      return [
-        ...wps,
-        {
-          ...first,
-          id: makeId(),
-          legProfile: defaultProfile,
-          dayEnd: undefined,
-          dayName: undefined,
-          dayDate: undefined,
-        },
-      ];
-    });
+    setWaypoints((wps) => closeLoop(wps, makeId(), defaultProfile));
     setFitSignal((nn) => nn + 1);
   };
 
@@ -660,7 +653,7 @@ export default function App() {
         </header>
       )}
 
-      {!passSession && <SearchBox onSelect={onSearchSelect} />}
+      {!passSession && !sidePlanner && <SearchBox onSelect={onSearchSelect} />}
 
       <MapView
         // The Pässeplaner is a dedicated mode (the SearchBox is hidden too):
@@ -672,11 +665,13 @@ export default function App() {
         fitSignal={fitSignal}
         onAddWaypoint={addWaypoint}
         onPrependWaypoint={prependWaypoint}
+        onSetDestination={setDestination}
         onMoveWaypoint={moveWaypoint}
         onInsertWaypoint={insertWaypoint}
         passPoints={passPoints}
         passEndpoints={passEndpoints}
         onSetPassMark={setPassMark}
+        editLocked={sidePlanner}
       />
 
       {!passSession && (
@@ -748,6 +743,7 @@ export default function App() {
 
       {showQuickPlan && (
         <QuickPlanModal
+          variant={desktop ? "sidebar" : "modal"}
           defaultProfile={defaultProfile}
           initialStops={
             waypoints.length >= 2
@@ -850,21 +846,21 @@ export default function App() {
             setShowQuickPlan(true);
           }}
           onGenius={() => {
-            setShowHome(false);
+            leaveHomeFor();
             setShowTourGenius(true);
           }}
           onPasses={() => {
-            setShowHome(false);
+            leaveHomeFor();
             setShowPassPlanner(true);
           }}
           onRoutes={() => {
-            setShowHome(false);
+            leaveHomeFor();
             setShowRoutes(true);
           }}
           onClubTours={
             clubToursEnabled
               ? () => {
-                  setShowHome(false);
+                  leaveHomeFor();
                   setShowClubTours(true);
                 }
               : undefined
