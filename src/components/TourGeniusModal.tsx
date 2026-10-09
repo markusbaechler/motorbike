@@ -10,6 +10,7 @@ import {
   type TourDuration,
   type TourProgress,
 } from "../lib/tourgen";
+import { useThrottleWait } from "../lib/useThrottleWait";
 import type { RouteProfile } from "../types";
 
 interface Props {
@@ -39,6 +40,8 @@ export default function TourGeniusModal({ onResults, onClose }: Props) {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<TourProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The public router allows ~17 requests a minute; the queue then waits.
+  const throttleWait = useThrottleWait();
 
   // A search fires dozens of routing requests and can run for minutes. Closing
   // the dialog cancels it; otherwise the result would pop up on the map later,
@@ -121,9 +124,10 @@ export default function TourGeniusModal({ onResults, onClose }: Props) {
   };
 
   const progressText =
-    progress && progress.total > 0
+    (progress && progress.total > 0
       ? `${progress.label}: ${progress.done} von ${progress.total} berechnet …`
-      : "Startort wird gesucht …";
+      : "Startort wird gesucht …") +
+    (throttleWait > 0 ? ` Routing-Dienst bremst kurz, weiter in ${throttleWait} s.` : "");
 
   return (
     <Modal
@@ -236,7 +240,8 @@ export default function TourGeniusModal({ onResults, onClose }: Props) {
           </button>
         )}
         <p className="modal-note">
-          Die Suche berechnet viele Varianten über den Routing-Dienst und kann 1 bis 3 Minuten dauern.
+          Die Suche berechnet viele Varianten über den Routing-Dienst. Er erlaubt nur rund 15 Anfragen
+          pro Minute, darum dauert sie 2 bis 4 Minuten.
         </p>
       </div>
     </Modal>

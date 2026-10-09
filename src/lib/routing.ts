@@ -1,5 +1,6 @@
 import type { RouteProfile, RouteResult, Waypoint } from "../types";
-import { withSlot } from "./queue";
+import { reportThrottled, withSlot } from "./queue";
+import { haversine, type Coord } from "./geo";
 
 // BRouter – free, key-less public routing server. Routing runs from the
 // user's browser. https://brouter.de/
@@ -211,8 +212,9 @@ interface Leg {
 // The public BRouter server is free but shared: it is occasionally slow,
 // briefly unavailable, and it throttles per IP (403 "Please, retry later!"
 // from the proxy in front of it, sometimes 429). Every request therefore goes
-// through the small queue in lib/queue.ts, gets a timeout, and is retried with
-// exponential backoff on timeouts, network errors, 5xx and throttling.
+// through the queue in lib/queue.ts (paced below the server's limit, shared
+// pause after a 403), gets a timeout, and is retried with exponential backoff
+// on timeouts, network errors and 5xx.
 const REQUEST_TIMEOUT_MS = 20000;
 const MAX_TRIES = 4;
 
@@ -239,14 +241,26 @@ async function fetchWithTimeout(url: string, signal?: AbortSignal): Promise<Resp
   }
 }
 
+// A 403/429 means "this IP sent too much": the queue then pauses every
+// request (see lib/queue.ts) and this one goes back in line. Three pauses
+// (about 1.5 min) before giving up – enough for the measured ~30 s block.
+const MAX_THROTTLE_WAITS = 3;
+
 async function brouterFetch(url: string, signal?: AbortSignal): Promise<Response> {
   let lastErr: Error | null = null;
+  let throttleWaits = 0;
   for (let attempt = 0; attempt < MAX_TRIES; attempt++) {
     if (signal?.aborted) throw abortError();
     try {
       // The queue slot covers the request only, not the backoff sleep.
       const res = await withSlot(() => fetchWithTimeout(url, signal), signal);
-      if (isOverloaded(res.status) && attempt < MAX_TRIES - 1) {
+      if ((res.status === 403 || res.status === 429) && throttleWaits < MAX_THROTTLE_WAITS) {
+        throttleWaits++;
+        reportThrottled();
+        attempt--; // waiting out the server's limit is not a failed attempt
+        continue;
+      }
+      if (res.status >= 500 && attempt < MAX_TRIES - 1) {
         lastErr = new Error(`HTTP ${res.status}`);
         await backoff(attempt);
         continue;
@@ -408,9 +422,7 @@ async function fetchLeg(
   legIndex: number,
   signal?: AbortSignal,
 ): Promise<Leg> {
-  const lonlats =
-    `${from.lng.toFixed(6)},${from.lat.toFixed(6)}|` +
-    `${to.lng.toFixed(6)},${to.lat.toFixed(6)}`;
+  const lonlats = legLonlats(from, to);
   let leg: CachedLeg;
   try {
     leg = await cachedLeg(`${lonlats}|${profile}`, (s) => routeLeg(lonlats, profile, s), signal);
@@ -423,6 +435,98 @@ async function fetchLeg(
     ...leg,
     feature: { ...leg.feature, properties: { ...leg.feature.properties, legIndex } },
   };
+}
+
+// --- Taking over a route that was already computed --------------------------
+// The Tour-Genius routes every candidate in ONE request through all stops.
+// When the rider looks at a candidate, those legs are put into the leg cache,
+// so the planner shows it without asking the server again – right after the
+// Genius burst that request would only hit the server's 403.
+
+type Pt = { lat: number; lng: number };
+
+// Same key as fetchLeg uses.
+const legLonlats = (from: Pt, to: Pt) =>
+  `${from.lng.toFixed(6)},${from.lat.toFixed(6)}|${to.lng.toFixed(6)},${to.lat.toFixed(6)}`;
+
+/**
+ * Index of the track point where each leg ends (first entry 0, last entry the
+ * last point). A via stop is matched to the nearest track point; on a loop
+ * that passes a stop twice the first pass wins.
+ */
+function splitIndices(coords: Coord[], stops: Pt[]): number[] {
+  const out = [0];
+  let from = 0;
+  for (let k = 1; k < stops.length - 1; k++) {
+    const p = [stops[k].lng, stops[k].lat];
+    let dmin = Infinity;
+    for (let j = from; j < coords.length; j++) dmin = Math.min(dmin, haversine(coords[j], p));
+    let at = from;
+    for (let j = from; j < coords.length; j++) {
+      if (haversine(coords[j], p) <= dmin + 5) {
+        at = j;
+        break;
+      }
+    }
+    out.push(at);
+    from = at;
+  }
+  out.push(coords.length - 1);
+  return out;
+}
+
+/** Split one routed line into one line per leg (shared point at each stop). */
+export function splitAtStops(coords: Coord[], stops: Pt[]): Coord[][] {
+  const b = splitIndices(coords, stops);
+  return b.slice(1).map((end, i) => coords.slice(b[i], end + 1));
+}
+
+/**
+ * Put the legs of an already routed multi-stop line into the leg cache, so
+ * fetchRoute() serves them without a request. BRouter's per-segment table
+ * ("messages": road type and length per segment) is split along, so the
+ * route details stay right even after single legs are re-routed later.
+ */
+export function primeLegs(stops: Pt[], feature: GeoJSON.Feature, profile: RouteProfile): void {
+  if (feature.geometry?.type !== "LineString" || stops.length < 2) return;
+  const coords = feature.geometry.coordinates;
+  const bounds = splitIndices(coords, stops);
+
+  // Messages rows end at a track point (micro-degrees); hand each row to the
+  // leg that contains that point.
+  const msgs = (feature.properties as { messages?: string[][] } | null)?.messages;
+  const rowsPerLeg: string[][][] = bounds.slice(1).map(() => []);
+  if (Array.isArray(msgs) && msgs.length > 1) {
+    const lonI = msgs[0].indexOf("Longitude");
+    const latI = msgs[0].indexOf("Latitude");
+    let j = 0;
+    for (const row of msgs.slice(1)) {
+      const lng = Number(row[lonI]) / 1e6;
+      const lat = Number(row[latI]) / 1e6;
+      let k = j;
+      while (k < coords.length && (Math.abs(coords[k][0] - lng) > 2e-6 || Math.abs(coords[k][1] - lat) > 2e-6)) k++;
+      if (k < coords.length) j = k;
+      let leg = bounds.findIndex((end, i) => i > 0 && end >= j) - 1;
+      if (leg < 0) leg = rowsPerLeg.length - 1;
+      rowsPerLeg[leg].push(row);
+    }
+  }
+
+  for (let i = 0; i + 1 < bounds.length; i++) {
+    const part = coords.slice(bounds[i], bounds[i + 1] + 1);
+    let m = 0;
+    for (let j = 1; j < part.length; j++) m += haversine(part[j - 1], part[j]);
+    const distanceKm = m / 1000;
+    const properties: Record<string, unknown> = { profile, "track-length": String(Math.round(m)) };
+    if (Array.isArray(msgs) && msgs.length > 1) properties.messages = [msgs[0], ...rowsPerLeg[i]];
+    legDone.set(`${legLonlats(stops[i], stops[i + 1])}|${profile}`, {
+      feature: { type: "Feature", properties, geometry: { type: "LineString", coordinates: part } },
+      distanceKm,
+      durationMin: (distanceKm / AVG_SPEED_KMH[profile]) * 60,
+      profile,
+    });
+  }
+  while (legDone.size > LEG_CACHE_MAX) legDone.delete(legDone.keys().next().value!);
 }
 
 /**

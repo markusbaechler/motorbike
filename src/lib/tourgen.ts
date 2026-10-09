@@ -42,6 +42,9 @@ export interface TourCandidate {
   doubled: number; // 0 (no overlap) … 1 (mostly retraced)
   passBonus: number; // count of curated passes this loop deliberately rides
   analysis: RouteAnalysis;
+  // The routed line through all stops (one BRouter request). Showing the
+  // candidate takes it over instead of routing it again (lib/routing primeLegs).
+  feature?: GeoJSON.Feature;
 }
 
 // Target ride distance per duration (real road km on curvy roads).
@@ -209,6 +212,7 @@ async function routeCandidate(
     doubled: doubledOf(s),
     passBonus,
     analysis: analyse([r.feature]),
+    feature: r.feature,
   };
 }
 
@@ -312,6 +316,7 @@ export async function findTours(
       doubled: doubledOf(s1),
       passBonus: 0,
       analysis: analyse([r1.feature]),
+      feature: r1.feature,
     };
 
     // Pass 2 – only worth a second request when pass 1 retraces noticeably:
@@ -330,6 +335,7 @@ export async function findTours(
         doubled: doubledOf(s2),
         passBonus: 0,
         analysis: analyse([r2.feature]),
+        feature: r2.feature,
       };
       // Keep pass 2 unless it actually got worse (more retracing).
       return cand2.doubled <= cand1.doubled + 0.02 ? cand2 : cand1;
@@ -351,6 +357,7 @@ export async function findTours(
       doubled: doubledOf(s),
       passBonus,
       analysis: analyse([r.feature]),
+      feature: r.feature,
     };
   };
 
@@ -407,6 +414,7 @@ export async function findTours(
       doubled: r.doubled,
       passBonus: r.passCount,
       analysis: analyse([r.feature]),
+      feature: r.feature,
     });
 
     let done = 0;

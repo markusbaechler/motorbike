@@ -37,7 +37,7 @@ import {
 import { addDays, buildBookingUrl } from "./lib/booking";
 import { computeDays } from "./lib/days";
 import { fetchWeather, type WeatherDay } from "./lib/weather";
-import { fetchRoute } from "./lib/routing";
+import { fetchRoute, primeLegs } from "./lib/routing";
 import { APP_NAME, CLUB_NAME, DEFAULT_CENTER, MOVED_TO } from "./config";
 import { reverseGeocode, type GeoResult } from "./lib/geocoding";
 import { DESKTOP_QUERY, useMediaQuery } from "./lib/useMediaQuery";
@@ -399,6 +399,10 @@ export default function App() {
   // route so the user can see it before deciding.
   const previewCandidate = (cand: TourCandidate, profile: RouteProfile) => {
     setPendingDay(false);
+    // The Genius already routed this loop: hand its legs to the router's
+    // cache, so showing it costs no request (right after the Genius burst a
+    // new request would only run into the server's limit).
+    if (cand.feature) primeLegs(cand.stops, cand.feature, profile);
     setWaypoints(
       cand.stops.map((s) => ({
         id: makeId(),
@@ -556,6 +560,9 @@ export default function App() {
             setPassProgress(`${p.label} ${Math.min(p.done + 1, p.total)}/${p.total} …`),
         });
         stops = opt.stops;
+        // The optimiser already routed this tour: take its legs over instead
+        // of asking the server again (see previewCandidate).
+        primeLegs(opt.stops, opt.feature, "kurvig_plus");
       } catch (e) {
         if (ctrl.signal.aborted) return; // the rider cancelled the session
         // Router unreachable → fall back to the plain marked-only ordering.

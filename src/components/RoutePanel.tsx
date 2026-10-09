@@ -5,6 +5,7 @@ import PlaceInput from "./PlaceInput";
 import { computeDays, dayStats, dayNumbers } from "../lib/days";
 import { DESKTOP_QUERY, useMediaQuery } from "../lib/useMediaQuery";
 import { canReorder, isClosedLoop } from "../lib/waypoints";
+import { useThrottleWait } from "../lib/useThrottleWait";
 import type { GeoResult } from "../lib/geocoding";
 import type { BookingPrefs } from "../lib/storage";
 import { isFair, type WeatherDay } from "../lib/weather";
@@ -184,6 +185,8 @@ export default function RoutePanel({
   onClear,
 }: Props) {
   const days = computeDays(waypoints);
+  // Seconds the router queue waits for the public server's limit (0 = none).
+  const throttleWait = useThrottleWait();
   const nums = dayNumbers(waypoints, days);
 
   // Where an inline place search is open: a leg index, "end", or nothing.
@@ -502,7 +505,13 @@ export default function RoutePanel({
         {waypoints.length === 1 && (
           <span className="hint">Nächsten Punkt setzen, um die Route zu berechnen.</span>
         )}
-        {loading && <span className="hint">Route wird berechnet …</span>}
+        {loading && (
+          <span className="hint">
+            {throttleWait > 0
+              ? `Routing-Dienst bremst kurz (zu viele Anfragen in kurzer Zeit) – geht in ${throttleWait} s automatisch weiter …`
+              : "Route wird berechnet …"}
+          </span>
+        )}
         {error && (
           <span className="error">
             ⚠ {error}
