@@ -45,6 +45,9 @@ interface Props {
   // look around, but taps, the context menu, line drags and marker drags must
   // not edit the route behind the form ("Tour erstellen" replaces it anyway).
   editLocked?: boolean;
+  // Waypoints with a route hint (out-and-back, far from the road): their
+  // marker gets a warning ring so the problem is visible on the map too.
+  warnIds?: string[];
 }
 
 const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
@@ -76,7 +79,10 @@ export default function MapView({
   passEndpoints = null,
   onSetPassMark,
   editLocked = false,
+  warnIds = [],
 }: Props) {
+  // Stable dependency for the marker effect (a new array every render).
+  const warnKey = warnIds.join("|");
   const containerRef = useRef<HTMLDivElement>(null);
   const lockedRef = useRef(editLocked);
   lockedRef.current = editLocked;
@@ -299,6 +305,7 @@ export default function MapView({
 
     const days = computeDays(waypoints);
     const nums = dayNumbers(waypoints, days);
+    const warn = new Set(warnKey ? warnKey.split("|") : []);
 
     waypoints.forEach((wp, index) => {
       const isLast = index === waypoints.length - 1;
@@ -318,6 +325,10 @@ export default function MapView({
         el.style.background = markerColor(index, waypoints.length);
         el.textContent = String(nums[index]);
       }
+      if (warn.has(wp.id)) {
+        el.classList.add("warn");
+        el.title += " – Hinweis in der Liste";
+      }
 
       const marker = new maplibregl.Marker({ element: el, draggable: !lockedRef.current })
         .setLngLat([wp.lng, wp.lat])
@@ -330,7 +341,7 @@ export default function MapView({
 
       markersRef.current.push(marker);
     });
-  }, [waypoints]);
+  }, [waypoints, warnKey]);
 
   // Lock/unlock editing on the map (markers already on it + an open menu).
   useEffect(() => {

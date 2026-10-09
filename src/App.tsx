@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import MapView, { type PassPoint } from "./components/MapView";
 import PassPlannerModal, { type PassSession } from "./components/PassPlannerModal";
 import PassSelectPanel from "./components/PassSelectPanel";
@@ -38,6 +38,7 @@ import { addDays, buildBookingUrl } from "./lib/booking";
 import { computeDays } from "./lib/days";
 import { fetchWeather, type WeatherDay } from "./lib/weather";
 import { fetchRoute } from "./lib/routing";
+import { checkRoute, legCoordinates } from "./lib/routecheck";
 import { APP_NAME, CLUB_NAME, MOVED_TO } from "./config";
 import { reverseGeocode, type GeoResult } from "./lib/geocoding";
 import { DESKTOP_QUERY, useMediaQuery } from "./lib/useMediaQuery";
@@ -597,8 +598,11 @@ export default function App() {
     .join("|");
   const waypointsRef = useRef(waypoints);
   waypointsRef.current = waypoints;
+  // The routeKey the current `route` was computed for (see routeChecks).
+  const [routedKey, setRoutedKey] = useState("");
   useEffect(() => {
     const waypoints = waypointsRef.current;
+    const key = routeKey;
     if (waypoints.length < 2) {
       setRoute(null);
       setError(null);
@@ -614,6 +618,7 @@ export default function App() {
       try {
         const result = await fetchRoute(waypoints, controller.signal);
         setRoute(result);
+        setRoutedKey(key);
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
           setRoute(null);
@@ -629,6 +634,21 @@ export default function App() {
       clearTimeout(debounceRef.current);
     };
   }, [routeKey, routeAttempt]);
+
+  // Hints per waypoint: ridden in and back out on the same road
+  // ("Stichfahrt"), or far from any drivable road. Only for the route that
+  // belongs to the current points – while an edit is being re-routed the old
+  // route would point at the wrong places.
+  const routeChecks = useMemo(
+    () => (route && routedKey === routeKey ? checkRoute(waypoints, legCoordinates(route)) : []),
+    [route, routedKey, routeKey, waypoints],
+  );
+
+  // "An Abzweigung legen" / "Auf Strasse legen": move a point to the position
+  // the hint suggests. The name says what it now marks (e.g. "Abzweigung
+  // Insone") instead of claiming to still be the village.
+  const placeWaypoint = (id: string, lng: number, lat: number, name?: string) =>
+    setWaypoints((wps) => wps.map((w) => (w.id === id ? { ...w, lng, lat, name } : w)));
 
   return (
     // pass-mode: on wide screens the sidebar is gone, so the map takes the
@@ -672,6 +692,7 @@ export default function App() {
         passEndpoints={passEndpoints}
         onSetPassMark={setPassMark}
         editLocked={sidePlanner}
+        warnIds={routeChecks.map((c) => waypoints[c.index].id)}
       />
 
       {!passSession && (
@@ -704,6 +725,8 @@ export default function App() {
         onReorderWaypoint={reorderWaypoint}
         onInsertWaypoint={insertWaypoint}
         onAppendWaypoint={addWaypoint}
+        checks={routeChecks}
+        onPlaceWaypoint={placeWaypoint}
         onClear={requestClear}
       />
       )}

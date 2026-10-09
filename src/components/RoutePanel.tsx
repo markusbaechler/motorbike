@@ -5,6 +5,7 @@ import PlaceInput from "./PlaceInput";
 import { computeDays, dayStats, dayNumbers } from "../lib/days";
 import { DESKTOP_QUERY, useMediaQuery } from "../lib/useMediaQuery";
 import { canReorder, isClosedLoop } from "../lib/waypoints";
+import { formatLegDistance, type PointCheck } from "../lib/routecheck";
 import type { GeoResult } from "../lib/geocoding";
 import type { BookingPrefs } from "../lib/storage";
 import { isFair, type WeatherDay } from "../lib/weather";
@@ -40,6 +41,9 @@ interface Props {
   // Inline place search in the list: insert into a leg, or append at the end.
   onInsertWaypoint: (legIndex: number, lng: number, lat: number, name?: string) => void;
   onAppendWaypoint: (lng: number, lat: number, name?: string) => void;
+  // Route hints per waypoint (lib/routecheck) and the "move it there" action.
+  checks: PointCheck[];
+  onPlaceWaypoint: (id: string, lng: number, lat: number, name?: string) => void;
   onClear: () => void;
 }
 
@@ -181,6 +185,8 @@ export default function RoutePanel({
   onReorderWaypoint,
   onInsertWaypoint,
   onAppendWaypoint,
+  checks,
+  onPlaceWaypoint,
   onClear,
 }: Props) {
   const days = computeDays(waypoints);
@@ -309,7 +315,7 @@ export default function RoutePanel({
               value={wp.legProfile}
               onChange={(p) => onSetLegProfile(wp.id, p)}
             />
-            {leg && <span className="segment-stats">{leg.distanceKm.toFixed(0)} km</span>}
+            {leg && <span className="segment-stats">{formatLegDistance(leg.distanceKm)}</span>}
             <button
               className={`segment-insert ${insertAt === i - 1 ? "active" : ""}`}
               onClick={() => setInsertAt(insertAt === i - 1 ? null : i - 1)}
@@ -396,6 +402,38 @@ export default function RoutePanel({
             </button>
           </span>
         </div>
+        {checks
+          .filter((c) => c.index === i)
+          .map((c) => (
+            <div className="wp-check" role="note" key={c.kind}>
+              <span>
+                ⚠{" "}
+                {c.kind === "spur"
+                  ? `Stichfahrt: ${formatLegDistance(c.meters / 1000)} hinein und auf derselben Strasse zurück.`
+                  : `Liegt ${formatLegDistance(c.meters / 1000)} neben der nächsten befahrbaren Strasse.`}
+              </span>
+              <button
+                className="wp-check-btn"
+                onClick={() =>
+                  onPlaceWaypoint(
+                    wp.id,
+                    c.fix[0],
+                    c.fix[1],
+                    // Off-road: still the same place, just on the road.
+                    // Spur: the point now marks the junction, not the village.
+                    c.kind === "offroad" ? wp.name : wp.name ? `Abzweigung ${shortName(wp)}` : undefined,
+                  )
+                }
+                title={
+                  c.kind === "spur"
+                    ? "Punkt an die Abzweigung legen: die Route fährt vorbei statt hinein und zurück"
+                    : "Punkt auf die Strasse legen, wo die Route ihn erreicht"
+                }
+              >
+                {c.kind === "spur" ? "An Abzweigung legen" : "Auf Strasse legen"}
+              </button>
+            </div>
+          ))}
       </li>
     );
   };
@@ -526,6 +564,13 @@ export default function RoutePanel({
                 <Icon name="share" size={15} /> Teilen
               </button>
             </span>
+          </span>
+        )}
+        {route && !loading && !error && checks.length > 0 && (
+          // Collapsed days hide the per-point hints, so count them here.
+          <span className="route-check-summary" role="status">
+            ⚠ {checks.length === 1 ? "1 Punkt" : `${checks.length} Punkte`} mit Hinweis
+            {" "}(Stichfahrt oder abseits der Strasse) – siehe orange markierte Punkte.
           </span>
         )}
       </div>
