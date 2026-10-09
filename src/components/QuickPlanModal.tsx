@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import Icon from "./Icon";
 import Modal from "./Modal";
 import PlaceInput from "./PlaceInput";
@@ -33,6 +33,58 @@ interface Props {
   defaultProfile: RouteProfile;
   onApply: (stops: QuickStop[]) => void;
   onClose: () => void;
+  // "modal": dialog over the map (phones, bottom sheet layout).
+  // "sidebar": fills the left sidebar on wide screens so the map stays
+  // visible next to the form instead of being dimmed behind a dialog.
+  variant?: "modal" | "sidebar";
+}
+
+/**
+ * Sidebar shell for the desktop layout: same head as a dialog (title + close),
+ * Escape closes, focus moves in on open and back to the opener on close. It
+ * is not modal: the map beside it stays usable for looking around.
+ */
+function SidebarView({
+  title,
+  onClose,
+  children,
+}: {
+  title: ReactNode;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  const boxRef = useRef<HTMLElement>(null);
+  const titleId = useId();
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    boxRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      // A dialog opened on top handles its own Escape.
+      if (e.key !== "Escape" || document.querySelector(".modal-backdrop")) return;
+      e.preventDefault();
+      onCloseRef.current();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      if (opener && document.contains(opener)) opener.focus();
+    };
+  }, []);
+
+  return (
+    <section ref={boxRef} className="side-view" aria-labelledby={titleId} tabIndex={-1}>
+      <div className="modal-head side-view-head">
+        <h2 id={titleId}>{title}</h2>
+        <button className="modal-close" onClick={onClose} aria-label="Schliessen">
+          <Icon name="x" size={18} />
+        </button>
+      </div>
+      {children}
+    </section>
+  );
 }
 
 let uid = 1;
@@ -71,6 +123,7 @@ export default function QuickPlanModal({
   defaultProfile,
   onApply,
   onClose,
+  variant = "modal",
 }: Props) {
   const init = buildInitial(initialStops, defaultProfile);
   const [start, setStart] = useState<Slot>(init.start);
@@ -235,8 +288,8 @@ export default function QuickPlanModal({
     </div>
   );
 
-  return (
-    <Modal title={initialStops ? "Tour bearbeiten" : "Tour planen"} onClose={close}>
+  const title = initialStops ? "Tour bearbeiten" : "Tour planen";
+  const body = (
         <div className="modal-body">
           <p className="modal-note" style={{ marginTop: 0 }}>
             Pro Tag ein Block. Jeder Tag startet an der Übernachtung des Vortags.
@@ -350,6 +403,15 @@ export default function QuickPlanModal({
             {busy ? "Tour wird erstellt …" : "Tour erstellen"}
           </button>
         </div>
+  );
+
+  return variant === "sidebar" ? (
+    <SidebarView title={title} onClose={close}>
+      {body}
+    </SidebarView>
+  ) : (
+    <Modal title={title} onClose={close}>
+      {body}
     </Modal>
   );
 }

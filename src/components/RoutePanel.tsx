@@ -4,6 +4,7 @@ import Modal from "./Modal";
 import PlaceInput from "./PlaceInput";
 import { computeDays, dayStats, dayNumbers } from "../lib/days";
 import { DESKTOP_QUERY, useMediaQuery } from "../lib/useMediaQuery";
+import { canReorder, isClosedLoop } from "../lib/waypoints";
 import type { GeoResult } from "../lib/geocoding";
 import type { BookingPrefs } from "../lib/storage";
 import { isFair, type WeatherDay } from "../lib/weather";
@@ -188,9 +189,15 @@ export default function RoutePanel({
   // Where an inline place search is open: a leg index, "end", or nothing.
   const [insertAt, setInsertAt] = useState<number | "end" | null>(null);
   const closeInsert = () => setInsertAt(null);
-  // Bias the search toward the middle of the leg (or the last point).
+  // A round trip ends where it starts (e.g. Tour-Genius loops). Such a tour has
+  // no final overnight to book, so we hide the accommodation UI for it. New
+  // points go in front of the closing copy of the start (see lib/waypoints).
+  const isRoundTrip = isClosedLoop(waypoints);
+
+  // Bias the search toward the middle of the leg (or the last real stop: on a
+  // round trip that is the point before the return to the start).
   const legMid = (a: Waypoint, b: Waypoint) => ({ lat: (a.lat + b.lat) / 2, lng: (a.lng + b.lng) / 2 });
-  const lastWp = waypoints[waypoints.length - 1];
+  const lastWp = waypoints[waypoints.length - (isRoundTrip ? 2 : 1)];
 
   const appendRow =
     insertAt === "end" ? (
@@ -204,17 +211,23 @@ export default function RoutePanel({
         onCancel={closeInsert}
       />
     ) : (
-      <button className="add-stop-btn wp-append" onClick={() => setInsertAt("end")}>
-        <Icon name="plus" size={15} /> Punkt anhängen
+      <button
+        className="add-stop-btn wp-append"
+        onClick={() => setInsertAt("end")}
+        title={isRoundTrip ? "Neuer Punkt wird vor der Rückkehr zum Start eingefügt" : undefined}
+      >
+        <Icon name="plus" size={15} />{" "}
+        {isRoundTrip ? "Punkt vor Rückkehr einfügen" : "Punkt anhängen"}
       </button>
     );
 
-  // A round trip ends where it starts (e.g. Tour-Genius loops). Such a tour has
-  // no final overnight to book, so we hide the accommodation UI for it.
-  const first = waypoints[0];
-  const last = waypoints[waypoints.length - 1];
-  const isRoundTrip =
-    waypoints.length >= 3 && !!first && !!last && first.lat === last.lat && first.lng === last.lng;
+  // "Tag hinzufügen" ends the day at the last real stop. On a round trip that
+  // is the point before the return; once it ends a day there is nothing left
+  // to add (every further point lands in that final day anyway).
+  const canAddDay =
+    waypoints.length >= 2 &&
+    !pendingDay &&
+    !(isRoundTrip && waypoints[waypoints.length - 2].dayEnd);
 
   // Collapse inactive days by default; only the last (active) day is open.
   // The user can toggle any day open/closed.
@@ -360,7 +373,7 @@ export default function RoutePanel({
             )}
             <button
               className="wp-btn"
-              disabled={i === 0}
+              disabled={!canReorder(waypoints, i, -1)}
               onClick={() => onReorderWaypoint(wp.id, -1)}
               aria-label="Nach oben"
             >
@@ -368,7 +381,7 @@ export default function RoutePanel({
             </button>
             <button
               className="wp-btn"
-              disabled={isLast}
+              disabled={!canReorder(waypoints, i, 1)}
               onClick={() => onReorderWaypoint(wp.id, 1)}
               aria-label="Nach unten"
             >
@@ -463,7 +476,12 @@ export default function RoutePanel({
             <button className="clear-btn" onClick={onReverse} title="Richtung umkehren">
               <Icon name="swap" size={14} /> Umkehren
             </button>
-            <button className="clear-btn" onClick={onRoundTrip} title="Zurück zum Start (Rundtour)">
+            <button
+              className="clear-btn"
+              onClick={onRoundTrip}
+              disabled={isRoundTrip}
+              title={isRoundTrip ? "Die Tour ist bereits eine Rundtour" : "Zurück zum Start (Rundtour)"}
+            >
               <Icon name="loop" size={14} /> Rundtour
             </button>
           </>
@@ -624,7 +642,7 @@ export default function RoutePanel({
         </div>
       )}
 
-      {waypoints.length >= 2 && !pendingDay && (
+      {canAddDay && (
         <button className="add-day-btn" onClick={onAddDay}>
           <Icon name="plus" size={16} /> Tag hinzufügen
         </button>
@@ -632,8 +650,10 @@ export default function RoutePanel({
 
       {waypoints.length >= 2 && (
         <p className="edit-hint">
-          „Tag hinzufügen“ beendet den Tag am letzten Punkt. Streckenlinie ziehen
-          fügt ein Zwischenziel ein.
+          {isRoundTrip
+            ? "„Tag hinzufügen“ beendet den Tag am letzten Punkt vor der Rückkehr; neue Punkte werden vor der Rückkehr eingefügt."
+            : "„Tag hinzufügen“ beendet den Tag am letzten Punkt."}{" "}
+          Streckenlinie ziehen fügt ein Zwischenziel ein.
         </p>
       )}
        </>
@@ -672,11 +692,13 @@ export default function RoutePanel({
                     <small>Richtung der Tour umdrehen</small>
                   </span>
                 </button>
-                <button className="tools-item" onClick={pick(onRoundTrip)}>
+                <button className="tools-item" onClick={pick(onRoundTrip)} disabled={isRoundTrip}>
                   <Icon name="loop" size={20} />
                   <span>
                     <strong>Rundtour</strong>
-                    <small>Zurück zum Start anhängen</small>
+                    <small>
+                      {isRoundTrip ? "Die Tour ist bereits eine Rundtour" : "Zurück zum Start anhängen"}
+                    </small>
                   </span>
                 </button>
               </>

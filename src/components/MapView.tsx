@@ -31,6 +31,9 @@ interface Props {
   onAddWaypoint: (lng: number, lat: number) => void;
   // Context menu "Start hier": the point becomes the new first waypoint.
   onPrependWaypoint: (lng: number, lat: number) => void;
+  // Context menu "Ziel hier": the point becomes the destination (opens a
+  // round trip on purpose).
+  onSetDestination: (lng: number, lat: number) => void;
   onMoveWaypoint: (id: string, lng: number, lat: number) => void;
   onInsertWaypoint: (legIndex: number, lng: number, lat: number) => void;
   // Pässeplaner: when non-null the map shows clickable pass dots and the normal
@@ -38,6 +41,10 @@ interface Props {
   passPoints?: PassPoint[] | null;
   passEndpoints?: { start: PassEndpoint; end: PassEndpoint | null } | null;
   onSetPassMark?: (key: string, mark: "need" | "nice" | null) => void;
+  // While "Tour planen" sits in the sidebar (desktop) the map stays free to
+  // look around, but taps, the context menu, line drags and marker drags must
+  // not edit the route behind the form ("Tour erstellen" replaces it anyway).
+  editLocked?: boolean;
 }
 
 const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
@@ -62,13 +69,17 @@ export default function MapView({
   fitSignal,
   onAddWaypoint,
   onPrependWaypoint,
+  onSetDestination,
   onMoveWaypoint,
   onInsertWaypoint,
   passPoints = null,
   passEndpoints = null,
   onSetPassMark,
+  editLocked = false,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const lockedRef = useRef(editLocked);
+  lockedRef.current = editLocked;
   const mapRef = useRef<maplibregl.Map | null>(null);
   const loadedRef = useRef(false);
   const markersRef = useRef<maplibregl.Marker[]>([]);
@@ -83,11 +94,13 @@ export default function MapView({
 
   const addRef = useRef(onAddWaypoint);
   const prependRef = useRef(onPrependWaypoint);
+  const destRef = useRef(onSetDestination);
   const moveRef = useRef(onMoveWaypoint);
   const insertRef = useRef(onInsertWaypoint);
   const setPassMarkRef = useRef(onSetPassMark);
   addRef.current = onAddWaypoint;
   prependRef.current = onPrependWaypoint;
+  destRef.current = onSetDestination;
   moveRef.current = onMoveWaypoint;
   insertRef.current = onInsertWaypoint;
   setPassMarkRef.current = onSetPassMark;
@@ -194,14 +207,14 @@ export default function MapView({
         return;
       }
       // In Pässeplaner mode the map is for picking passes, not adding stops.
-      if (passModeRef.current) return;
+      if (passModeRef.current || lockedRef.current) return;
       addRef.current(e.lngLat.lng, e.lngLat.lat);
     });
 
     map.on("contextmenu", (e) => {
       e.preventDefault();
       e.originalEvent.preventDefault();
-      if (passModeRef.current) return;
+      if (passModeRef.current || lockedRef.current) return;
       setCtx({ x: e.point.x, y: e.point.y, lng: e.lngLat.lng, lat: e.lngLat.lat });
     });
     map.on("movestart", () => setCtx(null));
@@ -232,6 +245,7 @@ export default function MapView({
     const onDown = (
       e: maplibregl.MapLayerMouseEvent | maplibregl.MapLayerTouchEvent,
     ) => {
+      if (lockedRef.current) return;
       const idx = e.features?.[0]?.properties?.legIndex;
       if (idx === undefined || idx === null) return;
       e.preventDefault();
@@ -305,7 +319,7 @@ export default function MapView({
         el.textContent = String(nums[index]);
       }
 
-      const marker = new maplibregl.Marker({ element: el, draggable: true })
+      const marker = new maplibregl.Marker({ element: el, draggable: !lockedRef.current })
         .setLngLat([wp.lng, wp.lat])
         .addTo(map);
 
@@ -317,6 +331,12 @@ export default function MapView({
       markersRef.current.push(marker);
     });
   }, [waypoints]);
+
+  // Lock/unlock editing on the map (markers already on it + an open menu).
+  useEffect(() => {
+    for (const m of markersRef.current) m.setDraggable(!editLocked);
+    if (editLocked) setCtx(null);
+  }, [editLocked]);
 
   // --- Sync route line ---
   useEffect(() => {
@@ -487,7 +507,7 @@ export default function MapView({
           <button role="menuitem" onClick={choose(insertVia)}>
             <Icon name="plus" size={16} /> Zwischenziel hier
           </button>
-          <button role="menuitem" onClick={choose((lng, lat) => addRef.current(lng, lat))}>
+          <button role="menuitem" onClick={choose((lng, lat) => destRef.current(lng, lat))}>
             <Icon name="check" size={16} /> Ziel hier
           </button>
         </div>
