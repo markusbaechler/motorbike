@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { clearLegCache, fetchRoute } from "./routing";
+import { clearLegCache, CURVY_PROFILE, fetchRoute } from "./routing";
 import type { Waypoint } from "../types";
 
 // "schnell" uses stock profiles only, so no profile upload gets in the way.
@@ -111,5 +111,33 @@ describe("routing against the public BRouter", () => {
     f.mockResolvedValue(resp(200));
     await fetchRoute([a, b]);
     expect(calls()).toHaveLength(2);
+  });
+});
+
+// The Fun profiles route motorcycles, not mopeds. Reported: Wolfgangpass →
+// Klosters Dorf was 121.7 km (via Chur and Landquart) instead of 9.8 km,
+// because the curvy profile, derived from BRouter's moped profile, refused
+// the Klosters bypass – an Autostrasse (motorroad=yes) motorcycles may use.
+describe("curvy profile for motorcycles", () => {
+  it("lets motorcycles use an Autostrasse (motorroad=yes)", () => {
+    expect(CURVY_PROFILE).not.toMatch(/motorroad=yes\s+10000/);
+  });
+
+  it("allows motorways, but at a cost that keeps Fun routes off them", () => {
+    const access = CURVY_PROFILE.split("assign caraccess")[0];
+    expect(access).toMatch(/highway=motorway highway=motorway_link\s+1/);
+    expect(CURVY_PROFILE).toMatch(/highway=motorway highway=motorway_link\s+20/);
+  });
+
+  it("never falls back to the moped profile for Fun 2", async () => {
+    // Profile upload fails → stock fallback chain only.
+    const f = vi.fn().mockImplementation((_url: string, init?: { method?: string }) =>
+      Promise.resolve(init?.method === "POST" ? resp(500, "down") : resp(200)),
+    );
+    vi.stubGlobal("fetch", f);
+    const [a, b] = fresh().map((w) => ({ ...w, legProfile: "kurvig_plus" as const }));
+    await fetchRoute([a, b]);
+    const routed = calls().filter((u) => u.includes("lonlats="));
+    expect(routed.map(profileOf)).not.toContain("moped");
   });
 });

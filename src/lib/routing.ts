@@ -11,19 +11,26 @@ const BROUTER = "https://brouter.de";
 // The "Fun" profiles additionally try a custom curvy profile first (uploaded
 // once to the public server, see CURVY_PROFILE) that strongly prefers small,
 // winding Landstrassen and avoids Haupt-/Schnellstrassen. If the upload or that
-// route fails, we fall back to these stock profiles.
+// route fails, we fall back to these stock profiles. No "moped": it may not
+// use an Autostrasse and would send a motorcycle on absurd detours.
 const BROUTER_PROFILES: Record<RouteProfile, string[]> = {
   kurvig: ["car-eco", "car-fast"],
-  kurvig_plus: ["moped", "car-eco"],
+  kurvig_plus: ["car-eco", "car-fast"],
   schnell: ["car-fast", "car-eco"],
 };
 
-// Custom BRouter profile (standard cost model). Based on the stock "moped"
+// Custom BRouter profile (standard cost model). Started from the stock "moped"
 // profile (full access + one-way handling) but with the cost weights inverted
 // so the smallest roads are cheapest and big roads are expensive — i.e. it
 // hunts out curvy tertiary/unclassified back-roads. Turn cost is lowered so it
 // happily takes winding roads. Uploaded to the public server on first use.
-const CURVY_PROFILE = `
+//
+// Access follows motorcycles, not mopeds: an Autostrasse (motorroad=yes) is
+// allowed, and motorways are allowed at a cost of 20 – Fun routes stay off
+// them unless the alternative is many times longer. The moped rules banned
+// both, which sent Wolfgangpass → Klosters Dorf over Chur and Landquart
+// (121.7 km instead of 9.8 km, the Klosters bypass is an Autostrasse).
+export const CURVY_PROFILE = `
 ---context:global
 
 assign downhillcost 0
@@ -54,6 +61,7 @@ assign motorverhicleaccess
               switch motor_vehicle=
                      switch vehicle=
                             switch access=
+                                   switch or highway=motorway highway=motorway_link    1
                                    switch or highway=trunk highway=trunk_link          1
                                    switch or highway=primary highway=primary_link      1
                                    switch or highway=secondary highway=secondary_link  1
@@ -79,7 +87,7 @@ assign motorcycleaccess
 
 assign accesspenalty
        switch or caraccess motorcycleaccess
-              switch motorroad=yes 10000 0
+              0
               10000
 
 assign onewaypenalty
@@ -99,6 +107,7 @@ assign costfactor
  add max onewaypenalty accesspenalty
  add switch islinktype 0.05 0
  switch and highway= not route=ferry  10000
+ switch or highway=motorway highway=motorway_link    20
  switch or highway=trunk highway=trunk_link          11
  switch or highway=primary highway=primary_link      4.5
  switch or highway=secondary highway=secondary_link  2.1
