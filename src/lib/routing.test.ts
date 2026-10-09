@@ -14,6 +14,19 @@ const resp = (status: number, body = GEOJSON) => ({
   text: async () => body,
   json: async () => JSON.parse(body),
 });
+// A BRouter answer whose line runs straight through the requested points
+// (what splitting a combined request needs).
+const lineResp = (url: string) => {
+  const pts = new URL(url).searchParams.get("lonlats")!.split("|").map((q) => q.split(",").map(Number));
+  return resp(
+    200,
+    JSON.stringify({
+      features: [{ type: "Feature", properties: { "track-length": "12000" }, geometry: { type: "LineString", coordinates: pts } }],
+    }),
+  );
+};
+const routed = () => calls().filter((u) => u.includes("lonlats="));
+const pointsOf = (url: string) => new URL(url).searchParams.get("lonlats")!.split("|").length;
 const calls = () => (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.map((c) => String(c[0]));
 const profileOf = (url: string) => new URL(url).searchParams.get("profile");
 
@@ -22,6 +35,10 @@ let counter = 0;
 const fresh = () => {
   counter++;
   return [wp("a", 8 + counter, 46), wp("b", 8.1 + counter, 46.1), wp("c", 8.2 + counter, 46.2)];
+};
+const freshN = (n: number) => {
+  counter++;
+  return Array.from({ length: n }, (_, i) => wp(`p${i}`, 8 + counter + i * 0.1, 46 + i * 0.1));
 };
 
 // Real pacing (15/min, 30 s pause) would make these tests wait for minutes.
@@ -71,16 +88,16 @@ describe("routing against the public BRouter", () => {
   });
 
   it("serves unchanged legs from the cache after an edit", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(resp(200)));
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => Promise.resolve(lineResp(url))));
     const [a, b, c] = fresh();
     await fetchRoute([a, b, c]);
-    expect(calls()).toHaveLength(2);
+    expect(calls()).toHaveLength(1); // both legs in one request
     // Move the last point: only the leg into it is new.
     await fetchRoute([a, b, { ...c, lat: c.lat + 0.01 }]);
-    expect(calls()).toHaveLength(3);
+    expect(calls()).toHaveLength(2);
     // Names and day ends do not matter for routing.
     await fetchRoute([{ ...a, name: "Start" }, { ...b, dayEnd: true }, { ...c, lat: c.lat + 0.01 }]);
-    expect(calls()).toHaveLength(3);
+    expect(calls()).toHaveLength(2);
   });
 
   it("keeps the good legs when one fails, so the retry only fetches the broken one", async () => {
@@ -92,7 +109,8 @@ describe("routing against the public BRouter", () => {
     const [a, b, c] = fresh();
     await expect(fetchRoute([a, b, c])).rejects.toThrow(/Etappe 2: HTTP 400 – target island/);
     const before = calls().length;
-    expect(before).toBe(3); // leg 1 once, leg 2 with both profiles
+    // Both legs together (refused), then leg 1 alone, leg 2 with both profiles.
+    expect(before).toBe(4);
     f.mockResolvedValue(resp(200));
     await fetchRoute([a, b, c]);
     expect(calls().length - before).toBe(1);
@@ -233,5 +251,58 @@ describe("taking over a route the Tour-Genius already computed", () => {
     expect(r.legs).toHaveLength(2);
     expect(r.legs[0].distanceKm).toBeCloseTo(0.445, 2);
     expect(r.distanceKm).toBeCloseTo(1.112, 2);
+  });
+});
+
+// A 34-point tour took minutes: one request per leg against a server that
+// allows ~15 a minute. Consecutive legs with the same riding style now go out
+// in ONE request (BRouter takes any number of points) and are split again.
+describe("combined requests for legs with the same riding style", () => {
+  it("routes consecutive legs with the same riding style in one request", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => Promise.resolve(lineResp(url))));
+    const r = await fetchRoute(freshN(5));
+    expect(routed()).toHaveLength(1);
+    expect(pointsOf(routed()[0])).toBe(5);
+    expect(r.legs).toHaveLength(4);
+    expect(r.geojson.features).toHaveLength(4);
+  });
+
+  it("starts a new request where the riding style changes", async () => {
+    // Profile upload refused → Fun legs use the stock fallback (car-eco).
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((url: string, init?: { method?: string }) =>
+        Promise.resolve(init?.method === "POST" ? resp(500, "down") : lineResp(url)),
+      ),
+    );
+    const w = freshN(5);
+    w[3] = { ...w[3], legProfile: "kurvig" };
+    w[4] = { ...w[4], legProfile: "kurvig" };
+    await fetchRoute(w);
+    expect(routed().map((u) => [profileOf(u), pointsOf(u)])).toEqual([
+      ["car-fast", 3],
+      ["car-eco", 3],
+    ]);
+  });
+
+  it("halves a refused combined request until the bad leg stands alone", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((url: string) =>
+        Promise.resolve(pointsOf(url) === 5 ? resp(400, "target island detected for section 2") : lineResp(url)),
+      ),
+    );
+    const r = await fetchRoute(freshN(5));
+    expect(routed().map(pointsOf)).toEqual([5, 3, 3]);
+    expect(r.legs).toHaveLength(4);
+  });
+
+  it("re-routes only the legs around a moved point, together", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => Promise.resolve(lineResp(url))));
+    const w = freshN(5);
+    await fetchRoute(w);
+    w[2] = { ...w[2], lat: w[2].lat + 0.01 };
+    await fetchRoute(w);
+    expect(routed().map(pointsOf)).toEqual([5, 3]);
   });
 });
