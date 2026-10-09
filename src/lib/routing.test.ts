@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { clearLegCache, CURVY_PROFILE, fetchRoute } from "./routing";
+import { clearLegCache, CURVY_PROFILE, fetchRoute, primeLegs, splitAtStops } from "./routing";
+import { configureQueue, QUEUE_DEFAULTS, resetQueue } from "./queue";
 import type { Waypoint } from "../types";
 
 // "schnell" uses stock profiles only, so no profile upload gets in the way.
@@ -23,17 +24,35 @@ const fresh = () => {
   return [wp("a", 8 + counter, 46), wp("b", 8.1 + counter, 46.1), wp("c", 8.2 + counter, 46.2)];
 };
 
-beforeEach(() => clearLegCache());
-afterEach(() => vi.unstubAllGlobals());
+// Real pacing (15/min, 30 s pause) would make these tests wait for minutes.
+const PAUSE_MS = 60;
+beforeEach(() => {
+  clearLegCache();
+  resetQueue();
+  configureQueue({ limit: 1000, windowMs: 60_000, pauseMs: PAUSE_MS });
+});
+afterEach(() => {
+  vi.unstubAllGlobals();
+  configureQueue(QUEUE_DEFAULTS);
+  resetQueue();
+});
 
 describe("routing against the public BRouter", () => {
-  it("retries a 403 with backoff and never falls back to another profile", async () => {
-    const f = vi.fn().mockResolvedValueOnce(resp(403, "Please, retry later!")).mockResolvedValue(resp(200));
+  it("waits out a 403 in the shared pause, then succeeds without a fallback profile", async () => {
+    const at: number[] = [];
+    const f = vi.fn().mockImplementation(() => {
+      at.push(Date.now());
+      return Promise.resolve(at.length === 1 ? resp(403, "Please, retry later!") : resp(200));
+    });
     vi.stubGlobal("fetch", f);
+    // Longer than the old private backoff (700 ms), so only the shared
+    // pause can explain the gap.
+    configureQueue({ limit: 1000, windowMs: 60_000, pauseMs: 1200 });
     const [a, b] = fresh();
     const r = await fetchRoute([a, b]);
     expect(r.distanceKm).toBeCloseTo(12);
     expect(calls().map(profileOf)).toEqual(["car-fast", "car-fast"]);
+    expect(at[1] - at[0]).toBeGreaterThanOrEqual(1150);
   }, 10000);
 
   it("gives up on persistent throttling with a clear message, without a fallback request", async () => {
@@ -139,5 +158,80 @@ describe("curvy profile for motorcycles", () => {
     await fetchRoute([a, b]);
     const routed = calls().filter((u) => u.includes("lonlats="));
     expect(routed.map(profileOf)).not.toContain("moped");
+  });
+});
+
+// The Tour-Genius already routed each candidate in one request. Showing it
+// must not route it again – that request came right after the Genius burst
+// and ran into the server's 403 ("Etappe 1: … ausgelastet").
+describe("taking over a route the Tour-Genius already computed", () => {
+  // A line north along lng 9.5, ~111 m per 0.001°; elevation as 3rd value.
+  const line = Array.from({ length: 11 }, (_, i) => [9.5, 46 + i * 0.001, 500 + i]);
+
+  it("splits the line at each via stop, the stop point belonging to both legs", () => {
+    const stops = [
+      { lng: 9.5, lat: 46 },
+      { lng: 9.5003, lat: 46.004 }, // ~23 m beside the line (snapped)
+      { lng: 9.5, lat: 46.01 },
+    ];
+    const legs = splitAtStops(line, stops);
+    expect(legs.map((l) => l.length)).toEqual([5, 7]);
+    expect(legs[0][legs[0].length - 1]).toEqual(legs[1][0]);
+    expect(legs[1][legs[1].length - 1]).toEqual(line[line.length - 1]);
+  });
+
+  it("takes the first pass by a stop on a loop that comes by twice", () => {
+    // Out north to 46.006, back south to the start.
+    const loop = [...line.slice(0, 7), ...line.slice(0, 6).reverse()];
+    const stops = [
+      { lng: 9.5, lat: 46 },
+      { lng: 9.5, lat: 46.003 }, // passed on the way out AND back
+      { lng: 9.5, lat: 46.006 },
+      { lng: 9.5, lat: 46 },
+    ];
+    const legs = splitAtStops(loop, stops);
+    expect(legs.map((l) => l.length)).toEqual([4, 4, 7]);
+  });
+
+  it("hands each row of BRouter's segment table to its own leg", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(resp(200)));
+    counter++;
+    const coords = line.map((c) => [c[0] + counter, c[1], c[2]]);
+    const micro = (c: number[]) => [String(Math.round(c[0] * 1e6)), String(Math.round(c[1] * 1e6))];
+    const header = ["Longitude", "Latitude", "Elevation", "Distance", "WayTags"];
+    // Segments end at points 2, 4 (= the via stop), 7 and 10.
+    const rows = [2, 4, 7, 10].map((i, n) => [...micro(coords[i]), "500", String(100 + n), `highway=road${n}`]);
+    const stops = [coords[0], coords[4], coords[10]].map((c) => ({ lng: c[0], lat: c[1] }));
+    const feature: GeoJSON.Feature = {
+      type: "Feature",
+      properties: { messages: [header, ...rows] },
+      geometry: { type: "LineString", coordinates: coords },
+    };
+    primeLegs(stops, feature, "kurvig");
+    const r = await fetchRoute(stops.map((s, i) => ({ id: `m${i}`, ...s, legProfile: "kurvig" as const })));
+    const tagsOf = (f: GeoJSON.Feature) =>
+      ((f.properties as { messages: string[][] }).messages.slice(1)).map((row) => row[4]);
+    expect(tagsOf(r.geojson.features[0])).toEqual(["highway=road0", "highway=road1"]);
+    expect(tagsOf(r.geojson.features[1])).toEqual(["highway=road2", "highway=road3"]);
+  });
+
+  it("primes the leg cache so showing the tour needs no request at all", async () => {
+    const f = vi.fn().mockResolvedValue(resp(200));
+    vi.stubGlobal("fetch", f);
+    counter++;
+    const base = 9.5 + counter; // fresh coordinates → no cache leftovers
+    const coords = line.map((c) => [c[0] + counter, c[1], c[2]]);
+    const stops = [
+      { lng: base, lat: 46 },
+      { lng: base, lat: 46.004 },
+      { lng: base, lat: 46.01 },
+    ];
+    const feature: GeoJSON.Feature = { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: coords } };
+    primeLegs(stops, feature, "kurvig_plus");
+    const r = await fetchRoute(stops.map((s, i) => ({ id: `g${i}`, ...s, legProfile: "kurvig_plus" as const })));
+    expect(f).not.toHaveBeenCalled();
+    expect(r.legs).toHaveLength(2);
+    expect(r.legs[0].distanceKm).toBeCloseTo(0.445, 2);
+    expect(r.distanceKm).toBeCloseTo(1.112, 2);
   });
 });
