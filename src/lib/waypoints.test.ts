@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  pointLabel,
   isClosedLoop,
   appendWaypoint,
   insertWaypoint,
@@ -236,5 +237,15 @@ describe("reverseWaypoints", () => {
 
   it("keeps a round trip closed", () => {
     expect(isClosedLoop(reverseWaypoints(loop()))).toBe(true);
+  });
+});
+
+describe("pointLabel", () => {
+  const at = { lat: 46.6342, lng: 8.5943 };
+  it("shortens looked-up names, keeps typed ones, falls back to coordinates", () => {
+    expect(pointLabel({ ...at, name: "Andermatt, Uri, Schweiz" })).toBe("Andermatt");
+    expect(pointLabel({ ...at, name: "Kaffee, Löwen", nameEdited: true })).toBe("Kaffee, Löwen");
+    expect(pointLabel(at)).toBe("46.634, 8.594");
+    expect(pointLabel(at, "Punkt 2")).toBe("Punkt 2");
   });
 });

@@ -4,7 +4,7 @@ import Modal from "./Modal";
 import PlaceInput from "./PlaceInput";
 import { computeDays, dayStats, dayNumbers } from "../lib/days";
 import { DESKTOP_QUERY, useMediaQuery } from "../lib/useMediaQuery";
-import { canReorder, isClosedLoop } from "../lib/waypoints";
+import { canReorder, isClosedLoop, pointLabel } from "../lib/waypoints";
 import { useThrottleWait } from "../lib/useThrottleWait";
 import type { GeoResult } from "../lib/geocoding";
 import type { BookingPrefs } from "../lib/storage";
@@ -37,6 +37,7 @@ interface Props {
   weather: Record<string, WeatherDay | null>;
   onAddDay: () => void;
   onRemoveWaypoint: (id: string) => void;
+  onRenameWaypoint: (id: string, name: string) => void;
   onReorderWaypoint: (id: string, direction: -1 | 1) => void;
   // Inline place search in the list: insert into a leg, or append at the end.
   onInsertWaypoint: (legIndex: number, lng: number, lat: number, name?: string) => void;
@@ -107,8 +108,46 @@ function placeName(wp: Waypoint): string {
 // Short display name: just the locality (drops region/country after the
 // comma). Coordinates keep both halves, "47.690" alone says nothing.
 function shortName(wp: Waypoint): string {
-  if (!wp.name) return `${wp.lat.toFixed(3)}, ${wp.lng.toFixed(3)}`;
-  return wp.name.split(",")[0].trim();
+  return pointLabel(wp);
+}
+
+/**
+ * The point's name as a quiet text field: click and type to rename it
+ * ("Kaffeehalt Löwen"), Enter or leaving the field saves, Escape cancels,
+ * emptying it brings back the place name. The position doesn't change.
+ */
+function WpName({ wp, onRename }: { wp: Waypoint; onRename: (id: string, name: string) => void }) {
+  const shown = wp.name ? shortName(wp) : "";
+  const [draft, setDraft] = useState<string | null>(null);
+  const cancelRef = useRef(false);
+  return (
+    <input
+      className="wp-name-input"
+      value={draft ?? shown}
+      placeholder={wp.name ? "" : "Ort wird gesucht …"}
+      aria-label="Name des Punkts"
+      title="Klicken zum Umbenennen"
+      onFocus={(e) => {
+        setDraft(shown);
+        e.currentTarget.select();
+      }}
+      onChange={(e) => setDraft(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") e.currentTarget.blur();
+        if (e.key === "Escape") {
+          e.stopPropagation();
+          cancelRef.current = true;
+          e.currentTarget.blur();
+        }
+      }}
+      onBlur={() => {
+        const next = (draft ?? shown).trim();
+        if (!cancelRef.current && next !== shown) onRename(wp.id, next);
+        cancelRef.current = false;
+        setDraft(null);
+      }}
+    />
+  );
 }
 
 function weatherIcon(code: number): IconName {
@@ -179,6 +218,7 @@ export default function RoutePanel({
   weather,
   onAddDay,
   onRemoveWaypoint,
+  onRenameWaypoint,
   onReorderWaypoint,
   onInsertWaypoint,
   onAppendWaypoint,
@@ -353,7 +393,7 @@ export default function RoutePanel({
           </span>
           <div className="wp-main">
             <span className="wp-name">
-              {shortName(wp)}
+              <WpName wp={wp} onRename={onRenameWaypoint} />
               {wp.dayEnd && (
                 <span className="bed-tag" title="Übernachtung">
                   <Icon name="bed" size={13} />

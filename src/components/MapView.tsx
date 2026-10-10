@@ -6,6 +6,7 @@ import { DEFAULT_CENTER, DEFAULT_ZOOM, MAP_STYLE_URL } from "../config";
 import { computeDays, dayNumbers } from "../lib/days";
 import type { FocusPoint } from "../App";
 import type { RouteResult, Waypoint } from "../types";
+import { pointLabel } from "../lib/waypoints";
 
 export interface PassPoint {
   key: string;
@@ -323,7 +324,7 @@ export default function MapView({
       const el = document.createElement("div");
       // Hover tooltip with the place name (desktop); map-placed points show
       // their coordinates.
-      el.title = wp.name ? wp.name.split(",")[0].trim() : `${wp.lat.toFixed(3)}, ${wp.lng.toFixed(3)}`;
+      el.title = pointLabel(wp);
       if (isOvernight) {
         // Highlight overnight stops with a bed marker (inline SVG, not emoji).
         el.className = "wp-marker bed";

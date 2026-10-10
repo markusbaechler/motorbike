@@ -2,6 +2,7 @@ import { computeDays, dayStats } from "./days";
 import { analyse, type ElevationPoint, type RouteAnalysis } from "./analysis";
 import type { RouteResult, RouteProfile, Waypoint } from "../types";
 import type { WeatherDay } from "./weather";
+import { pointLabel } from "./waypoints";
 
 const PROF_LABEL: Record<RouteProfile, string> = {
   kurvig: "Fun 1",
@@ -23,7 +24,7 @@ function fmtDate(iso?: string): string {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("de-CH");
 }
 function short(wp: Waypoint): string {
-  return (wp.name ?? `${wp.lat.toFixed(3)}, ${wp.lng.toFixed(3)}`).split(",")[0].trim();
+  return pointLabel(wp);
 }
 
 function svgProfile(profile: ElevationPoint[], minEle: number, maxEle: number): string {

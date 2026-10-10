@@ -569,10 +569,37 @@ button {
 }
 
 .wp-name {
-  display: block;
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+/* Name looks like text until hovered/clicked, then it's an input. */
+.wp-name-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font: inherit;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 3px 6px;
+  margin-left: -6px;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  cursor: text;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.wp-name-input::placeholder {
+  color: var(--muted);
+  font-style: italic;
+}
+.wp-name-input:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+.wp-name-input:focus {
+  outline: none;
+  background: rgba(0, 0, 0, 0.25);
+  border-color: var(--accent);
 }
 
 .wp-actions {

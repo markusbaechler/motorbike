@@ -8,6 +8,17 @@
 
 import type { RouteProfile, Waypoint } from "../types";
 
+/**
+ * Short label of a point for lists, markers, roadbook and GPX: the first part
+ * of a looked-up place ("Andermatt, Uri, Schweiz" → "Andermatt"); a name the
+ * rider typed stays whole; no name → the coordinates (or `fallback`).
+ */
+export function pointLabel(wp: Pick<Waypoint, "name" | "nameEdited" | "lat" | "lng">, fallback?: string): string {
+  if (!wp.name) return fallback ?? `${wp.lat.toFixed(3)}, ${wp.lng.toFixed(3)}`;
+  if (wp.nameEdited) return wp.name;
+  return wp.name.split(",")[0].trim();
+}
+
 // A point about to become a waypoint: position, optional name, fresh id.
 export type NewPoint = Pick<Waypoint, "id" | "lng" | "lat" | "name">;
 

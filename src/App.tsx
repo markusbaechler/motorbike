@@ -305,7 +305,7 @@ export default function App() {
 
   const moveWaypoint = (id: string, lng: number, lat: number) =>
     setWaypoints((wps) =>
-      wps.map((w) => (w.id === id ? { ...w, lng, lat, name: undefined } : w)),
+      wps.map((w) => (w.id === id ? { ...w, lng, lat, name: w.nameEdited ? w.name : undefined } : w)),
     );
 
   const removeWaypoint = (id: string) =>
@@ -441,9 +441,9 @@ export default function App() {
     previewCandidate(geniusCands[next], geniusProfile.current);
   };
 
-  // Give points the Tour-Genius placed on the map (ring vias, the far side
-  // of a pass loop) a real name once the rider keeps the tour, one lookup at
-  // a time. Names only ever fill a gap, so an edit meanwhile is never undone.
+  // Give points without a name (map taps, drags, Tour-Genius points once the
+  // tour is kept) a real place name, one lookup at a time. Names only ever
+  // fill a gap at the same spot, so an edit or a move meanwhile is never undone.
   const nameUnnamedPoints = async (list: Waypoint[]) => {
     for (const w of list) {
       if (w.name) continue;
@@ -454,13 +454,34 @@ export default function App() {
         name = null;
       }
       if (!name) continue;
-      setWaypoints((prev) => prev.map((p) => (p.id === w.id && !p.name ? { ...p, name } : p)));
+      setWaypoints((prev) =>
+        prev.map((p) => (p.id === w.id && !p.name && p.lat === w.lat && p.lng === w.lng ? { ...p, name } : p)),
+      );
     }
+  };
+  // Each point is looked up once per position (a move asks again).
+  const namedKeys = useRef(new Set<string>());
+  const nameKey = (w: Waypoint) => `${w.id}@${w.lat},${w.lng}`;
+  useEffect(() => {
+    // Previews (Tour-Genius) and the Pässeplaner don't keep their points yet.
+    if (geniusCands || passSession) return;
+    const todo = waypoints.filter((w) => !w.name && !namedKeys.current.has(nameKey(w)));
+    if (todo.length === 0) return;
+    todo.forEach((w) => namedKeys.current.add(nameKey(w)));
+    void nameUnnamedPoints(todo);
+  }, [waypoints, geniusCands, passSession]);
+
+  // Name typed in the list. Empty brings the looked-up place name back.
+  const renameWaypoint = (id: string, name: string) => {
+    const w = waypoints.find((p) => p.id === id);
+    if (w && !name) namedKeys.current.delete(nameKey(w));
+    setWaypoints((wps) =>
+      wps.map((p) => (p.id === id ? { ...p, name: name || undefined, nameEdited: !!name || undefined } : p)),
+    );
   };
 
   const geniusAccept = () => {
-    setGeniusCands(null); // keep the route as-is
-    void nameUnnamedPoints(waypoints);
+    setGeniusCands(null); // keep the route as-is; its points get named above
   };
 
   const geniusDiscard = () => {
@@ -728,6 +749,7 @@ export default function App() {
         weather={weather}
         onAddDay={addDay}
         onRemoveWaypoint={removeWaypoint}
+        onRenameWaypoint={renameWaypoint}
         onReorderWaypoint={reorderWaypoint}
         onInsertWaypoint={insertWaypoint}
         onAppendWaypoint={addWaypoint}

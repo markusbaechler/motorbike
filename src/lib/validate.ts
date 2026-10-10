@@ -36,6 +36,7 @@ export function sanitizeWaypoint(raw: unknown, idPrefix = "v"): Waypoint | null 
     lat: o.lat,
     legProfile: isRouteProfile(o.legProfile) ? o.legProfile : "kurvig",
     name: text(o.name, 200),
+    nameEdited: (o.nameEdited === true && !!text(o.name, 200)) || undefined,
     dayEnd: o.dayEnd === true || undefined,
     dayName: text(o.dayName, 80),
     dayDate: isIsoDate(o.dayDate) ? o.dayDate : undefined,

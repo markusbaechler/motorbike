@@ -26,7 +26,8 @@ function b64urlDecode(s: string): string {
   return decodeURIComponent(escape(atob(s.replace(/-/g, "+").replace(/_/g, "/") + pad)));
 }
 
-type Row = [number, number, string, number, string, string, string];
+// Optional 8th field: 1 = name typed by the rider (older links have 7).
+type Row = [number, number, string, number, string, string, string, number?];
 
 // Routed distance/time, embedded so the website can show them for club tours
 // without routing at build time. The planner itself ignores them on import.
@@ -36,15 +37,19 @@ export interface ShareStats {
 }
 
 export function encodeRoute(waypoints: Waypoint[], stats?: ShareStats): string {
-  const w: Row[] = waypoints.map((p) => [
-    Number(p.lng.toFixed(5)),
-    Number(p.lat.toFixed(5)),
-    PROF_TO_CODE[p.legProfile] ?? "k",
-    p.dayEnd ? 1 : 0,
-    p.name ?? "",
-    p.dayName ?? "",
-    p.dayDate ?? "",
-  ]);
+  const w: Row[] = waypoints.map((p) => {
+    const row: Row = [
+      Number(p.lng.toFixed(5)),
+      Number(p.lat.toFixed(5)),
+      PROF_TO_CODE[p.legProfile] ?? "k",
+      p.dayEnd ? 1 : 0,
+      p.name ?? "",
+      p.dayName ?? "",
+      p.dayDate ?? "",
+    ];
+    if (p.nameEdited && p.name) row.push(1);
+    return row;
+  });
   const payload: { v: 1; w: Row[]; s?: [number, number] } = { v: 1, w };
   if (stats && Number.isFinite(stats.distanceKm) && Number.isFinite(stats.durationMin)) {
     payload.s = [Math.round(stats.distanceKm), Math.round(stats.durationMin)];
@@ -68,6 +73,7 @@ export function decodeRoute(code: string): Waypoint[] | null {
             name: r[4] || undefined,
             dayName: r[5] || undefined,
             dayDate: r[6] || undefined,
+            nameEdited: r[7] === 1,
           }
         : null,
     );
