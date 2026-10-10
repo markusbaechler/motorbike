@@ -3279,3 +3279,8 @@ button {
 .wx-time { opacity: 0.8; }
 .wx-temp { font-weight: 600; }
 .wx-mm, .wx-name { font-size: 0.68rem; opacity: 0.8; max-width: 80px; text-align: center; }
+.wx-marker { padding: 2px 6px; border-radius: 10px; background: rgba(255, 255, 255, 0.92); color: #0f172a; font-size: 12px; font-weight: 600; box-shadow: 0 1px 4px rgba(15, 23, 42, 0.35); white-space: nowrap; cursor: pointer; }
+.wx-marker.pass { background: #ffedd5; }
+.maplibregl-popup-content { white-space: pre-line; }
+.map-wx-toggle { position: absolute; top: 10px; right: 10px; z-index: 2; padding: 6px 10px; border-radius: 8px; border: 0; background: rgba(15, 23, 42, 0.75); color: #f8fafc; font-size: 13px; cursor: pointer; }
+.map-wx-toggle.on { background: #0ea5e9; }
