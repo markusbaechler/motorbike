@@ -3250,3 +3250,15 @@ button {
 .home-footer {
   margin-top: 14px;
 }
+
+/* Named passes under the statistics in Tour-Details */
+.pass-names {
+  margin: 10px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.pass-names .icon {
+  vertical-align: -2px;
+  color: var(--accent);
+}

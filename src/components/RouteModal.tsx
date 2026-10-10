@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Icon from "./Icon";
 import Modal from "./Modal";
 import ElevationChart from "./ElevationChart";
-import { analyse, type RouteAnalysis } from "../lib/analysis";
+import { analyse, type KnownPass, type RouteAnalysis } from "../lib/analysis";
+import { ensureEuroPasses } from "../lib/passplanner";
 import { buildGpx, downloadGpx } from "../lib/gpx";
 import { openRoadbook } from "../lib/roadbook";
 import { prefetchRouteTiles } from "../lib/offline";
@@ -90,7 +91,21 @@ function ScoreBar({ icon, label, value }: { icon: Parameters<typeof Icon>[0]["na
 }
 
 export default function RouteModal({ waypoints, route, weather, onClose }: Props) {
-  const analysis = useMemo(() => analyse(route.geojson.features), [route]);
+  // Named passes (same list as the Pässeplaner). Until it is loaded – or when
+  // it can't be (offline) – passes are estimated from the elevation profile.
+  const [knownPasses, setKnownPasses] = useState<KnownPass[] | undefined>();
+  useEffect(() => {
+    let alive = true;
+    ensureEuroPasses()
+      .then((list) => alive && setKnownPasses(list))
+      .catch(() => {
+        /* keep the estimate */
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const analysis = useMemo(() => analyse(route.geojson.features, knownPasses), [route, knownPasses]);
   const days = useMemo(() => computeDays(waypoints), [waypoints]);
   const multiDay = days.length > 1;
   const [showWhole, setShowWhole] = useState(false);
@@ -130,9 +145,9 @@ export default function RouteModal({ waypoints, route, weather, onClose }: Props
           const i = (f.properties?.legIndex ?? -1) as number;
           return i >= d.startIdx && i < d.endIdx;
         });
-        return { span: d, a: analyse(feats), overnight: waypoints[d.endIdx] };
+        return { span: d, a: analyse(feats, knownPasses), overnight: waypoints[d.endIdx] };
       }),
-    [days, route, waypoints],
+    [days, route, waypoints, knownPasses],
   );
 
   const exportWhole = (mode: "waypoints" | "route" | "track") =>
@@ -152,20 +167,27 @@ export default function RouteModal({ waypoints, route, weather, onClose }: Props
       [a.roadKm.haupt.toFixed(0), "km Hauptstr."],
       [a.roadKm.schnell.toFixed(0), "km Schnellstr."],
       [a.roadKm.autobahn.toFixed(0), "km Autobahn"],
-      [String(a.passes), "Pässe"],
+      [String(a.passes), a.passNames ? "Pässe" : "Anstiege"],
       [`${a.maxEle}`, "höchster Pkt (m)"],
       [`${a.ascentM}`, "Anstieg (m)"],
       [a.cornersPerKm.toFixed(1), "Kurven / km"],
     ];
     return (
-      <div className="stat-grid">
-        {items.map(([v, l]) => (
-          <div className="stat" key={l}>
-            <span className="stat-val">{v}</span>
-            <span className="stat-lbl">{l}</span>
-          </div>
-        ))}
-      </div>
+      <>
+        <div className="stat-grid">
+          {items.map(([v, l]) => (
+            <div className="stat" key={l}>
+              <span className="stat-val">{v}</span>
+              <span className="stat-lbl">{l}</span>
+            </div>
+          ))}
+        </div>
+        {a.passNames && a.passNames.length > 0 && (
+          <p className="pass-names">
+            <Icon name="mountain" size={14} /> {a.passNames.join(" · ")}
+          </p>
+        )}
+      </>
     );
   };
 
@@ -198,7 +220,7 @@ export default function RouteModal({ waypoints, route, weather, onClose }: Props
           <section className="modal-section card">
             <ScoreBar icon="zap" label="Kurvenreichtum" value={analysis.scores.curves} />
             <ScoreBar icon="mountain" label="Bergigkeit & Pässe" value={analysis.scores.mountains} />
-            <ScoreBar icon="scenery" label="Landschaft (kleine Strassen)" value={analysis.scores.scenic} />
+            <ScoreBar icon="scenery" label="Strassen (wenig Autobahn)" value={analysis.scores.scenic} />
           </section>
 
           {/* Statistics */}
@@ -229,7 +251,7 @@ export default function RouteModal({ waypoints, route, weather, onClose }: Props
                   </div>
                   <div className="day-rating-meta">
                     {dayStats(span, route).distanceKm.toFixed(0)} km · Kurven {a.scores.curves} ·
-                    Berg {a.scores.mountains} · {a.passes} Pässe
+                    Berg {a.scores.mountains} · {a.passes} {a.passNames ? "Pässe" : "Anstiege"}
                   </div>
                   <ElevationChart profile={a.profile} minEle={a.minEle} maxEle={a.maxEle} />
                 </div>
@@ -265,7 +287,7 @@ export default function RouteModal({ waypoints, route, weather, onClose }: Props
             <button
               className="export-btn"
               style={{ width: "100%" }}
-              onClick={() => openRoadbook("Tour", waypoints, route, weather)}
+              onClick={() => openRoadbook("Tour", waypoints, route, weather, knownPasses)}
             >
               <Icon name="print" size={16} /> Roadbook drucken / als PDF
             </button>
@@ -331,10 +353,11 @@ export default function RouteModal({ waypoints, route, weather, onClose }: Props
         >
           <div className="modal-body">
             <ul className="info-list">
-              <li><strong>Gesamt</strong> = Kurven 40 % + Bergigkeit 30 % + Landschaft 30 %.</li>
-              <li><strong>Kurvenreichtum</strong>: echte Richtungswechsel ({">"}25°) pro km. Schon ~2 Kurven/km = Maximum.</li>
-              <li><strong>Bergigkeit & Pässe</strong>: höchster Punkt (Passhöhe), Anzahl Pässe und Höhenmeter pro km.</li>
-              <li><strong>Landschaft</strong>: Anteil kleiner Neben-/Landstrassen, abzüglich Autobahnanteil.</li>
+              <li><strong>Gesamt</strong> = Kurven 40 % + Bergigkeit 40 % + Strassen 20 %.</li>
+              <li><strong>Kurvenreichtum</strong>: echte Richtungswechsel ({">"}25°) pro km, mit abnehmendem Zuwachs: 1 Kurve/km ≈ 3,7 · 2,5 ≈ 7,7 · 3 ≈ 8,3 · 5 ≈ 9,6.</li>
+              <li><strong>Bergigkeit & Pässe</strong>: relativ zum Gelände statt absolute Höhe – Höhenunterschied der Tour (40 %, 1400 m = 10), Höhenmeter pro km (30 %, 16 m/km = 10) und befahrene Pässe aus der Pass-Liste des Pässeplaners (30 %, 8 Pässe = 10).</li>
+              <li><strong>Strassen</strong>: Autobahn zählt voll gegen die Tour, Schnellstrassen zu 60 %, Hauptstrassen zu 25 % (Alpenpässe sind Hauptstrassen und sollen nicht wie Autobahn zählen).</li>
+              <li><strong>Einstufung</strong>: ab 8 Traumstrecke · ab 6,5 sehr reizvoll · ab 5 reizvoll · ab 3,5 solide.</li>
             </ul>
             <p className="modal-note">
               Es handelt sich um eine berechnete Einschätzung aus Geometrie, Höhenprofil und

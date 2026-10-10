@@ -21,13 +21,16 @@ export interface RouteAnalysis {
   minEle: number;
   maxEle: number;
   cornersPerKm: number;
+  // Named passes the route crosses (from the pass list), in route order. When
+  // no list is given, `passes` falls back to counting climbs in the profile.
   passes: number;
+  passNames: string[] | null;
   hasRoadData: boolean;
   roadKm: RoadKm;
   scores: {
     curves: number; // 0–10 Kurvenreichtum
     mountains: number; // 0–10 Bergigkeit
-    scenic: number; // 0–10 Landschaft / kleine Strassen
+    scenic: number; // 0–10 kleine Strassen, wenig Autobahn
     overall: number; // 0–10 Gesamt-Attraktivität
   };
 }
@@ -104,8 +107,49 @@ function roadBreakdown(features: GeoJSON.Feature[]): { roadKm: RoadKm; hasData: 
   };
 }
 
-// Count mountain passes as prominent high points in the elevation profile
-// (a climb of >=thresh followed by a descent of >=thresh).
+export interface KnownPass {
+  name: string;
+  lat: number;
+  lng: number;
+}
+
+// A pass counts when the route passes within this distance of its point.
+const PASS_RADIUS_M = 300;
+
+/**
+ * Named passes along the route, in the order they are ridden. Each pass is
+ * compared with the track (thinned to ~100 m) after a cheap bounding-box test.
+ */
+export function passesOnRoute(coords: Coord[], known: KnownPass[]): string[] {
+  if (coords.length === 0) return [];
+  let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+  for (const c of coords) {
+    minLat = Math.min(minLat, c[1]); maxLat = Math.max(maxLat, c[1]);
+    minLng = Math.min(minLng, c[0]); maxLng = Math.max(maxLng, c[0]);
+  }
+  const pad = 0.01;
+  const near = known.filter(
+    (p) => p.lat >= minLat - pad && p.lat <= maxLat + pad && p.lng >= minLng - pad && p.lng <= maxLng + pad,
+  );
+  if (near.length === 0) return [];
+  const track = thin(coords, 100);
+  const found: { name: string; at: number }[] = [];
+  for (const p of near) {
+    const pc: Coord = [p.lng, p.lat];
+    for (let i = 0; i < track.length; i++) {
+      if (Math.abs(track[i][1] - p.lat) > 0.01 || Math.abs(track[i][0] - p.lng) > 0.015) continue;
+      if (haversine(track[i], pc) <= PASS_RADIUS_M) {
+        if (!found.some((f) => f.name === p.name)) found.push({ name: p.name, at: i });
+        break;
+      }
+    }
+  }
+  return found.sort((a, b) => a.at - b.at).map((f) => f.name);
+}
+
+// Fallback without a pass list: prominent high points in the elevation profile
+// (a climb of >=thresh followed by a descent of >=thresh). Overcounts in hilly
+// country (every Jura ridge is a "pass"), hence only a fallback.
 function countPasses(eles: number[], thresh = 140): number {
   if (eles.length < 3) return 0;
   let passes = 0;
@@ -131,7 +175,7 @@ function countPasses(eles: number[], thresh = 140): number {
   return passes;
 }
 
-export function analyse(features: GeoJSON.Feature[]): RouteAnalysis {
+export function analyse(features: GeoJSON.Feature[], knownPasses?: KnownPass[]): RouteAnalysis {
   const coords = collectCoords(features);
 
   const profile: ElevationPoint[] = [];
@@ -174,22 +218,33 @@ export function analyse(features: GeoJSON.Feature[]): RouteAnalysis {
   const cornersPerKm = cornerCount / totalKm;
 
   const { roadKm, hasData } = roadBreakdown(features);
-  const passes = hasElevation ? countPasses(profile.map((p) => p.ele)) : 0;
+  const passNames = knownPasses ? passesOnRoute(coords, knownPasses) : null;
+  const passes = passNames ? passNames.length : hasElevation ? countPasses(profile.map((p) => p.ele)) : 0;
 
   // --- Sub-scores (each 0–1) ---
-  // Curves: 2 real corners/km already counts as very twisty.
-  const curve01 = clamp(cornersPerKm / 2, 0, 1);
-  // Mountains: how high it goes (pass altitude) + number of passes + climb.
-  const alt01 = hasElevation ? clamp(maxEle / 2400, 0, 1) : 0;
-  const pass01 = clamp(passes / 4, 0, 1);
-  const ascent01 = clamp(ascentM / totalKm / 18, 0, 1);
-  const mountains01 = clamp(0.5 * alt01 + 0.3 * pass01 + 0.2 * ascent01, 0, 1);
-  // Scenery proxy: share of distance on small/back roads (motorways & trunk
-  // roads are already excluded from "neben").
-  const scenicShare = hasData ? roadKm.neben / totalKm : 0.5;
-  const scenic01 = clamp(scenicShare, 0, 1);
+  // Calibrated on the club tours and reference routes so that the club's
+  // favourites (Jura XXL, the Ticino rounds) land around 8, alpine pass
+  // tours higher, a flat Mittelland loop clearly lower and motorway near 0.
+  // Measures are relative to the terrain (relief, climb, passes) rather than
+  // absolute altitude, so a great Jura tour isn't held down by not being
+  // 2400 m high.
+  // Curves: rising quickly, then levelling off (diminishing returns):
+  // 1 corner/km ≈ 3.7, 2.5 ≈ 7.7, 3 ≈ 8.3, 5 ≈ 9.6.
+  const curve01 = 1 - Math.exp(-Math.max(0, cornersPerKm - 0.3) / 1.5);
+  // Mountains: relief (highest minus lowest point, 1400 m = full), climbing
+  // per km (16 m/km = full) and named passes (8 = full).
+  const relief01 = hasElevation ? clamp((maxEle - minEle) / 1400, 0, 1) : 0;
+  const ascent01 = clamp(ascentM / totalKm / 16, 0, 1);
+  const pass01 = clamp(passes / 8, 0, 1);
+  const mountains01 = clamp(0.4 * relief01 + 0.3 * ascent01 + 0.3 * pass01, 0, 1);
+  // Roads: motorway counts fully against the tour, trunk roads mostly, main
+  // roads a little (alpine passes are main roads in OSM, so they must not be
+  // punished as hard as a motorway).
+  const scenic01 = hasData
+    ? clamp(1 - (roadKm.autobahn + 0.6 * roadKm.schnell + 0.25 * roadKm.haupt) / totalKm, 0, 1)
+    : 0.5;
 
-  const overall = round1((curve01 * 0.4 + mountains01 * 0.3 + scenic01 * 0.3) * 10);
+  const overall = round1((curve01 * 0.4 + mountains01 * 0.4 + scenic01 * 0.2) * 10);
 
   return {
     distanceKm,
@@ -201,6 +256,7 @@ export function analyse(features: GeoJSON.Feature[]): RouteAnalysis {
     maxEle: hasElevation ? Math.round(maxEle) : 0,
     cornersPerKm: Math.round(cornersPerKm * 10) / 10,
     passes,
+    passNames,
     hasRoadData: hasData,
     roadKm,
     scores: {
