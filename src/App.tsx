@@ -10,7 +10,7 @@ import {
 import { optimizeLoop } from "./lib/passopt";
 import RoutePanel from "./components/RoutePanel";
 import RouteModal from "./components/RouteModal";
-import QuickPlanModal, { type QuickStop } from "./components/QuickPlanModal";
+import QuickPlanModal, { planSlotId, type MapPick, type QuickStop } from "./components/QuickPlanModal";
 import TourGeniusModal from "./components/TourGeniusModal";
 import TourGeniusPreview from "./components/TourGeniusPreview";
 import type { TourCandidate } from "./lib/tourgen";
@@ -102,6 +102,16 @@ export default function App() {
   // the route behind the form) is hidden and the map can't edit the route.
   const desktop = useMediaQuery(DESKTOP_QUERY);
   const sidePlanner = desktop && showQuickPlan;
+  // Sidebar planner <-> map: picks go into the form, its points come back.
+  const [mapPick, setMapPick] = useState<MapPick | null>(null);
+  const [planPoints, setPlanPoints] = useState<Waypoint[]>([]);
+  const pickSeq = useRef(0);
+  const onPlanPick = (lng: number, lat: number, target?: "start" | "via" | "end") =>
+    setMapPick({ seq: ++pickSeq.current, lng, lat, target });
+  const onPlanMove = (id: string, lng: number, lat: number) => {
+    const slotId = planSlotId(id);
+    if (slotId !== null) setMapPick({ seq: ++pickSeq.current, lng, lat, slotId });
+  };
   const [showTourGenius, setShowTourGenius] = useState(false);
   // Tour-Genius map preview: candidates being previewed (round trips), the
   // currently shown one, and the waypoints to restore if the user discards.
@@ -674,7 +684,7 @@ export default function App() {
         // The Pässeplaner is a dedicated mode (the SearchBox is hidden too):
         // don't clutter it with the normal route's waypoints/line, which may
         // include a restored draft from an earlier session.
-        waypoints={passSession ? [] : waypoints}
+        waypoints={passSession ? [] : sidePlanner ? planPoints : waypoints}
         route={passSession ? null : route}
         focus={focus}
         fitSignal={fitSignal}
@@ -687,6 +697,8 @@ export default function App() {
         passEndpoints={passEndpoints}
         onSetPassMark={setPassMark}
         editLocked={sidePlanner}
+        onPlanPick={sidePlanner ? onPlanPick : undefined}
+        onPlanMove={sidePlanner ? onPlanMove : undefined}
       />
 
       {!passSession && (
@@ -773,6 +785,8 @@ export default function App() {
           }
           onApply={applyQuickPlan}
           onClose={() => setShowQuickPlan(false)}
+          mapPick={desktop ? mapPick : null}
+          onPointsChange={setPlanPoints}
         />
       )}
 

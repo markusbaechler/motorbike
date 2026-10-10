@@ -8,6 +8,7 @@ interface Props {
   autoFocus?: boolean;
   onChange: (value: string) => void;
   onPick: (result: GeoResult) => void;
+  onFocus?: () => void;
 }
 
 /**
@@ -20,7 +21,7 @@ interface Props {
  * parent (pre-filled stops, the resolved name after a pick) never reopen the
  * suggestion list.
  */
-export default function PlaceInput({ value, placeholder, bias, autoFocus, onChange, onPick }: Props) {
+export default function PlaceInput({ value, placeholder, bias, autoFocus, onChange, onPick, onFocus }: Props) {
   const [results, setResults] = useState<GeoResult[]>([]);
   // The text the shown results belong to (the list lags behind typing).
   const [resultsFor, setResultsFor] = useState("");
@@ -155,7 +156,10 @@ export default function PlaceInput({ value, placeholder, bias, autoFocus, onChan
           typed.current = true;
           onChange(e.target.value);
         }}
-        onFocus={() => results.length > 0 && setOpen(true)}
+        onFocus={() => {
+          onFocus?.();
+          if (results.length > 0) setOpen(true);
+        }}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         onKeyDown={onKeyDown}
         role="combobox"
