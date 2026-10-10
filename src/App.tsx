@@ -10,7 +10,9 @@ import {
 import { optimizeLoop } from "./lib/passopt";
 import RoutePanel from "./components/RoutePanel";
 import RouteModal from "./components/RouteModal";
-import QuickPlanModal, { type QuickStop } from "./components/QuickPlanModal";
+import NavRail, { type Section } from "./components/NavRail";
+import DesktopWelcome from "./components/DesktopWelcome";
+import QuickPlanModal, { planSlotId, type MapPick, type QuickStop } from "./components/QuickPlanModal";
 import TourGeniusModal from "./components/TourGeniusModal";
 import TourGeniusPreview from "./components/TourGeniusPreview";
 import type { TourCandidate } from "./lib/tourgen";
@@ -102,6 +104,16 @@ export default function App() {
   // the route behind the form) is hidden and the map can't edit the route.
   const desktop = useMediaQuery(DESKTOP_QUERY);
   const sidePlanner = desktop && showQuickPlan;
+  // Sidebar planner <-> map: picks go into the form, its points come back.
+  const [mapPick, setMapPick] = useState<MapPick | null>(null);
+  const [planPoints, setPlanPoints] = useState<Waypoint[]>([]);
+  const pickSeq = useRef(0);
+  const onPlanPick = (lng: number, lat: number, target?: "start" | "via" | "end") =>
+    setMapPick({ seq: ++pickSeq.current, lng, lat, target });
+  const onPlanMove = (id: string, lng: number, lat: number) => {
+    const slotId = planSlotId(id);
+    if (slotId !== null) setMapPick({ seq: ++pickSeq.current, lng, lat, slotId });
+  };
   const [showTourGenius, setShowTourGenius] = useState(false);
   // Tour-Genius map preview: candidates being previewed (round trips), the
   // currently shown one, and the waypoints to restore if the user discards.
@@ -295,7 +307,7 @@ export default function App() {
 
   const moveWaypoint = (id: string, lng: number, lat: number) =>
     setWaypoints((wps) =>
-      wps.map((w) => (w.id === id ? { ...w, lng, lat, name: undefined } : w)),
+      wps.map((w) => (w.id === id ? { ...w, lng, lat, name: w.nameEdited ? w.name : undefined } : w)),
     );
 
   const removeWaypoint = (id: string) =>
@@ -339,6 +351,31 @@ export default function App() {
     setShowHome(false);
     setShowQuickPlan(false);
   };
+
+  // Desktop nav rail: which tool fills the sidebar ("tour" = route panel or
+  // the "Tour planen" form). Choosing one closes whatever was open there.
+  const section: Section = showTourGenius
+    ? "genius"
+    : showPassPlanner
+      ? "passes"
+      : showClubTours
+        ? "club"
+        : showRoutes
+          ? "routes"
+          : "tour";
+  const selectSection = (s: Section) => {
+    setShowQuickPlan(false);
+    setShowTourGenius(s === "genius");
+    setShowPassPlanner(s === "passes");
+    setShowClubTours(s === "club");
+    setShowRoutes(s === "routes");
+  };
+  // Something other than the route panel covers the sidebar (desktop).
+  const sideOpen = desktop && (showQuickPlan || section !== "tour");
+  const sideVariant = desktop ? ("sidebar" as const) : ("modal" as const);
+  // The full start screen is for phones; desktop starts in the sidebar. Only
+  // the old hosting keeps it on desktop too, for its "moved" notice.
+  const homeVisible = showHome && (!desktop || !!movedTo);
 
   const resumeDraft = () => {
     if (!draft) return;
@@ -431,9 +468,9 @@ export default function App() {
     previewCandidate(geniusCands[next], geniusProfile.current);
   };
 
-  // Give points the Tour-Genius placed on the map (ring vias, the far side
-  // of a pass loop) a real name once the rider keeps the tour, one lookup at
-  // a time. Names only ever fill a gap, so an edit meanwhile is never undone.
+  // Give points without a name (map taps, drags, Tour-Genius points once the
+  // tour is kept) a real place name, one lookup at a time. Names only ever
+  // fill a gap at the same spot, so an edit or a move meanwhile is never undone.
   const nameUnnamedPoints = async (list: Waypoint[]) => {
     for (const w of list) {
       if (w.name) continue;
@@ -444,13 +481,34 @@ export default function App() {
         name = null;
       }
       if (!name) continue;
-      setWaypoints((prev) => prev.map((p) => (p.id === w.id && !p.name ? { ...p, name } : p)));
+      setWaypoints((prev) =>
+        prev.map((p) => (p.id === w.id && !p.name && p.lat === w.lat && p.lng === w.lng ? { ...p, name } : p)),
+      );
     }
+  };
+  // Each point is looked up once per position (a move asks again).
+  const namedKeys = useRef(new Set<string>());
+  const nameKey = (w: Waypoint) => `${w.id}@${w.lat},${w.lng}`;
+  useEffect(() => {
+    // Previews (Tour-Genius) and the Pässeplaner don't keep their points yet.
+    if (geniusCands || passSession) return;
+    const todo = waypoints.filter((w) => !w.name && !namedKeys.current.has(nameKey(w)));
+    if (todo.length === 0) return;
+    todo.forEach((w) => namedKeys.current.add(nameKey(w)));
+    void nameUnnamedPoints(todo);
+  }, [waypoints, geniusCands, passSession]);
+
+  // Name typed in the list. Empty brings the looked-up place name back.
+  const renameWaypoint = (id: string, name: string) => {
+    const w = waypoints.find((p) => p.id === id);
+    if (w && !name) namedKeys.current.delete(nameKey(w));
+    setWaypoints((wps) =>
+      wps.map((p) => (p.id === id ? { ...p, name: name || undefined, nameEdited: !!name || undefined } : p)),
+    );
   };
 
   const geniusAccept = () => {
-    setGeniusCands(null); // keep the route as-is
-    void nameUnnamedPoints(waypoints);
+    setGeniusCands(null); // keep the route as-is; its points get named above
   };
 
   const geniusDiscard = () => {
@@ -652,7 +710,17 @@ export default function App() {
       {/* The Pässeplaner is a dedicated mode: its own floating bar replaces the
           title bar, the search box and the route panel, so the whole map stays
           free for picking passes. */}
-      {!passSession && (
+      {desktop && !passSession && (
+        <NavRail
+          active={section}
+          onSelect={selectSection}
+          clubTours={clubToursEnabled}
+          canInstall={!!installEvt && !isStandalone}
+          onInstall={doInstall}
+        />
+      )}
+
+      {!passSession && !desktop && (
         <header className="topbar">
           <button
             className="topbar-home"
@@ -668,13 +736,13 @@ export default function App() {
         </header>
       )}
 
-      {!passSession && !sidePlanner && <SearchBox onSelect={onSearchSelect} bias={searchBias} />}
+      {!passSession && !sideOpen && <SearchBox onSelect={onSearchSelect} bias={searchBias} />}
 
       <MapView
         // The Pässeplaner is a dedicated mode (the SearchBox is hidden too):
         // don't clutter it with the normal route's waypoints/line, which may
         // include a restored draft from an earlier session.
-        waypoints={passSession ? [] : waypoints}
+        waypoints={passSession ? [] : sidePlanner ? planPoints : waypoints}
         route={passSession ? null : route}
         focus={focus}
         fitSignal={fitSignal}
@@ -687,6 +755,8 @@ export default function App() {
         passEndpoints={passEndpoints}
         onSetPassMark={setPassMark}
         editLocked={sidePlanner}
+        onPlanPick={sidePlanner ? onPlanPick : undefined}
+        onPlanMove={sidePlanner ? onPlanMove : undefined}
       />
 
       {!passSession && (
@@ -716,10 +786,29 @@ export default function App() {
         weather={weather}
         onAddDay={addDay}
         onRemoveWaypoint={removeWaypoint}
+        onRenameWaypoint={renameWaypoint}
         onReorderWaypoint={reorderWaypoint}
         onInsertWaypoint={insertWaypoint}
         onAppendWaypoint={addWaypoint}
         onClear={requestClear}
+        welcome={
+          desktop ? (
+            <DesktopWelcome
+              draft={
+                draft
+                  ? { points: draft.waypoints.length, days: computeDays(draft.waypoints).length }
+                  : null
+              }
+              onResume={resumeDraft}
+              onPlan={() => setShowQuickPlan(true)}
+              clubTours={
+                clubToursEnabled
+                  ? { onLoad: loadRoute, onShowAll: () => selectSection("club") }
+                  : undefined
+              }
+            />
+          ) : undefined
+        }
       />
       )}
 
@@ -745,6 +834,7 @@ export default function App() {
               : undefined
           }
           onClose={() => setShowRoutes(false)}
+          variant={sideVariant}
         />
       )}
 
@@ -758,7 +848,7 @@ export default function App() {
 
       {showQuickPlan && (
         <QuickPlanModal
-          variant={desktop ? "sidebar" : "modal"}
+          variant={sideVariant}
           defaultProfile={defaultProfile}
           initialStops={
             waypoints.length >= 2
@@ -773,6 +863,8 @@ export default function App() {
           }
           onApply={applyQuickPlan}
           onClose={() => setShowQuickPlan(false)}
+          mapPick={desktop ? mapPick : null}
+          onPointsChange={setPlanPoints}
         />
       )}
 
@@ -780,6 +872,7 @@ export default function App() {
         <TourGeniusModal
           onResults={onGeniusResults}
           onClose={() => setShowTourGenius(false)}
+          variant={sideVariant}
         />
       )}
 
@@ -787,6 +880,7 @@ export default function App() {
         <PassPlannerModal
           onReady={startPassSession}
           onClose={() => setShowPassPlanner(false)}
+          variant={sideVariant}
         />
       )}
 
@@ -838,10 +932,11 @@ export default function App() {
           currentWaypoints={waypoints}
           onLoad={loadRoute}
           onClose={() => setShowClubTours(false)}
+          variant={sideVariant}
         />
       )}
 
-      {showHome && (
+      {homeVisible && (
         <Home
           savedCount={listRoutes().length}
           canInstall={!!installEvt && !isStandalone}
@@ -884,7 +979,7 @@ export default function App() {
       )}
 
       {migration && (
-        <div className={`toast ${showHome ? "on-home" : ""}`} role="status">
+        <div className={`toast ${homeVisible ? "on-home" : ""}`} role="status">
           <span>{migrationText(migration)}</span>
           <button className="toast-close" onClick={() => setMigration(null)} aria-label="Schliessen">
             <Icon name="x" size={16} />

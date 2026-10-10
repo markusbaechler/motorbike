@@ -26,11 +26,13 @@ export interface PassSession {
 interface Props {
   onReady: (session: PassSession) => void;
   onClose: () => void;
+  // Desktop: shown in the left sidebar instead of as a dialog.
+  variant?: "modal" | "sidebar";
 }
 
 const isAbort = (e: unknown) => (e as Error | null)?.name === "AbortError";
 
-export default function PassPlannerModal({ onReady, onClose }: Props) {
+export default function PassPlannerModal({ onReady, onClose, variant }: Props) {
   const [startVal, setStartVal] = useState("");
   const [startPick, setStartPick] = useState<GeoResult | undefined>();
   const [roundTrip, setRoundTrip] = useState(true);
@@ -104,6 +106,7 @@ export default function PassPlannerModal({ onReady, onClose }: Props) {
         </>
       }
       onClose={close}
+      variant={variant}
       className="modal-pass"
     >
       <div className="modal-body">

@@ -96,7 +96,7 @@ export default function Home({
           <span className="brand">{APP_NAME}</span>
         </h1>
         <p className="home-tagline">
-          Kurvige Touren planen: Tag für Tag, mit Pässen, Übernachtungen und GPX fürs Navi.
+          Kurvige Touren planen – Tag für Tag, mit GPX fürs Navi.
         </p>
 
         {movedTo && !movedLater && (
@@ -123,6 +123,9 @@ export default function Home({
           </section>
         )}
 
+        {/* One main action; the other ways to start as quiet tiles; the
+            rest as small links. Fewer, calmer choices than a stack of
+            equal buttons. */}
         <div className="home-actions">
           {hasRoute && (
             <button className="home-cta primary" onClick={onBack}>
@@ -140,64 +143,46 @@ export default function Home({
           <button className={`home-cta ${continueFirst ? "" : "primary"}`} onClick={onPlan}>
             <Icon name="zap" size={20} /> Neue Tour planen
           </button>
-          <button className="home-cta genius" onClick={onGenius}>
-            <Icon name="compass" size={20} /> Tour-Genius
-            <span className="home-cta-sub">Touren automatisch generieren</span>
+        </div>
+
+        <p className="home-or">oder starten mit</p>
+        <div className={`home-tiles ${onClubTours ? "" : "two"}`}>
+          <button className="home-tile" onClick={onGenius}>
+            <Icon name="compass" size={22} />
+            <span>Tour-Genius</span>
           </button>
-          <button className="home-cta passes" onClick={onPasses}>
-            <Icon name="mountain" size={20} /> Pässeplaner
-            <span className="home-cta-sub">Tour über ausgewählte Pässe</span>
+          <button className="home-tile" onClick={onPasses}>
+            <Icon name="mountain" size={22} />
+            <span>Pässe</span>
           </button>
           {onClubTours && (
-            <button className="home-cta club" onClick={onClubTours}>
-              <Icon name="scenery" size={20} /> Club-Touren
-              <span className="home-cta-sub">Vorschläge der Pudgilly Riders</span>
+            <button className="home-tile" onClick={onClubTours}>
+              <Icon name="users" size={22} />
+              <span>Club-Touren</span>
             </button>
           )}
-          <button className="home-cta" onClick={onRoutes}>
-            <Icon name="folder" size={19} /> Meine Touren
-            {savedCount > 0 ? ` (${savedCount})` : ""}
+        </div>
+
+        <div className="home-links">
+          <button className="home-link" onClick={onRoutes}>
+            <Icon name="folder" size={16} /> Meine Touren{savedCount > 0 ? ` (${savedCount})` : ""}
           </button>
-          {canInstall && (
-            <button className="home-cta install" onClick={onInstall}>
-              <Icon name="download" size={19} /> Als App installieren
-            </button>
-          )}
-          {iosInstall && (
+          {(canInstall || iosInstall) && (
             <button
-              className="home-cta install"
-              onClick={() => setShowIosHint((v) => !v)}
-              aria-expanded={showIosHint}
+              className="home-link"
+              onClick={canInstall ? onInstall : () => setShowIosHint((v) => !v)}
+              aria-expanded={iosInstall ? showIosHint : undefined}
             >
-              <Icon name="download" size={19} /> Als App installieren
+              <Icon name="download" size={16} /> Als App installieren
             </button>
           )}
-
-          {showIosHint && (
-            <p className="ios-hint">
-              In Safari: unten auf <strong>Teilen</strong> (Quadrat mit Pfeil) tippen →
-              <strong> „Zum Home-Bildschirm“</strong>. Dann startet der Routenplaner wie eine App.
-            </p>
-          )}
         </div>
-
-        <div className="home-features">
-          <div className="home-feat">
-            <span className="home-feat-icon kurvig"><Icon name="zap" size={18} /></span>
-            <strong>Kurvig</strong>
-            <span>Fun-Routing über kleine Strassen &amp; Pässe</span>
-          </div>
-          <div className="home-feat">
-            <span className="home-feat-icon bed"><Icon name="bed" size={18} /></span>
-            <strong>Mehrtägig</strong>
-            <span>Tage, Übernachtungen &amp; Hotels</span>
-          </div>
-          <div className="home-feat">
-            <span className="home-feat-icon gpx"><Icon name="download" size={18} /></span>
-            <strong>GPX</strong>
-            <span>Export fürs Navi (Beeline, Garmin …)</span>
-          </div>
-        </div>
+        {showIosHint && (
+          <p className="ios-hint">
+            In Safari: unten auf <strong>Teilen</strong> (Quadrat mit Pfeil) tippen →
+            <strong> „Zum Home-Bildschirm“</strong>. Dann startet der Routenplaner wie eine App.
+          </p>
+        )}
 
         {/* target=_top: inside the website's iframe these must replace the
             whole page, not load the site within the planner frame. */}

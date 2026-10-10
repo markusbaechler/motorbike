@@ -11,8 +11,10 @@ export interface Waypoint {
   id: string;
   lng: number;
   lat: number;
-  // Optional place name from the search; map-placed points have none.
+  // Place name: from the search, looked up for map-placed points, or typed
+  // by the rider (then nameEdited is set and the name stays when it moves).
   name?: string;
+  nameEdited?: boolean;
   // Profile used for the leg arriving at this waypoint (from the previous
   // one). Ignored for the first waypoint, which has no incoming leg.
   legProfile: RouteProfile;

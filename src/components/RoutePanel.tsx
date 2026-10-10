@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Icon, { type IconName } from "./Icon";
 import Modal from "./Modal";
 import PlaceInput from "./PlaceInput";
 import { computeDays, dayStats, dayNumbers } from "../lib/days";
 import { DESKTOP_QUERY, useMediaQuery } from "../lib/useMediaQuery";
-import { canReorder, isClosedLoop } from "../lib/waypoints";
+import { canReorder, isClosedLoop, pointLabel } from "../lib/waypoints";
 import { useThrottleWait } from "../lib/useThrottleWait";
 import type { GeoResult } from "../lib/geocoding";
 import type { BookingPrefs } from "../lib/storage";
@@ -37,11 +37,14 @@ interface Props {
   weather: Record<string, WeatherDay | null>;
   onAddDay: () => void;
   onRemoveWaypoint: (id: string) => void;
+  onRenameWaypoint: (id: string, name: string) => void;
   onReorderWaypoint: (id: string, direction: -1 | 1) => void;
   // Inline place search in the list: insert into a leg, or append at the end.
   onInsertWaypoint: (legIndex: number, lng: number, lat: number, name?: string) => void;
   onAppendWaypoint: (lng: number, lat: number, name?: string) => void;
   onClear: () => void;
+  // Desktop, empty map: start options shown instead of the planning controls.
+  welcome?: ReactNode;
 }
 
 // Small inline place search shown where a point is about to be inserted.
@@ -107,8 +110,46 @@ function placeName(wp: Waypoint): string {
 // Short display name: just the locality (drops region/country after the
 // comma). Coordinates keep both halves, "47.690" alone says nothing.
 function shortName(wp: Waypoint): string {
-  if (!wp.name) return `${wp.lat.toFixed(3)}, ${wp.lng.toFixed(3)}`;
-  return wp.name.split(",")[0].trim();
+  return pointLabel(wp);
+}
+
+/**
+ * The point's name as a quiet text field: click and type to rename it
+ * ("Kaffeehalt Löwen"), Enter or leaving the field saves, Escape cancels,
+ * emptying it brings back the place name. The position doesn't change.
+ */
+function WpName({ wp, onRename }: { wp: Waypoint; onRename: (id: string, name: string) => void }) {
+  const shown = wp.name ? shortName(wp) : "";
+  const [draft, setDraft] = useState<string | null>(null);
+  const cancelRef = useRef(false);
+  return (
+    <input
+      className="wp-name-input"
+      value={draft ?? shown}
+      placeholder={wp.name ? "" : "Ort wird gesucht …"}
+      aria-label="Name des Punkts"
+      title="Klicken zum Umbenennen"
+      onFocus={(e) => {
+        setDraft(shown);
+        e.currentTarget.select();
+      }}
+      onChange={(e) => setDraft(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") e.currentTarget.blur();
+        if (e.key === "Escape") {
+          e.stopPropagation();
+          cancelRef.current = true;
+          e.currentTarget.blur();
+        }
+      }}
+      onBlur={() => {
+        const next = (draft ?? shown).trim();
+        if (!cancelRef.current && next !== shown) onRename(wp.id, next);
+        cancelRef.current = false;
+        setDraft(null);
+      }}
+    />
+  );
 }
 
 function weatherIcon(code: number): IconName {
@@ -179,10 +220,12 @@ export default function RoutePanel({
   weather,
   onAddDay,
   onRemoveWaypoint,
+  onRenameWaypoint,
   onReorderWaypoint,
   onInsertWaypoint,
   onAppendWaypoint,
   onClear,
+  welcome,
 }: Props) {
   const days = computeDays(waypoints);
   // Seconds the router queue waits for the public server's limit (0 = none).
@@ -306,8 +349,14 @@ export default function RoutePanel({
     return (
       <li key={wp.id} className="wp-item">
         {i > 0 && (
-          <div className="segment">
-            <span className="segment-arrow">↳ Abschnitt {i}→{i + 1}</span>
+          // The leg hangs on the line between its two points, in the colour of
+          // its riding style (as on the map); "+" sits on that line.
+          <div
+            className="segment"
+            data-profile={wp.legProfile}
+            role="group"
+            aria-label={`Abschnitt ${i}→${i + 1}`}
+          >
             <ProfileToggle
               value={wp.legProfile}
               onChange={(p) => onSetLegProfile(wp.id, p)}
@@ -347,7 +396,7 @@ export default function RoutePanel({
           </span>
           <div className="wp-main">
             <span className="wp-name">
-              {shortName(wp)}
+              <WpName wp={wp} onRename={onRenameWaypoint} />
               {wp.dayEnd && (
                 <span className="bed-tag" title="Übernachtung">
                   <Icon name="bed" size={13} />
@@ -442,25 +491,18 @@ export default function RoutePanel({
         </button>
       ) : (
        <>
+      {desktop && welcome && waypoints.length === 0 ? (
+        welcome
+      ) : (
+       <>
       <div className="panel-row top">
         {/* One primary action; the other tools share the quiet secondary style
             (desktop) or sit behind "Mehr" (phones). */}
         <button className="quickplan-btn" onClick={onOpenQuickPlan}>
           <Icon name="zap" size={16} /> Tour planen
         </button>
-        {desktop ? (
-          <>
-            <button className="quickplan-btn secondary" onClick={onOpenTourGenius}>
-              <Icon name="compass" size={16} /> Tour-Genius
-            </button>
-            <button className="quickplan-btn secondary" onClick={onOpenPassPlanner}>
-              <Icon name="mountain" size={16} /> Pässeplaner
-            </button>
-            <button className="quickplan-btn secondary" onClick={onOpenRoutes}>
-              <Icon name="folder" size={16} /> Touren
-            </button>
-          </>
-        ) : (
+        {/* Desktop: Tour-Genius, Pässe, Touren live in the nav rail. */}
+        {!desktop && (
           <button
             className="quickplan-btn secondary tools-btn"
             onClick={() => setShowTools(true)}
@@ -474,26 +516,6 @@ export default function RoutePanel({
       <div className="panel-row profile">
         <span className="default-label">Neuer Abschnitt:</span>
         <ProfileToggle value={defaultProfile} onChange={onDefaultProfileChange} />
-        {desktop && waypoints.length >= 2 && (
-          <>
-            <button className="clear-btn" onClick={onReverse} title="Richtung umkehren">
-              <Icon name="swap" size={14} /> Umkehren
-            </button>
-            <button
-              className="clear-btn"
-              onClick={onRoundTrip}
-              disabled={isRoundTrip}
-              title={isRoundTrip ? "Die Tour ist bereits eine Rundtour" : "Zurück zum Start (Rundtour)"}
-            >
-              <Icon name="loop" size={14} /> Rundtour
-            </button>
-          </>
-        )}
-        {desktop && waypoints.length > 0 && (
-          <button className="clear-btn" onClick={onClear}>
-            Zurücksetzen
-          </button>
-        )}
       </div>
 
       <div className="panel-row summary">
@@ -664,6 +686,32 @@ export default function RoutePanel({
             : "„Tag hinzufügen“ beendet den Tag am letzten Punkt."}{" "}
           Streckenlinie ziehen fügt ein Zwischenziel ein.
         </p>
+      )}
+
+      {/* Desktop: the rarer whole-tour actions, quiet at the end of the list. */}
+      {desktop && waypoints.length > 0 && (
+        <div className="panel-row tour-tools">
+          {waypoints.length >= 2 && (
+            <>
+              <button className="clear-btn" onClick={onReverse} title="Richtung umkehren">
+                <Icon name="swap" size={14} /> Umkehren
+              </button>
+              <button
+                className="clear-btn"
+                onClick={onRoundTrip}
+                disabled={isRoundTrip}
+                title={isRoundTrip ? "Die Tour ist bereits eine Rundtour" : "Zurück zum Start (Rundtour)"}
+              >
+                <Icon name="loop" size={14} /> Rundtour
+              </button>
+            </>
+          )}
+          <button className="clear-btn" onClick={onClear}>
+            Zurücksetzen
+          </button>
+        </div>
+      )}
+       </>
       )}
        </>
       )}

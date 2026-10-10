@@ -16,6 +16,8 @@ import type { RouteProfile } from "../types";
 interface Props {
   onResults: (candidates: TourCandidate[], profile: RouteProfile) => void;
   onClose: () => void;
+  // Desktop: shown in the left sidebar instead of as a dialog.
+  variant?: "modal" | "sidebar";
 }
 
 type TourMode = "round" | "dest";
@@ -27,7 +29,7 @@ const PROFILES: { id: RouteProfile; label: string }[] = [
 
 const isAbort = (e: unknown) => (e as Error | null)?.name === "AbortError";
 
-export default function TourGeniusModal({ onResults, onClose }: Props) {
+export default function TourGeniusModal({ onResults, onClose, variant }: Props) {
   const [mode, setMode] = useState<TourMode>("round");
   const [value, setValue] = useState("");
   const [picked, setPicked] = useState<GeoResult | undefined>();
@@ -137,6 +139,7 @@ export default function TourGeniusModal({ onResults, onClose }: Props) {
         </>
       }
       onClose={close}
+      variant={variant}
     >
       <div className="modal-body">
         <span className="toggle tg-modes">

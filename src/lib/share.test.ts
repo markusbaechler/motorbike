@@ -19,6 +19,13 @@ describe("share encode/decode", () => {
     expect(out![1].name).toBe("Ziel");
   });
 
+  it("keeps a typed name whole and marked as typed", () => {
+    const typed: Waypoint[] = [wps[0], { ...wps[1], name: "Kaffee, Löwen", nameEdited: true }];
+    const out = decodeRoute(encodeRoute(typed))!;
+    expect(out[1]).toMatchObject({ name: "Kaffee, Löwen", nameEdited: true });
+    expect(out[0].nameEdited).toBeUndefined();
+  });
+
   it("returns null for garbage input", () => {
     expect(decodeRoute("§§not-valid§§")).toBeNull();
   });

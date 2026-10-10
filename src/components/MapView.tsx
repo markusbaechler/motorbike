@@ -6,6 +6,7 @@ import { DEFAULT_CENTER, DEFAULT_ZOOM, MAP_STYLE_URL } from "../config";
 import { computeDays, dayNumbers } from "../lib/days";
 import type { FocusPoint } from "../App";
 import type { RouteResult, Waypoint } from "../types";
+import { pointLabel } from "../lib/waypoints";
 
 export interface PassPoint {
   key: string;
@@ -45,6 +46,10 @@ interface Props {
   // look around, but taps, the context menu, line drags and marker drags must
   // not edit the route behind the form ("Tour erstellen" replaces it anyway).
   editLocked?: boolean;
+  // While locked: clicks, the context menu and marker drags edit the form in
+  // the sidebar instead (its points are passed in as `waypoints`).
+  onPlanPick?: (lng: number, lat: number, target?: "start" | "via" | "end") => void;
+  onPlanMove?: (id: string, lng: number, lat: number) => void;
 }
 
 const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
@@ -76,6 +81,8 @@ export default function MapView({
   passEndpoints = null,
   onSetPassMark,
   editLocked = false,
+  onPlanPick,
+  onPlanMove,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const lockedRef = useRef(editLocked);
@@ -104,6 +111,12 @@ export default function MapView({
   moveRef.current = onMoveWaypoint;
   insertRef.current = onInsertWaypoint;
   setPassMarkRef.current = onSetPassMark;
+  const planPickRef = useRef(onPlanPick);
+  const planMoveRef = useRef(onPlanMove);
+  planPickRef.current = onPlanPick;
+  planMoveRef.current = onPlanMove;
+  // Markers can be dragged unless the route is locked without a form to edit.
+  const canDrag = () => !lockedRef.current || !!planMoveRef.current;
 
   // Right-click / long-press menu: "Start hier", "Zwischenziel hier", "Ziel hier".
   // Position in container pixels; null when closed.
@@ -207,14 +220,18 @@ export default function MapView({
         return;
       }
       // In Pässeplaner mode the map is for picking passes, not adding stops.
-      if (passModeRef.current || lockedRef.current) return;
+      if (passModeRef.current) return;
+      if (lockedRef.current) {
+        planPickRef.current?.(e.lngLat.lng, e.lngLat.lat);
+        return;
+      }
       addRef.current(e.lngLat.lng, e.lngLat.lat);
     });
 
     map.on("contextmenu", (e) => {
       e.preventDefault();
       e.originalEvent.preventDefault();
-      if (passModeRef.current || lockedRef.current) return;
+      if (passModeRef.current || (lockedRef.current && !planPickRef.current)) return;
       setCtx({ x: e.point.x, y: e.point.y, lng: e.lngLat.lng, lat: e.lngLat.lat });
     });
     map.on("movestart", () => setCtx(null));
@@ -307,7 +324,7 @@ export default function MapView({
       const el = document.createElement("div");
       // Hover tooltip with the place name (desktop); map-placed points show
       // their coordinates.
-      el.title = wp.name ? wp.name.split(",")[0].trim() : `${wp.lat.toFixed(3)}, ${wp.lng.toFixed(3)}`;
+      el.title = pointLabel(wp);
       if (isOvernight) {
         // Highlight overnight stops with a bed marker (inline SVG, not emoji).
         el.className = "wp-marker bed";
@@ -319,13 +336,14 @@ export default function MapView({
         el.textContent = String(nums[index]);
       }
 
-      const marker = new maplibregl.Marker({ element: el, draggable: !lockedRef.current })
+      const marker = new maplibregl.Marker({ element: el, draggable: canDrag() })
         .setLngLat([wp.lng, wp.lat])
         .addTo(map);
 
       marker.on("dragend", () => {
         const { lng, lat } = marker.getLngLat();
-        moveRef.current(wp.id, lng, lat);
+        if (lockedRef.current) planMoveRef.current?.(wp.id, lng, lat);
+        else moveRef.current(wp.id, lng, lat);
       });
 
       markersRef.current.push(marker);
@@ -334,8 +352,14 @@ export default function MapView({
 
   // Lock/unlock editing on the map (markers already on it + an open menu).
   useEffect(() => {
-    for (const m of markersRef.current) m.setDraggable(!editLocked);
-    if (editLocked) setCtx(null);
+    for (const m of markersRef.current) m.setDraggable(canDrag());
+    setCtx(null);
+    // The current route fades while a new one is being put together.
+    const map = mapRef.current;
+    if (map && loadedRef.current && map.getLayer("route-line")) {
+      map.setPaintProperty("route-line", "line-opacity", editLocked ? 0.35 : 1);
+      map.setPaintProperty("route-casing", "line-opacity", editLocked ? 0.2 : 0.6);
+    }
   }, [editLocked]);
 
   // --- Sync route line ---
@@ -490,6 +514,10 @@ export default function MapView({
     if (ctx) fn(ctx.lng, ctx.lat);
     setCtx(null);
   };
+  // With the form open the menu fills its fields instead of editing the route.
+  const plan = (target: "start" | "via" | "end") => (lng: number, lat: number) =>
+    planPickRef.current?.(lng, lat, target);
+  const planning = editLocked && !!onPlanPick;
   const insertVia = (lng: number, lat: number) => {
     const n = waypointsRef.current.length;
     if (n >= 2) insertRef.current(n - 2, lng, lat);
@@ -501,13 +529,13 @@ export default function MapView({
       <div className="map" ref={containerRef} />
       {ctx && (
         <div className="map-ctx" role="menu" style={{ left: menuLeft, top: menuTop }}>
-          <button role="menuitem" onClick={choose((lng, lat) => prependRef.current(lng, lat))}>
+          <button role="menuitem" onClick={choose(planning ? plan("start") : (lng, lat) => prependRef.current(lng, lat))}>
             <Icon name="flag" size={16} /> Start hier
           </button>
-          <button role="menuitem" onClick={choose(insertVia)}>
+          <button role="menuitem" onClick={choose(planning ? plan("via") : insertVia)}>
             <Icon name="plus" size={16} /> Zwischenziel hier
           </button>
-          <button role="menuitem" onClick={choose((lng, lat) => destRef.current(lng, lat))}>
+          <button role="menuitem" onClick={choose(planning ? plan("end") : (lng, lat) => destRef.current(lng, lat))}>
             <Icon name="check" size={16} /> Ziel hier
           </button>
         </div>

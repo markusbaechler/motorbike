@@ -469,19 +469,19 @@ button {
   opacity: 0.4;
 }
 
+/* Point list as a timeline: each point is a card that holds its own buttons;
+   the leg between two points hangs on the connecting line. */
 .wp-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
 }
 
 .wp-item {
   display: flex;
   flex-direction: column;
-  gap: 6px;
 }
 
 .wp-row {
@@ -489,20 +489,47 @@ button {
   align-items: center;
   gap: 10px;
   font-size: 0.85rem;
+  padding: 5px 5px 5px 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.045);
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.wp-row:hover,
+.wp-row:focus-within {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
 }
 
-/* Segment (leg) row between two waypoints */
+/* Segment (leg) between two cards: line in the riding style's colour, the
+   "+" (insert a stop into this leg) sits on the line. */
 .segment {
+  --leg: var(--kurvig);
+  position: relative;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  padding-left: 8px;
+  gap: 6px 8px;
+  min-height: 46px;
+  padding: 7px 0 7px 41px;
   font-size: 0.8rem;
 }
-
-.segment-arrow {
-  opacity: 0.65;
-  flex: 0 0 auto;
+.segment[data-profile="kurvig_plus"] { --leg: var(--kurvig-plus); }
+.segment[data-profile="schnell"] { --leg: var(--schnell); }
+.segment::before {
+  content: "";
+  position: absolute;
+  left: 17px;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--leg);
+  opacity: 0.85;
+}
+.segment .toggle-btn {
+  padding: 4px 10px;
+  font-size: 0.76rem;
 }
 
 .segment-stats {
@@ -542,10 +569,37 @@ button {
 }
 
 .wp-name {
-  display: block;
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+/* Name looks like text until hovered/clicked, then it's an input. */
+.wp-name-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font: inherit;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 3px 6px;
+  margin-left: -6px;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  cursor: text;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.wp-name-input::placeholder {
+  color: var(--muted);
+  font-style: italic;
+}
+.wp-name-input:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+.wp-name-input:focus {
+  outline: none;
+  background: rgba(0, 0, 0, 0.25);
+  border-color: var(--accent);
 }
 
 .wp-actions {
@@ -553,6 +607,18 @@ button {
   display: flex;
   gap: 2px;
   flex: 0 0 auto;
+}
+/* With a mouse the buttons stay quiet until their card is hovered, so the
+   list reads as places, not as a wall of buttons. */
+@media (hover: hover) {
+  .wp-row .wp-actions {
+    opacity: 0.35;
+    transition: opacity 0.12s ease;
+  }
+  .wp-row:hover .wp-actions,
+  .wp-row:focus-within .wp-actions {
+    opacity: 1;
+  }
 }
 
 .wp-btn {
@@ -1544,40 +1610,17 @@ button {
     font-size: 0.9rem;
   }
 
-  /* Waypoint rows: name on top, actions wrap to a full-width second line */
-  .wp-row {
-    flex-wrap: wrap;
-  }
-  .wp-main {
-    flex: 1 1 60%;
-  }
+  /* Waypoint cards: name and its buttons on one line, so every button
+     clearly belongs to its card; the name shortens instead. */
   .wp-actions {
-    flex: 1 1 100%;
-    justify-content: flex-end;
-    margin-top: 2px;
-    gap: 6px;
+    gap: 4px;
   }
   .wp-btn {
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
   }
 
-  /* Segment: arrow on line 1, full-width toggle below, km after */
-  .segment {
-    flex-wrap: wrap;
-    gap: 6px 8px;
-  }
-  .segment-arrow {
-    flex: 1 1 auto;
-  }
-  .segment .toggle {
-    flex: 1 1 100%;
-    order: 3;
-  }
-  .segment .toggle-btn {
-    flex: 1 1 0;
-  }
 
   .day-meta {
     gap: 8px;
@@ -1912,46 +1955,6 @@ button {
 }
 .home-cta.primary:hover { filter: brightness(1.07); background: linear-gradient(135deg, var(--brand-from), var(--brand-to)); }
 
-/* Feature strip: purely informational. A divider plus a flat, border-less,
-   muted layout (no boxes, no coloured icons) makes it clearly read as a caption
-   — not three more tappable buttons. */
-.home-features {
-  display: flex;
-  gap: 20px;
-  margin-top: 26px;
-  padding-top: 22px;
-  border-top: 1px solid var(--border);
-  width: 100%;
-}
-.home-feat {
-  flex: 1 1 0;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-.home-feat strong { font-size: 0.8rem; font-weight: 700; color: var(--text); opacity: 0.82; }
-.home-feat span:last-child { font-size: 0.7rem; color: var(--muted); line-height: 1.35; }
-.home-feat-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-  background: rgba(255, 255, 255, 0.05);
-}
-/* uniform, quiet icon treatment — no per-feature accent colours */
-.home-feat-icon.kurvig,
-.home-feat-icon.bed,
-.home-feat-icon.gpx { background: rgba(255, 255, 255, 0.05); color: var(--muted); }
-
-.home-cta.install {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: var(--border-strong);
-}
 .ios-hint {
   margin: 12px 0 0;
   font-size: 0.85rem;
@@ -2017,12 +2020,7 @@ button {
 .wp-weather.wet { color: #60a5fa; background: rgba(96, 165, 250, 0.14); }
 
 /* --- Tour-Genius --- */
-/* Secondary CTAs that carry a sub-label (Tour-Genius, Pässeplaner). They read
-   like the other neutral buttons — only "Neue Tour planen" stays accented — so
-   the home screen has a single focal point instead of three coloured boxes. */
-.home-cta.genius,
-.home-cta.passes,
-.home-cta.club,
+/* "Letzte Tour fortsetzen" carries a sub-label (points, days). */
 .home-cta.resume {
   flex-wrap: wrap;
 }
@@ -2826,11 +2824,15 @@ button {
    Same components as the bottom sheet, only repositioned. The breakpoint is
    mirrored in lib/useMediaQuery.ts (DESKTOP_QUERY). */
 @media (min-width: 900px) {
+  /* Three columns: nav rail | sidebar (tour or the chosen tool) | map. */
   :root {
-    --sidebar-w: 400px;
+    --rail-w: 76px;
+    --panel-w: 380px;
+    --sidebar-w: calc(var(--rail-w) + var(--panel-w));
   }
   /* Pässeplaner mode has no sidebar: the map gets the whole width. */
   .app.pass-mode {
+    --rail-w: 0px;
     --sidebar-w: 0px;
   }
 
@@ -2838,18 +2840,81 @@ button {
     left: var(--sidebar-w);
   }
 
-  .topbar {
-    right: auto;
-    width: var(--sidebar-w);
-    z-index: 12;
-    padding: 14px 16px 0;
+  .nav-rail {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: var(--rail-w);
+    z-index: 13;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 0 14px;
+    background: var(--bg);
+    border-right: 1px solid var(--border);
+  }
+  .nav-rail-logo {
+    width: 46px;
+    height: 46px;
+    margin-bottom: 12px;
+    border-radius: 50%;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+  }
+  .nav-rail-logo img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+  }
+  .nav-rail-item {
+    width: 62px;
+    padding: 8px 0 7px;
+    border: none;
+    border-radius: 14px;
+    background: transparent;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font: inherit;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+  .nav-rail-item:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .nav-rail-item.active {
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .nav-rail-item.quiet {
+    font-size: 0.66rem;
+    opacity: 0.7;
+  }
+  .nav-rail-item.quiet:hover {
+    opacity: 1;
+  }
+  .nav-rail-spacer {
+    flex: 1 1 auto;
   }
 
   .searchbox {
-    top: 72px;
-    left: 16px;
+    top: 16px;
+    left: calc(var(--rail-w) + 16px);
     right: auto;
-    width: calc(var(--sidebar-w) - 32px);
+    width: calc(var(--panel-w) - 32px);
     max-width: none;
     margin: 0;
   }
@@ -2857,16 +2922,21 @@ button {
   .panel {
     top: 0;
     bottom: 0;
-    left: 0;
+    left: var(--rail-w);
     right: auto;
-    width: var(--sidebar-w);
+    width: var(--panel-w);
     max-height: none;
     border-radius: 0;
     border-top: 0;
     border-right: 1px solid var(--border-strong);
     box-shadow: 12px 0 40px rgba(0, 0, 0, 0.35);
-    padding: 134px 16px 20px;
+    padding: 78px 16px 20px;
     gap: 14px;
+  }
+  .panel-row.tour-tools {
+    justify-content: flex-start;
+    gap: 8px;
+    padding-top: 4px;
   }
 
   .panel-handle,
@@ -2885,19 +2955,6 @@ button {
     left: calc(var(--sidebar-w) + (100vw - var(--sidebar-w)) / 2);
   }
 
-  /* The sidebar is narrow: per-leg style toggle on its own full-width line,
-     like on phones, instead of squeezing "Fun 1" into two lines. */
-  .segment {
-    flex-wrap: wrap;
-    gap: 6px 8px;
-  }
-  .segment .toggle {
-    flex: 1 1 100%;
-    order: 3;
-  }
-  .segment .toggle-btn {
-    flex: 1 1 0;
-  }
 
   /* "Tour planen" in the sidebar: covers the route panel (same column, under
      the club chip), the map on the right stays visible and pannable. */
@@ -2905,12 +2962,12 @@ button {
     position: absolute;
     top: 0;
     bottom: 0;
-    left: 0;
-    width: var(--sidebar-w);
+    left: var(--rail-w);
+    width: var(--panel-w);
     z-index: 11;
     display: flex;
     flex-direction: column;
-    padding-top: 62px;
+    overflow-y: auto;
     background: var(--surface);
     border-right: 1px solid var(--border-strong);
     box-shadow: 12px 0 40px rgba(0, 0, 0, 0.35);
@@ -2941,21 +2998,28 @@ button {
   .side-view .qp-profile .toggle-btn {
     flex: 1 1 0;
   }
+  /* Club tours in the narrow column: compact one-line buttons. */
+  .side-view .club-actions .export-btn {
+    padding: 7px 12px;
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
 }
 
 /* --- Inline insert in the point list: "+" per leg, "Punkt anhängen" at the end --- */
 .segment-insert {
-  order: 2;
-  margin-left: auto;
-  width: 28px;
-  height: 28px;
-  flex: 0 0 auto;
+  position: absolute;
+  left: 7px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 23px;
+  height: 23px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  border: 1px dashed rgba(255, 138, 30, 0.5);
-  background: transparent;
+  border: 1px dashed rgba(255, 138, 30, 0.6);
+  background: var(--surface);
   color: var(--accent);
   cursor: pointer;
   transition: background var(--transition), border-color var(--transition);
@@ -2969,7 +3033,7 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 6px 0 10px 34px;
+  margin: 0 0 8px 41px;
 }
 .wp-insert .place-input {
   flex: 1 1 auto;
@@ -2986,4 +3050,203 @@ button {
   .wp-append {
     margin-left: 0;
   }
+}
+
+/* --- Desktop start (sidebar, empty map): main action + club suggestions --- */
+.welcome {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.welcome-lead {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.welcome-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.welcome-actions .quickplan-btn {
+  width: 100%;
+  flex-wrap: wrap;
+  padding: 12px 18px;
+}
+.welcome-sub {
+  flex: 1 1 100%;
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0.85;
+}
+.welcome-club h3 {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.welcome-club ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.welcome-club li button {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.welcome-club li button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent);
+}
+.welcome-club-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.welcome-club-meta {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.welcome-more {
+  margin-top: 8px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.welcome-footer {
+  display: flex;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.welcome-footer a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.welcome-footer a:hover {
+  color: var(--text);
+}
+
+/* --- Start screen (phones): calm hero photo on top, actions on solid ground --- */
+.home {
+  background: var(--bg);
+}
+/* The photo only fills the top band and fades into the page colour, so the
+   buttons below sit on a quiet surface instead of on trees and sparks. */
+.home-bg {
+  height: 46%;
+  object-position: center 35%;
+  -webkit-mask-image: linear-gradient(180deg, #000 35%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 35%, transparent 100%);
+  opacity: 0.55;
+}
+.home-scrim {
+  background: linear-gradient(180deg, rgba(16, 15, 18, 0.25) 0%, rgba(16, 15, 18, 0) 30%);
+}
+.home-logo {
+  height: 76px;
+  margin-bottom: 12px;
+}
+.home-title {
+  font-size: 2.1rem;
+}
+.home-tagline {
+  font-size: 0.95rem;
+  margin: 8px 0 26px;
+  color: var(--muted);
+}
+.home-actions {
+  gap: 10px;
+}
+.home-or {
+  margin: 22px 0 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.home-tiles {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.home-tiles.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.home-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 84px;
+  padding: 12px 6px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.home-tile .icon {
+  color: var(--accent);
+}
+.home-tile:hover,
+.home-tile:focus-visible {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+.home-links {
+  margin-top: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 18px;
+}
+.home-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 6px 2px;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.home-link .icon {
+  color: var(--muted);
+}
+.home-link:hover {
+  color: var(--accent);
+}
+.home-footer {
+  margin-top: 14px;
 }

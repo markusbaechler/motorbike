@@ -1,10 +1,11 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import Icon from "./Icon";
 import Modal from "./Modal";
 import PlaceInput from "./PlaceInput";
 import { PROFILE_HINT, PROFILE_LABEL } from "./RoutePanel";
-import { searchPlaces, type GeoResult } from "../lib/geocoding";
-import type { RouteProfile } from "../types";
+import { reverseGeocode, searchPlaces, type GeoResult } from "../lib/geocoding";
+import { coordLabel, pickAction, type PickTarget } from "../lib/planpick";
+import type { RouteProfile, Waypoint } from "../types";
 
 const isAbort = (e: unknown) => (e as Error | null)?.name === "AbortError";
 
@@ -15,6 +16,24 @@ export interface QuickStop {
   legProfile: RouteProfile;
   dayEnd?: boolean;
 }
+
+// A point clicked (or a form marker dragged) on the map beside the sidebar.
+// `seq` makes every pick a new event, even on the same spot.
+export interface MapPick {
+  seq: number;
+  lng: number;
+  lat: number;
+  // Context menu choice; absent for a plain click.
+  target?: PickTarget;
+  // Marker drag: the slot whose point moved.
+  slotId?: number;
+}
+
+// Map markers of the form are named "plan-<slot id>".
+export const planSlotId = (waypointId: string): number | null => {
+  const m = /^plan-(\d+)$/.exec(waypointId);
+  return m ? Number(m[1]) : null;
+};
 
 interface Slot {
   id: number;
@@ -37,54 +56,9 @@ interface Props {
   // "sidebar": fills the left sidebar on wide screens so the map stays
   // visible next to the form instead of being dimmed behind a dialog.
   variant?: "modal" | "sidebar";
-}
-
-/**
- * Sidebar shell for the desktop layout: same head as a dialog (title + close),
- * Escape closes, focus moves in on open and back to the opener on close. It
- * is not modal: the map beside it stays usable for looking around.
- */
-function SidebarView({
-  title,
-  onClose,
-  children,
-}: {
-  title: ReactNode;
-  onClose: () => void;
-  children: ReactNode;
-}) {
-  const boxRef = useRef<HTMLElement>(null);
-  const titleId = useId();
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
-
-  useEffect(() => {
-    const opener = document.activeElement as HTMLElement | null;
-    boxRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      // A dialog opened on top handles its own Escape.
-      if (e.key !== "Escape" || document.querySelector(".modal-backdrop")) return;
-      e.preventDefault();
-      onCloseRef.current();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      if (opener && document.contains(opener)) opener.focus();
-    };
-  }, []);
-
-  return (
-    <section ref={boxRef} className="side-view" aria-labelledby={titleId} tabIndex={-1}>
-      <div className="modal-head side-view-head">
-        <h2 id={titleId}>{title}</h2>
-        <button className="modal-close" onClick={onClose} aria-label="Schliessen">
-          <Icon name="x" size={18} />
-        </button>
-      </div>
-      {children}
-    </section>
-  );
+  // Sidebar only: points picked on the map, and the form's points to show there.
+  mapPick?: MapPick | null;
+  onPointsChange?: (points: Waypoint[]) => void;
 }
 
 let uid = 1;
@@ -124,6 +98,8 @@ export default function QuickPlanModal({
   onApply,
   onClose,
   variant = "modal",
+  mapPick = null,
+  onPointsChange,
 }: Props) {
   const init = buildInitial(initialStops, defaultProfile);
   const [start, setStart] = useState<Slot>(init.start);
@@ -138,6 +114,95 @@ export default function QuickPlanModal({
     setOpenOverrides((o) => ({ ...o, [id]: !isDayOpen(id, isLast) }));
 
   const patchStart = (patch: Partial<Slot>) => setStart((s) => ({ ...s, ...patch }));
+
+  // Any slot (Start or a stop of any day) by id. `onlyIf` guards late updates.
+  const patchSlot = (id: number, patch: Partial<Slot>, onlyIf: (s: Slot) => boolean = () => true) => {
+    const upd = (s: Slot) => (s.id === id && onlyIf(s) ? { ...s, ...patch } : s);
+    setStart(upd);
+    setDays((ds) => ds.map((d) => ({ ...d, stops: d.stops.map(upd) })));
+  };
+
+  // The field the rider was last in: a map click fills that one (once).
+  const focusedRef = useRef<number | null>(null);
+  const nameCtrls = useRef(new Set<AbortController>());
+  useEffect(() => () => nameCtrls.current.forEach((c) => c.abort()), []);
+
+  // A pick left over from an earlier opening of the form is not a new one.
+  const seenSeq = useRef(mapPick?.seq);
+  useEffect(() => {
+    if (!mapPick || mapPick.seq === seenSeq.current) return;
+    seenSeq.current = mapPick.seq;
+    const { lng, lat } = mapPick;
+    let id: number;
+    let dayId: number | undefined;
+    const label = coordLabel(lat, lng);
+    const picked: GeoResult = { name: label, lng, lat };
+    if (mapPick.slotId !== undefined) {
+      id = mapPick.slotId;
+      patchSlot(id, { value: label, picked });
+    } else {
+      const action = pickAction(
+        {
+          startId: start.id,
+          startFilled: !!start.picked || start.value.trim() !== "",
+          days: days.map((d) => ({
+            id: d.id,
+            stops: d.stops.map((s) => ({ id: s.id, filled: !!s.picked || s.value.trim() !== "" })),
+          })),
+        },
+        focusedRef.current,
+        mapPick.target,
+      );
+      focusedRef.current = null;
+      if (action.kind === "fill") {
+        id = action.id;
+        dayId = days.find((d) => d.stops.some((s) => s.id === id))?.id;
+        patchSlot(id, { value: label, picked });
+      } else {
+        const slot = { ...makeSlot(profile), value: label, picked };
+        id = slot.id;
+        dayId = days[action.dayIndex].id;
+        setDays((ds) =>
+          ds.map((d, i) =>
+            i === action.dayIndex ? { ...d, stops: [...d.stops.slice(0, -1), slot, d.stops[d.stops.length - 1]] } : d,
+          ),
+        );
+      }
+      // Show the day the point went into.
+      if (dayId !== undefined) setOpenOverrides((o) => ({ ...o, [dayId as number]: true }));
+    }
+    setError(null);
+
+    // Replace the coordinates by the place name, unless the slot changed meanwhile.
+    const ctrl = new AbortController();
+    nameCtrls.current.add(ctrl);
+    reverseGeocode(lat, lng, ctrl.signal)
+      .then((name) => {
+        if (!name) return;
+        patchSlot(id, { value: name, picked: { ...picked, name } }, (s) => s.picked === picked);
+      })
+      .catch(() => {
+        /* offline / aborted: the coordinates stay */
+      })
+      .finally(() => nameCtrls.current.delete(ctrl));
+    // Only a new pick (seq) triggers this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapPick?.seq]);
+
+  // Publish the chosen points so the map can show them while planning.
+  const pointsRef = useRef(onPointsChange);
+  pointsRef.current = onPointsChange;
+  useEffect(() => {
+    if (!pointsRef.current) return;
+    const pts: Waypoint[] = [];
+    const add = (s: Slot, dayEnd?: boolean) => {
+      if (s.picked)
+        pts.push({ id: `plan-${s.id}`, lng: s.picked.lng, lat: s.picked.lat, name: s.picked.name, legProfile: s.legProfile, dayEnd });
+    };
+    add(start);
+    days.forEach((d, di) => d.stops.forEach((s, j) => add(s, j === d.stops.length - 1 && di < days.length - 1)));
+    pointsRef.current(pts);
+  }, [start, days]);
 
   const patchStop = (di: number, id: number, patch: Partial<Slot>) =>
     setDays((ds) =>
@@ -279,6 +344,7 @@ export default function QuickPlanModal({
         bias={bias}
         onChange={(v) => patchStop(di, slot.id, { value: v, picked: undefined })}
         onPick={(r) => patchStop(di, slot.id, { value: r.name, picked: r })}
+        onFocus={() => (focusedRef.current = slot.id)}
       />
       <span className="qp-actions">
         <button className="wp-btn" onClick={() => moveStop(di, slot.id, -1)} aria-label="Nach oben"><Icon name="up" size={16} /></button>
@@ -294,6 +360,13 @@ export default function QuickPlanModal({
           <p className="modal-note" style={{ marginTop: 0 }}>
             Pro Tag ein Block. Jeder Tag startet an der Übernachtung des Vortags.
             „+ Tag“ fügt einen weiteren Tag an.
+            {variant === "sidebar" && (
+              <>
+                {" "}
+                <strong>Klick auf die Karte</strong> setzt den Punkt ins zuletzt gewählte oder
+                nächste leere Feld, Rechtsklick wählt Start, Zwischenziel oder Ziel.
+              </>
+            )}
           </p>
 
           {days.map((day, di) => {
@@ -338,6 +411,7 @@ export default function QuickPlanModal({
                       placeholder="Start"
                       onChange={(v) => patchStart({ value: v, picked: undefined })}
                       onPick={(r) => patchStart({ value: r.name, picked: r })}
+                      onFocus={() => (focusedRef.current = start.id)}
                     />
                     <span className="qp-actions" />
                   </div>
@@ -405,12 +479,8 @@ export default function QuickPlanModal({
         </div>
   );
 
-  return variant === "sidebar" ? (
-    <SidebarView title={title} onClose={close}>
-      {body}
-    </SidebarView>
-  ) : (
-    <Modal title={title} onClose={close}>
+  return (
+    <Modal title={title} onClose={close} variant={variant}>
       {body}
     </Modal>
   );

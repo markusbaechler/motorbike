@@ -10,6 +10,7 @@ import { MAP_STYLE_URL } from "../config";
 import { computeDays, dayStats } from "../lib/days";
 import type { WeatherDay } from "../lib/weather";
 import type { RouteResult, Waypoint } from "../types";
+import { pointLabel } from "../lib/waypoints";
 
 interface Props {
   waypoints: Waypoint[];
@@ -36,8 +37,7 @@ function ratingLabel(score: number): string {
 }
 
 function placeName(wp: Waypoint): string {
-  if (!wp.name) return `${wp.lat.toFixed(3)}, ${wp.lng.toFixed(3)}`;
-  return wp.name.split(",")[0].trim();
+  return pointLabel(wp);
 }
 
 // Circular gauge for the overall score.
