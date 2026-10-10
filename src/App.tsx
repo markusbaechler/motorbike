@@ -38,7 +38,7 @@ import {
 } from "./lib/storage";
 import { addDays, buildBookingUrl } from "./lib/booking";
 import { computeDays } from "./lib/days";
-import { fetchWeather, type WeatherDay } from "./lib/weather";
+import { useRouteWeather } from "./lib/useRouteWeather";
 import { fetchRoute, primeLegs } from "./lib/routing";
 import { APP_NAME, CLUB_NAME, DEFAULT_CENTER, MOVED_TO } from "./config";
 import { reverseGeocode, type GeoResult } from "./lib/geocoding";
@@ -204,38 +204,8 @@ export default function App() {
   const isIos =
     /iphone|ipad|ipod/i.test(navigator.userAgent) ||
     (/Mac/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
-  // Weather per day (overnight location + date) via Open-Meteo.
-  const [weather, setWeather] = useState<Record<string, WeatherDay | null>>({});
-  const weatherFetched = useRef<Set<string>>(new Set());
-  useEffect(() => {
-    const days = computeDays(waypoints);
-    const targets: { wp: Waypoint; date: string }[] = [];
-    for (const span of days) {
-      const date = waypoints[span.endIdx]?.dayDate;
-      if (!date) continue;
-      const firstIdx = span.day === 1 ? span.startIdx : span.startIdx + 1;
-      for (let i = firstIdx; i <= span.endIdx; i++) {
-        targets.push({ wp: waypoints[i], date });
-      }
-    }
-    const controller = new AbortController();
-    (async () => {
-      for (const { wp, date } of targets) {
-        const key = `${wp.id}:${date}`;
-        if (weatherFetched.current.has(key)) continue;
-        weatherFetched.current.add(key);
-        try {
-          const r = await fetchWeather(wp.lat, wp.lng, date, controller.signal);
-          setWeather((prev) => ({ ...prev, [key]: r }));
-        } catch (e) {
-          if ((e as Error).name !== "AbortError") {
-            weatherFetched.current.delete(key);
-          }
-        }
-      }
-    })();
-    return () => controller.abort();
-  }, [waypoints]);
+  // Weather at the estimated passing time along the route (lib/schedule.ts).
+  const routeWx = useRouteWeather(waypoints, route);
 
   const doInstall = async () => {
     if (!installEvt) return;
@@ -744,6 +714,7 @@ export default function App() {
         // include a restored draft from an earlier session.
         waypoints={passSession ? [] : sidePlanner ? planPoints : waypoints}
         route={passSession ? null : route}
+        routeWx={passSession || sidePlanner ? null : routeWx}
         focus={focus}
         fitSignal={fitSignal}
         onAddWaypoint={addWaypoint}
@@ -783,7 +754,7 @@ export default function App() {
         onSetLegProfile={setLegProfile}
         onToggleDayEnd={toggleDayEnd}
         onSetDayMeta={setDayMeta}
-        weather={weather}
+        routeWx={routeWx}
         onAddDay={addDay}
         onRemoveWaypoint={removeWaypoint}
         onRenameWaypoint={renameWaypoint}
@@ -816,7 +787,7 @@ export default function App() {
         <RouteModal
           waypoints={waypoints}
           route={route}
-          weather={weather}
+          routeWx={routeWx}
           onClose={() => setShowDetails(false)}
         />
       )}

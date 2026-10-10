@@ -1,7 +1,7 @@
 import { computeDays, dayStats } from "./days";
 import { analyse, type ElevationPoint, type KnownPass, type RouteAnalysis } from "./analysis";
 import type { RouteResult, RouteProfile, Waypoint } from "../types";
-import type { WeatherDay } from "./weather";
+import type { RouteWeather } from "./useRouteWeather";
 import { pointLabel } from "./waypoints";
 
 const PROF_LABEL: Record<RouteProfile, string> = {
@@ -78,7 +78,7 @@ export function openRoadbook(
   title: string,
   waypoints: Waypoint[],
   route: RouteResult,
-  weather: Record<string, WeatherDay | null>,
+  _routeWx: RouteWeather,
   // Same pass list as Tour-Details, so both show the same numbers.
   knownPasses?: KnownPass[],
 ): void {
@@ -95,7 +95,6 @@ export function openRoadbook(
         return i >= span.startIdx && i < span.endIdx;
       });
       const a = analyse(feats, knownPasses);
-      const wx = overnight.dayDate ? weather[`${overnight.id}:${overnight.dayDate}`] : null;
       const firstIdx = span.day === 1 ? span.startIdx : span.startIdx + 1;
 
       const rows: string[] = [];
@@ -119,7 +118,6 @@ export function openRoadbook(
             ${overnight.dayDate ? fmtDate(overnight.dayDate) + " · " : ""}
             ${st.distanceKm.toFixed(0)} km · ${fmtDur(st.durationMin)} ·
             ${isFinal ? "Ziel" : "Übernachtung"}: <strong>${esc(short(overnight))}</strong>
-            ${wx ? ` · Wetter ${esc(wx.label)} ${wx.tMax}°/${wx.tMin}°, ${wx.precipProb}% Regen` : ""}
           </p>
           ${statBlock(a)}
           ${a.hasElevation ? svgProfile(a.profile, a.minEle, a.maxEle) : ""}

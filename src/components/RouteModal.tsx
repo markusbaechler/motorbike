@@ -9,14 +9,14 @@ import { openRoadbook } from "../lib/roadbook";
 import { prefetchRouteTiles } from "../lib/offline";
 import { MAP_STYLE_URL } from "../config";
 import { computeDays, dayStats } from "../lib/days";
-import type { WeatherDay } from "../lib/weather";
+import type { RouteWeather } from "../lib/useRouteWeather";
 import type { RouteResult, Waypoint } from "../types";
 import { pointLabel } from "../lib/waypoints";
 
 interface Props {
   waypoints: Waypoint[];
   route: RouteResult;
-  weather: Record<string, WeatherDay | null>;
+  routeWx: RouteWeather;
   onClose: () => void;
 }
 
@@ -90,7 +90,7 @@ function ScoreBar({ icon, label, value }: { icon: Parameters<typeof Icon>[0]["na
   );
 }
 
-export default function RouteModal({ waypoints, route, weather, onClose }: Props) {
+export default function RouteModal({ waypoints, route, routeWx, onClose }: Props) {
   // Named passes (same list as the Pässeplaner). Until it is loaded – or when
   // it can't be (offline) – passes are estimated from the elevation profile.
   const [knownPasses, setKnownPasses] = useState<KnownPass[] | undefined>();
@@ -287,7 +287,7 @@ export default function RouteModal({ waypoints, route, weather, onClose }: Props
             <button
               className="export-btn"
               style={{ width: "100%" }}
-              onClick={() => openRoadbook("Tour", waypoints, route, weather, knownPasses)}
+              onClick={() => openRoadbook("Tour", waypoints, route, routeWx, knownPasses)}
             >
               <Icon name="print" size={16} /> Roadbook drucken / als PDF
             </button>

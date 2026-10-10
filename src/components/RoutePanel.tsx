@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import Icon, { type IconName } from "./Icon";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import Icon from "./Icon";
+import WeatherStrip, { pct, weatherIcon } from "./WeatherStrip";
 import Modal from "./Modal";
 import PlaceInput from "./PlaceInput";
 import { computeDays, dayStats, dayNumbers } from "../lib/days";
@@ -8,7 +9,9 @@ import { canReorder, isClosedLoop, pointLabel } from "../lib/waypoints";
 import { useThrottleWait } from "../lib/useThrottleWait";
 import type { GeoResult } from "../lib/geocoding";
 import type { BookingPrefs } from "../lib/storage";
-import { isFair, type WeatherDay } from "../lib/weather";
+import { isFair } from "../lib/weather";
+import { stationWx, type RouteWeather } from "../lib/useRouteWeather";
+import { fmtHhMm } from "../lib/schedule";
 import type { RouteProfile, RouteResult, Waypoint } from "../types";
 
 interface Props {
@@ -33,8 +36,8 @@ interface Props {
   onDefaultProfileChange: (p: RouteProfile) => void;
   onSetLegProfile: (waypointId: string, p: RouteProfile) => void;
   onToggleDayEnd: (id: string) => void;
-  onSetDayMeta: (id: string, patch: { dayName?: string; dayDate?: string }) => void;
-  weather: Record<string, WeatherDay | null>;
+  onSetDayMeta: (id: string, patch: { dayName?: string; dayDate?: string; dayStart?: string }) => void;
+  routeWx: RouteWeather;
   onAddDay: () => void;
   onRemoveWaypoint: (id: string) => void;
   onRenameWaypoint: (id: string, name: string) => void;
@@ -152,16 +155,6 @@ function WpName({ wp, onRename }: { wp: Waypoint; onRename: (id: string, name: s
   );
 }
 
-function weatherIcon(code: number): IconName {
-  if (code === 0) return "sun";
-  if (code <= 2) return "cloudSun";
-  if (code === 3) return "cloud";
-  if (code === 45 || code === 48) return "fog";
-  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return "snow";
-  if (code >= 95) return "thunder";
-  return "rain"; // 51–67 drizzle/rain, 80–82 showers
-}
-
 function formatDate(iso?: string): string {
   if (!iso) return "";
   const d = new Date(iso + "T00:00:00");
@@ -217,7 +210,7 @@ export default function RoutePanel({
   onSetLegProfile,
   onToggleDayEnd,
   onSetDayMeta,
-  weather,
+  routeWx,
   onAddDay,
   onRemoveWaypoint,
   onRenameWaypoint,
@@ -341,11 +334,13 @@ export default function RoutePanel({
     else setMin((m) => !m);
   };
 
-  const renderWaypoint = (i: number, dayDate?: string) => {
+  const wxByWp = useMemo(() => stationWx(routeWx), [routeWx]);
+
+  const renderWaypoint = (i: number) => {
     const wp = waypoints[i];
+    const at = wxByWp.get(wp.id);
     const leg = i > 0 ? route?.legs[i - 1] : undefined;
     const isLast = i === waypoints.length - 1;
-    const wx = dayDate ? weather[`${wp.id}:${dayDate}`] : undefined;
     return (
       <li key={wp.id} className="wp-item">
         {i > 0 && (
@@ -403,12 +398,19 @@ export default function RoutePanel({
                 </span>
               )}
             </span>
-            {wx && (
+            {at && (
               <span
-                className={`wp-weather ${isFair(wx.code) ? "fair" : "wet"}`}
-                title={`${wx.label} · Wind ${wx.windMax} km/h`}
+                className={`wp-weather ${at.wx ? (isFair(at.wx.code) ? "fair" : "wet") : ""}`}
+                title={at.wx ? `Wind ${Math.round(at.wx.wind)} km/h` : undefined}
               >
-                <Icon name={weatherIcon(wx.code)} size={14} /> {wx.tMax}° / {wx.tMin}° · {wx.precipProb}% Regen
+                {at.st.kind === "start" ? "ab" : "an ca."} {fmtHhMm(at.st.arriveMin)}
+                {at.wx && (
+                  <>
+                    {" · "}
+                    <Icon name={weatherIcon(at.wx.code)} size={14} /> {Math.round(at.wx.temp)}° ·{" "}
+                    {pct(at.wx.precipProb)}
+                  </>
+                )}
               </span>
             )}
           </div>
@@ -586,6 +588,8 @@ export default function RoutePanel({
           for (let i = firstIdx; i <= span.endIdx; i++) indices.push(i);
 
           const open = isDayOpen(span.day);
+          const plan = routeWx.plans[span.day - 1];
+          const dayWx = routeWx.wx[span.day - 1];
           return (
             <div key={span.day} className={`day-group ${open ? "" : "collapsed"}`}>
               <button
@@ -628,6 +632,29 @@ export default function RoutePanel({
                     value={overnight.dayDate ?? ""}
                     onChange={(e) => onSetDayMeta(overnight.id, { dayDate: e.target.value })}
                   />
+                  {plan && (
+                    <label className="day-start">
+                      Start
+                      <input
+                        type="time"
+                        value={fmtHhMm(plan.startMin)}
+                        onChange={(e) => onSetDayMeta(overnight.id, { dayStart: e.target.value || undefined })}
+                      />
+                      {!plan.startIsDefault && (
+                        <button
+                          className="day-start-reset"
+                          onClick={() => onSetDayMeta(overnight.id, { dayStart: undefined })}
+                        >
+                          Standard
+                        </button>
+                      )}
+                    </label>
+                  )}
+                  {plan?.dateIsDefault && (
+                    <span className="day-date-auto">
+                      {plan.daysAhead === 0 ? "heute" : formatDate(plan.date)} (automatisch)
+                    </span>
+                  )}
                   {!(isFinalDay && isRoundTrip) && (
                     <button
                       className="hotel-btn"
@@ -639,12 +666,10 @@ export default function RoutePanel({
                   )}
                 </div>
               )}
-              {open && overnight.dayDate && weather[`${overnight.id}:${overnight.dayDate}`] === null && (
-                <p className="day-weather muted">Wetter: keine Vorhersage (Datum zu weit weg/vergangen).</p>
-              )}
+              {open && plan && <WeatherStrip plan={plan} state={dayWx} />}
               {open && (
                 <ul className="wp-list">
-                  {indices.map((i) => renderWaypoint(i, overnight.dayDate))}
+                  {indices.map((i) => renderWaypoint(i))}
                 </ul>
               )}
               {open && isFinalDay && !pendingDay && appendRow}

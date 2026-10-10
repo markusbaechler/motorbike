@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import type { RouteWeather } from "../lib/useRouteWeather";
 import Icon from "./Icon";
 import { DEFAULT_CENTER, DEFAULT_ZOOM, MAP_STYLE_URL } from "../config";
 import { computeDays, dayNumbers } from "../lib/days";
@@ -40,6 +41,8 @@ interface Props {
   // Pässeplaner: when non-null the map shows clickable pass dots and the normal
   // tap-to-add-waypoint behaviour is suppressed.
   passPoints?: PassPoint[] | null;
+  // Weather along the route (null = hide, e.g. in the Pässeplaner).
+  routeWx?: RouteWeather | null;
   passEndpoints?: { start: PassEndpoint; end: PassEndpoint | null } | null;
   onSetPassMark?: (key: string, mark: "need" | "nice" | null) => void;
   // While "Tour planen" sits in the sidebar (desktop) the map stays free to
