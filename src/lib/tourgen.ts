@@ -1,6 +1,6 @@
 import { bearing, bearingDelta, destination, haversine, type Coord } from "./geo";
 import { fetchMultiPoint } from "./routing";
-import { analyse, type RouteAnalysis } from "./analysis";
+import { analyse, type KnownPass, type RouteAnalysis } from "./analysis";
 import { DEFAULT_PASSES, type NamedPlace } from "./passes";
 import { optimizeLoop, type OptResult } from "./passopt";
 import { ensureEuroPasses, type KeyedPass } from "./passplanner";
@@ -211,7 +211,7 @@ async function routeCandidate(
     roundness: roundnessOf(r.feature, r.distanceKm * 1000),
     doubled: doubledOf(s),
     passBonus,
-    analysis: analyse([r.feature]),
+    analysis: analyse([r.feature], knownPasses),
     feature: r.feature,
   };
 }
@@ -268,6 +268,18 @@ function dedupe(pool: TourCandidate[]): TourCandidate[] {
   return variants.length > 0 ? variants : pool.slice(0, 6);
 }
 
+// Named passes for the candidates' analysis (same list as Tour-Details), so
+// the Genius counts real passes, not every hill. Loaded once per search;
+// without it (offline) the analysis falls back to the elevation estimate.
+let knownPasses: KnownPass[] | undefined;
+async function loadKnownPasses(): Promise<void> {
+  try {
+    knownPasses = await ensureEuroPasses();
+  } catch {
+    knownPasses = undefined;
+  }
+}
+
 export async function findTours(
   start: { lat: number; lng: number; name?: string },
   duration: TourDuration,
@@ -275,6 +287,7 @@ export async function findTours(
   signal?: AbortSignal,
   onProgress?: ProgressFn,
 ): Promise<TourCandidate[]> {
+  await loadKnownPasses();
   const target = TARGET_KM[duration];
   const baseRadiusM = ((target / DETOUR) * 1000) / (2 * Math.PI);
   const origin: Coord = [start.lng, start.lat];
@@ -315,7 +328,7 @@ export async function findTours(
       roundness: roundnessOf(r1.feature, r1.distanceKm * 1000),
       doubled: doubledOf(s1),
       passBonus: 0,
-      analysis: analyse([r1.feature]),
+      analysis: analyse([r1.feature], knownPasses),
       feature: r1.feature,
     };
 
@@ -334,7 +347,7 @@ export async function findTours(
         roundness: roundnessOf(r2.feature, r2.distanceKm * 1000),
         doubled: doubledOf(s2),
         passBonus: 0,
-        analysis: analyse([r2.feature]),
+        analysis: analyse([r2.feature], knownPasses),
         feature: r2.feature,
       };
       // Keep pass 2 unless it actually got worse (more retracing).
@@ -356,7 +369,7 @@ export async function findTours(
       roundness: roundnessOf(r.feature, r.distanceKm * 1000),
       doubled: doubledOf(s),
       passBonus,
-      analysis: analyse([r.feature]),
+      analysis: analyse([r.feature], knownPasses),
       feature: r.feature,
     };
   };
@@ -413,7 +426,7 @@ export async function findTours(
       roundness: roundnessOf(r.feature, r.distanceKm * 1000),
       doubled: r.doubled,
       passBonus: r.passCount,
-      analysis: analyse([r.feature]),
+      analysis: analyse([r.feature], knownPasses),
       feature: r.feature,
     });
 
@@ -559,6 +572,7 @@ export async function findToursToDest(
   signal?: AbortSignal,
   onProgress?: ProgressFn,
 ): Promise<TourCandidate[]> {
+  await loadKnownPasses();
   const a: Coord = [start.lng, start.lat];
   const b: Coord = [dest.lng, dest.lat];
   const startStop: TourStop = { lat: start.lat, lng: start.lng, name: start.name };

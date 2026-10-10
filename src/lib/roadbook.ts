@@ -1,5 +1,5 @@
 import { computeDays, dayStats } from "./days";
-import { analyse, type ElevationPoint, type RouteAnalysis } from "./analysis";
+import { analyse, type ElevationPoint, type KnownPass, type RouteAnalysis } from "./analysis";
 import type { RouteResult, RouteProfile, Waypoint } from "../types";
 import type { WeatherDay } from "./weather";
 import { pointLabel } from "./waypoints";
@@ -50,7 +50,7 @@ function statBlock(a: RouteAnalysis): string {
     [a.roadKm.haupt.toFixed(0), "km Hauptstr."],
     [a.roadKm.schnell.toFixed(0), "km Schnellstr."],
     [a.roadKm.autobahn.toFixed(0), "km Autobahn"],
-    [String(a.passes), "Pässe"],
+    [String(a.passes), a.passNames ? "Pässe" : "Anstiege"],
     [`${a.maxEle}`, "höchster Pkt (m)"],
     [`${a.ascentM}`, "Anstieg (m)"],
     [a.cornersPerKm.toFixed(1), "Kurven/km"],
@@ -79,9 +79,11 @@ export function openRoadbook(
   waypoints: Waypoint[],
   route: RouteResult,
   weather: Record<string, WeatherDay | null>,
+  // Same pass list as Tour-Details, so both show the same numbers.
+  knownPasses?: KnownPass[],
 ): void {
   const days = computeDays(waypoints);
-  const whole = analyse(route.geojson.features);
+  const whole = analyse(route.geojson.features, knownPasses);
 
   const dayBlocks = days
     .map((span) => {
@@ -92,7 +94,7 @@ export function openRoadbook(
         const i = (f.properties?.legIndex ?? -1) as number;
         return i >= span.startIdx && i < span.endIdx;
       });
-      const a = analyse(feats);
+      const a = analyse(feats, knownPasses);
       const wx = overnight.dayDate ? weather[`${overnight.id}:${overnight.dayDate}`] : null;
       const firstIdx = span.day === 1 ? span.startIdx : span.startIdx + 1;
 
