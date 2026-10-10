@@ -306,8 +306,14 @@ export default function RoutePanel({
     return (
       <li key={wp.id} className="wp-item">
         {i > 0 && (
-          <div className="segment">
-            <span className="segment-arrow">↳ Abschnitt {i}→{i + 1}</span>
+          // The leg hangs on the line between its two points, in the colour of
+          // its riding style (as on the map); "+" sits on that line.
+          <div
+            className="segment"
+            data-profile={wp.legProfile}
+            role="group"
+            aria-label={`Abschnitt ${i}→${i + 1}`}
+          >
             <ProfileToggle
               value={wp.legProfile}
               onChange={(p) => onSetLegProfile(wp.id, p)}

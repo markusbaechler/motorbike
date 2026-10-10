@@ -469,19 +469,19 @@ button {
   opacity: 0.4;
 }
 
+/* Point list as a timeline: each point is a card that holds its own buttons;
+   the leg between two points hangs on the connecting line. */
 .wp-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
 }
 
 .wp-item {
   display: flex;
   flex-direction: column;
-  gap: 6px;
 }
 
 .wp-row {
@@ -489,20 +489,47 @@ button {
   align-items: center;
   gap: 10px;
   font-size: 0.85rem;
+  padding: 5px 5px 5px 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.045);
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.wp-row:hover,
+.wp-row:focus-within {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
 }
 
-/* Segment (leg) row between two waypoints */
+/* Segment (leg) between two cards: line in the riding style's colour, the
+   "+" (insert a stop into this leg) sits on the line. */
 .segment {
+  --leg: var(--kurvig);
+  position: relative;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  padding-left: 8px;
+  gap: 6px 8px;
+  min-height: 46px;
+  padding: 7px 0 7px 41px;
   font-size: 0.8rem;
 }
-
-.segment-arrow {
-  opacity: 0.65;
-  flex: 0 0 auto;
+.segment[data-profile="kurvig_plus"] { --leg: var(--kurvig-plus); }
+.segment[data-profile="schnell"] { --leg: var(--schnell); }
+.segment::before {
+  content: "";
+  position: absolute;
+  left: 17px;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--leg);
+  opacity: 0.85;
+}
+.segment .toggle-btn {
+  padding: 4px 10px;
+  font-size: 0.76rem;
 }
 
 .segment-stats {
@@ -553,6 +580,18 @@ button {
   display: flex;
   gap: 2px;
   flex: 0 0 auto;
+}
+/* With a mouse the buttons stay quiet until their card is hovered, so the
+   list reads as places, not as a wall of buttons. */
+@media (hover: hover) {
+  .wp-row .wp-actions {
+    opacity: 0.35;
+    transition: opacity 0.12s ease;
+  }
+  .wp-row:hover .wp-actions,
+  .wp-row:focus-within .wp-actions {
+    opacity: 1;
+  }
 }
 
 .wp-btn {
@@ -1544,40 +1583,17 @@ button {
     font-size: 0.9rem;
   }
 
-  /* Waypoint rows: name on top, actions wrap to a full-width second line */
-  .wp-row {
-    flex-wrap: wrap;
-  }
-  .wp-main {
-    flex: 1 1 60%;
-  }
+  /* Waypoint cards: name and its buttons on one line, so every button
+     clearly belongs to its card; the name shortens instead. */
   .wp-actions {
-    flex: 1 1 100%;
-    justify-content: flex-end;
-    margin-top: 2px;
-    gap: 6px;
+    gap: 4px;
   }
   .wp-btn {
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
   }
 
-  /* Segment: arrow on line 1, full-width toggle below, km after */
-  .segment {
-    flex-wrap: wrap;
-    gap: 6px 8px;
-  }
-  .segment-arrow {
-    flex: 1 1 auto;
-  }
-  .segment .toggle {
-    flex: 1 1 100%;
-    order: 3;
-  }
-  .segment .toggle-btn {
-    flex: 1 1 0;
-  }
 
   .day-meta {
     gap: 8px;
@@ -2885,19 +2901,6 @@ button {
     left: calc(var(--sidebar-w) + (100vw - var(--sidebar-w)) / 2);
   }
 
-  /* The sidebar is narrow: per-leg style toggle on its own full-width line,
-     like on phones, instead of squeezing "Fun 1" into two lines. */
-  .segment {
-    flex-wrap: wrap;
-    gap: 6px 8px;
-  }
-  .segment .toggle {
-    flex: 1 1 100%;
-    order: 3;
-  }
-  .segment .toggle-btn {
-    flex: 1 1 0;
-  }
 
   /* "Tour planen" in the sidebar: covers the route panel (same column, under
      the club chip), the map on the right stays visible and pannable. */
@@ -2945,17 +2948,18 @@ button {
 
 /* --- Inline insert in the point list: "+" per leg, "Punkt anhängen" at the end --- */
 .segment-insert {
-  order: 2;
-  margin-left: auto;
-  width: 28px;
-  height: 28px;
-  flex: 0 0 auto;
+  position: absolute;
+  left: 7px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 23px;
+  height: 23px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  border: 1px dashed rgba(255, 138, 30, 0.5);
-  background: transparent;
+  border: 1px dashed rgba(255, 138, 30, 0.6);
+  background: var(--surface);
   color: var(--accent);
   cursor: pointer;
   transition: background var(--transition), border-color var(--transition);
@@ -2969,7 +2973,7 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 6px 0 10px 34px;
+  margin: 0 0 8px 41px;
 }
 .wp-insert .place-input {
   flex: 1 1 auto;
