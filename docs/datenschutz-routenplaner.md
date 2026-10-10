@@ -22,8 +22,9 @@ oder exportierst.
 Damit Karte, Routen und Wetter funktionieren, fragt der Planer bei der Nutzung
 folgende Dienste ab. Dabei wird jeweils deine IP-Adresse übermittelt, bei der
 Routenberechnung zusätzlich die Koordinaten deiner Start-, Zwischen- und
-Zielpunkte, bei der Ortssuche der eingegebene Suchtext und beim Wetter der Ort
-und das Datum der Übernachtung:
+Zielpunkte, bei der Ortssuche der eingegebene Suchtext und beim Wetter die
+Koordinaten von Punkten entlang der geplanten Route (etwa alle 30 km, Pässe
+und Wegpunkte) mit dem Datum der Fahrt:
 
 - **Kartendarstellung:** OpenFreeMap (Betreiber: Hyperknot, Ungarn, Daten von
   OpenStreetMap). <https://openfreemap.org/>
