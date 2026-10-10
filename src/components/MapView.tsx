@@ -4,6 +4,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import type { RouteWeather } from "../lib/useRouteWeather";
 import { fmtHhMm } from "../lib/schedule";
 import { codeLabel } from "../lib/weather";
+import { fetchRadarFrames, nextFrame, RADAR_ATTRIBUTION, RADAR_MAX_ZOOM, type RadarFrame } from "../lib/radar";
 import { pct } from "./WeatherStrip";
 import Icon from "./Icon";
 import { DEFAULT_CENTER, DEFAULT_ZOOM, MAP_STYLE_URL } from "../config";
@@ -105,6 +106,29 @@ export default function MapView({
   const endpointMarkersRef = useRef<maplibregl.Marker[]>([]);
   // Weather chips along the route; the toggle is remembered per device.
   const wxMarkersRef = useRef<maplibregl.Marker[]>([]);
+
+  // Rain radar (RainViewer): off by default – the loop costs mobile data.
+  const [radarOn, setRadarOn] = useState(() => {
+    try {
+      return localStorage.getItem("mb.radar") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const toggleRadar = () =>
+    setRadarOn((on) => {
+      try {
+        localStorage.setItem("mb.radar", on ? "0" : "1");
+      } catch {
+        /* private mode */
+      }
+      return !on;
+    });
+  const [radarFrames, setRadarFrames] = useState<RadarFrame[]>([]);
+  const [radarIdx, setRadarIdx] = useState(0);
+  const [radarPlaying, setRadarPlaying] = useState(true);
+  const [radarError, setRadarError] = useState(false);
+  const radarLayersRef = useRef<string[]>([]);
   const [wxOn, setWxOn] = useState(() => {
     try {
       return localStorage.getItem("mb.wxLayer") !== "0";
@@ -544,6 +568,88 @@ export default function MapView({
     });
   }, [routeWx, wxOn]);
 
+  // --- Rain radar: frame list, refreshed every 10 min while shown ---
+  useEffect(() => {
+    if (!radarOn) {
+      setRadarFrames([]);
+      setRadarError(false);
+      return;
+    }
+    const ctrl = new AbortController();
+    const load = () =>
+      fetchRadarFrames(ctrl.signal)
+        .then((f) => {
+          setRadarError(false);
+          setRadarFrames(f);
+          setRadarIdx(f.length - 1); // start on the newest picture
+        })
+        .catch((e) => {
+          if ((e as Error).name !== "AbortError") setRadarError(true);
+        });
+    load();
+    const t = setInterval(load, 10 * 60_000);
+    return () => {
+      clearInterval(t);
+      ctrl.abort();
+    };
+  }, [radarOn]);
+
+  // --- Rain radar: one raster layer per frame, below the route line ---
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const apply = () => {
+      for (const id of radarLayersRef.current) {
+        if (map.getLayer(id)) map.removeLayer(id);
+        if (map.getSource(id)) map.removeSource(id);
+      }
+      radarLayersRef.current = [];
+      for (const f of radarFrames) {
+        const id = `radar-${f.time}`;
+        map.addSource(id, {
+          type: "raster",
+          tiles: [f.tiles],
+          tileSize: 256,
+          maxzoom: RADAR_MAX_ZOOM,
+          attribution: RADAR_ATTRIBUTION,
+        });
+        map.addLayer(
+          {
+            id,
+            type: "raster",
+            source: id,
+            paint: { "raster-opacity": 0, "raster-fade-duration": 0 },
+          },
+          map.getLayer("route-casing") ? "route-casing" : undefined,
+        );
+        radarLayersRef.current.push(id);
+      }
+    };
+    if (loadedRef.current) apply();
+    else map.once("load", apply);
+  }, [radarFrames]);
+
+  // --- Rain radar: show the current frame ---
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !loadedRef.current) return;
+    radarLayersRef.current.forEach((id, i) => {
+      if (map.getLayer(id)) map.setPaintProperty(id, "raster-opacity", i === radarIdx ? 0.7 : 0);
+    });
+  }, [radarIdx, radarFrames]);
+
+  // --- Rain radar: loop, holding the newest picture a little longer ---
+  useEffect(() => {
+    if (!radarPlaying || radarFrames.length < 2) return;
+    const last = radarIdx === radarFrames.length - 1;
+    const t = setTimeout(() => setRadarIdx((i) => nextFrame(i, radarFrames.length)), last ? 2000 : 600);
+    return () => clearTimeout(t);
+  }, [radarPlaying, radarIdx, radarFrames]);
+
+  const radarTime = radarFrames[radarIdx]
+    ? new Date(radarFrames[radarIdx].time * 1000).toLocaleTimeString("de-CH", { hour: "2-digit", minute: "2-digit" })
+    : "";
+
   // --- Fly to a searched location ---
   useEffect(() => {
     const map = mapRef.current;
@@ -585,16 +691,36 @@ export default function MapView({
   return (
     <div className="map-wrap">
       <div className="map" ref={containerRef} />
-      {routeWx && routeWx.plans.length > 0 && (
+      <div className="map-toggles">
+        {routeWx && routeWx.plans.length > 0 && (
+          <button
+            className={`map-wx-toggle ${wxOn ? "on" : ""}`}
+            onClick={toggleWx}
+            aria-pressed={wxOn}
+            title={wxOn ? "Wetter auf der Karte ausblenden" : "Wetter auf der Karte einblenden"}
+          >
+            Wetter
+          </button>
+        )}
         <button
-          className={`map-wx-toggle ${wxOn ? "on" : ""}`}
-          onClick={toggleWx}
-          aria-pressed={wxOn}
-          title={wxOn ? "Wetter auf der Karte ausblenden" : "Wetter auf der Karte einblenden"}
+          className={`map-wx-toggle ${radarOn ? "on" : ""}`}
+          onClick={toggleRadar}
+          aria-pressed={radarOn}
+          title={radarOn ? "Regenradar ausblenden" : "Regenradar der letzten 2 Stunden einblenden"}
         >
-          Wetter
+          Radar
         </button>
-      )}
+        {radarOn && radarError && <span className="map-radar-time">Radar gerade nicht verfügbar</span>}
+        {radarOn && !radarError && radarTime && (
+          <button
+            className="map-radar-time"
+            onClick={() => setRadarPlaying((p) => !p)}
+            title={radarPlaying ? "Animation anhalten" : "Animation abspielen"}
+          >
+            {radarPlaying ? "⏸" : "▶"} {radarTime}
+          </button>
+        )}
+      </div>
       {ctx && (
         <div className="map-ctx" role="menu" style={{ left: menuLeft, top: menuTop }}>
           <button role="menuitem" onClick={choose(planning ? plan("start") : (lng, lat) => prependRef.current(lng, lat))}>

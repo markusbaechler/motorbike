@@ -34,6 +34,9 @@ und Wegpunkte) mit dem Datum der Fahrt:
   OpenStreetMap). <https://photon.komoot.io/>
 - **Wetter:** Open-Meteo (Betreiber: Open-Meteo, Schweiz).
   <https://open-meteo.com/en/terms>
+- **Regenradar** (nur wenn auf der Karte «Radar» eingeschaltet ist):
+  RainViewer (Betreiber: Meteolab Inc., USA). Übermittelt wird nur die
+  IP-Adresse beim Laden der Radarbilder. <https://www.rainviewer.com/privacy.html>
 - **Übernachtungen:** Der Button «Hotels» öffnet Booking.com (Booking.com B.V.,
   Niederlande) in einem neuen Fenster mit Ort, Datum und Reisendenzahl. Erst mit
   dem Klick werden Daten an Booking.com übermittelt. Die Links können eine
