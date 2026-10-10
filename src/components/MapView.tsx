@@ -4,6 +4,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import type { RouteWeather } from "../lib/useRouteWeather";
 import { fmtHhMm } from "../lib/schedule";
 import { codeLabel } from "../lib/weather";
+import { declutter, type Box } from "../lib/declutter";
 import { fetchRadarFrames, nextFrame, RADAR_ATTRIBUTION, RADAR_MAX_ZOOM, type RadarFrame } from "../lib/radar";
 import { pct } from "./WeatherStrip";
 import Icon from "./Icon";
@@ -541,6 +542,12 @@ export default function MapView({
     wxMarkersRef.current.forEach((m) => m.remove());
     wxMarkersRef.current = [];
     if (!map || !routeWx || !wxOn) return;
+    // When space is short: passes, then day ends, day starts, the 30-km
+    // samples, and last the via points (their weather is in the list).
+    const PRIORITY: Record<string, number> = { pass: 0, end: 1, start: 2, sample: 3, via: 4 };
+    const prio: number[] = [];
+    // Chips float above the point, clear of a waypoint marker (26 px) on it.
+    const LIFT = 16;
     const emoji = (c: number) =>
       c === 0 ? "☀️" : c <= 2 ? "🌤️" : c === 3 ? "☁️" : c === 45 || c === 48 ? "🌫️" :
       (c >= 71 && c <= 77) || c === 85 || c === 86 ? "❄️" : c >= 95 ? "⛈️" : "🌧️";
@@ -559,13 +566,44 @@ export default function MapView({
 ` +
           `${codeLabel(v.code)} · ${Math.round(v.temp)}° · Regen ${pct(v.precipProb)}` +
           `${v.precip > 0 ? ` · ${v.precip.toFixed(1)} mm` : ""} · Wind ${Math.round(v.wind)} km/h`;
-        const marker = new maplibregl.Marker({ element: el, anchor: "bottom", offset: [0, -10] })
+        const marker = new maplibregl.Marker({ element: el, anchor: "bottom", offset: [0, -LIFT] })
           .setLngLat([st.lng, st.lat])
           .setPopup(new maplibregl.Popup({ offset: 14, closeButton: false, className: "wx-popup" }).setText(text))
           .addTo(map);
         wxMarkersRef.current.push(marker);
+        prio.push(PRIORITY[st.kind] ?? 3);
       });
     });
+
+    // Show only the chips that fit without overlapping each other or the
+    // numbered waypoint markers; zooming in brings more back.
+    const layout = () => {
+      const obstacles: Box[] = markersRef.current.map((m) => {
+        const p = map.project(m.getLngLat());
+        const el = m.getElement();
+        const w = el.offsetWidth || 28;
+        const h = el.offsetHeight || 28;
+        return { x: p.x - w / 2, y: p.y - h / 2, w, h };
+      });
+      const items = wxMarkersRef.current.map((m, i) => {
+        const p = map.project(m.getLngLat());
+        const el = m.getElement();
+        const w = el.offsetWidth || 56;
+        const h = el.offsetHeight || 22;
+        return { box: { x: p.x - w / 2, y: p.y - LIFT - h, w, h }, priority: prio[i] };
+      });
+      const vis = declutter(items, obstacles);
+      wxMarkersRef.current.forEach((m, i) => {
+        m.getElement().style.visibility = vis[i] ? "" : "hidden";
+      });
+    };
+    layout();
+    map.on("moveend", layout);
+    map.on("resize", layout);
+    return () => {
+      map.off("moveend", layout);
+      map.off("resize", layout);
+    };
   }, [routeWx, wxOn]);
 
   // --- Rain radar: frame list, refreshed every 10 min while shown ---
@@ -715,9 +753,9 @@ export default function MapView({
           <button
             className="map-radar-time"
             onClick={() => setRadarPlaying((p) => !p)}
-            title={radarPlaying ? "Animation anhalten" : "Animation abspielen"}
+            title={`Gemessener Regen der letzten 2 Stunden (unabhängig vom Tourdatum) – ${radarPlaying ? "anhalten" : "abspielen"}`}
           >
-            {radarPlaying ? "⏸" : "▶"} {radarTime}
+            {radarPlaying ? "⏸" : "▶"} Live {radarTime}
           </button>
         )}
       </div>
