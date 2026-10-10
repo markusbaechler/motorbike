@@ -1,7 +1,9 @@
 import { computeDays, dayStats } from "./days";
 import { analyse, type ElevationPoint, type KnownPass, type RouteAnalysis } from "./analysis";
 import type { RouteResult, RouteProfile, Waypoint } from "../types";
-import type { WeatherDay } from "./weather";
+import { stationWx, type RouteWeather } from "./useRouteWeather";
+import { fmtHhMm } from "./schedule";
+import { summarize } from "./weather";
 import { pointLabel } from "./waypoints";
 
 const PROF_LABEL: Record<RouteProfile, string> = {
@@ -78,12 +80,13 @@ export function openRoadbook(
   title: string,
   waypoints: Waypoint[],
   route: RouteResult,
-  weather: Record<string, WeatherDay | null>,
+  routeWx: RouteWeather,
   // Same pass list as Tour-Details, so both show the same numbers.
   knownPasses?: KnownPass[],
 ): void {
   const days = computeDays(waypoints);
   const whole = analyse(route.geojson.features, knownPasses);
+  const wxByWp = stationWx(routeWx);
 
   const dayBlocks = days
     .map((span) => {
@@ -95,17 +98,26 @@ export function openRoadbook(
         return i >= span.startIdx && i < span.endIdx;
       });
       const a = analyse(feats, knownPasses);
-      const wx = overnight.dayDate ? weather[`${overnight.id}:${overnight.dayDate}`] : null;
       const firstIdx = span.day === 1 ? span.startIdx : span.startIdx + 1;
+      const plan = routeWx.plans[span.day - 1];
+      const dayWx = routeWx.wx[span.day - 1];
+      const sum = dayWx?.status === "ok" ? summarize(dayWx.values) : null;
+      const date = overnight.dayDate ?? plan?.date;
 
       const rows: string[] = [];
       for (let i = firstIdx; i <= span.endIdx; i++) {
         const wp = waypoints[i];
         const leg = i > 0 ? route.legs[i - 1] : undefined;
         const legInfo = leg ? `${PROF_LABEL[wp.legProfile]} · ${leg.distanceKm.toFixed(0)} km` : "Start";
+        const at = wxByWp.get(wp.id);
+        const wxInfo = at
+          ? `${at.st.kind === "start" ? "ab" : "an ca."} ${fmtHhMm(at.st.arriveMin)}` +
+            (at.wx ? ` · ${Math.round(at.wx.temp)}° · ${at.wx.precipProb ?? "–"}% Regen` : "")
+          : "";
         rows.push(
           `<tr><td class="num">${i === 0 ? "S" : i === waypoints.length - 1 ? "Z" : i}</td>` +
-            `<td>${esc(short(wp))}</td><td class="leg">${esc(legInfo)}</td></tr>`,
+            `<td>${esc(short(wp))}</td><td class="leg">${esc(legInfo)}</td>` +
+            `<td class="leg">${esc(wxInfo)}</td></tr>`,
         );
       }
 
@@ -116,10 +128,11 @@ export function openRoadbook(
             <span class="dscore">${a.scores.overall.toFixed(1)}/10</span>
           </div>
           <p class="meta">
-            ${overnight.dayDate ? fmtDate(overnight.dayDate) + " · " : ""}
+            ${date ? fmtDate(date) + " · " : ""}
+            ${plan ? `Start ${fmtHhMm(plan.startMin)} · ` : ""}
             ${st.distanceKm.toFixed(0)} km · ${fmtDur(st.durationMin)} ·
             ${isFinal ? "Ziel" : "Übernachtung"}: <strong>${esc(short(overnight))}</strong>
-            ${wx ? ` · Wetter ${esc(wx.label)} ${wx.tMax}°/${wx.tMin}°, ${wx.precipProb}% Regen` : ""}
+            ${sum ? ` · Wetter unterwegs ${sum.tMin}–${sum.tMax}°, max. ${sum.maxProb ?? "–"}% Regen${sum.maxPrecip > 0 ? `, bis ${sum.maxPrecip.toFixed(1)} mm` : ""}` : ""}
           </p>
           ${statBlock(a)}
           ${a.hasElevation ? svgProfile(a.profile, a.minEle, a.maxEle) : ""}

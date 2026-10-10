@@ -38,7 +38,7 @@ import {
 } from "./lib/storage";
 import { addDays, buildBookingUrl } from "./lib/booking";
 import { computeDays } from "./lib/days";
-import { fetchWeather, type WeatherDay } from "./lib/weather";
+import { routeKeyOf, useRouteWeather } from "./lib/useRouteWeather";
 import { fetchRoute, primeLegs } from "./lib/routing";
 import { APP_NAME, CLUB_NAME, DEFAULT_CENTER, MOVED_TO } from "./config";
 import { reverseGeocode, type GeoResult } from "./lib/geocoding";
@@ -204,38 +204,6 @@ export default function App() {
   const isIos =
     /iphone|ipad|ipod/i.test(navigator.userAgent) ||
     (/Mac/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
-  // Weather per day (overnight location + date) via Open-Meteo.
-  const [weather, setWeather] = useState<Record<string, WeatherDay | null>>({});
-  const weatherFetched = useRef<Set<string>>(new Set());
-  useEffect(() => {
-    const days = computeDays(waypoints);
-    const targets: { wp: Waypoint; date: string }[] = [];
-    for (const span of days) {
-      const date = waypoints[span.endIdx]?.dayDate;
-      if (!date) continue;
-      const firstIdx = span.day === 1 ? span.startIdx : span.startIdx + 1;
-      for (let i = firstIdx; i <= span.endIdx; i++) {
-        targets.push({ wp: waypoints[i], date });
-      }
-    }
-    const controller = new AbortController();
-    (async () => {
-      for (const { wp, date } of targets) {
-        const key = `${wp.id}:${date}`;
-        if (weatherFetched.current.has(key)) continue;
-        weatherFetched.current.add(key);
-        try {
-          const r = await fetchWeather(wp.lat, wp.lng, date, controller.signal);
-          setWeather((prev) => ({ ...prev, [key]: r }));
-        } catch (e) {
-          if ((e as Error).name !== "AbortError") {
-            weatherFetched.current.delete(key);
-          }
-        }
-      }
-    })();
-    return () => controller.abort();
-  }, [waypoints]);
 
   const doInstall = async () => {
     if (!installEvt) return;
@@ -323,7 +291,7 @@ export default function App() {
       wps.map((w) => (w.id === id ? { ...w, dayEnd: !w.dayEnd } : w)),
     );
 
-  const setDayMeta = (id: string, patch: { dayName?: string; dayDate?: string }) =>
+  const setDayMeta = (id: string, patch: { dayName?: string; dayDate?: string; dayStart?: string }) =>
     setWaypoints((wps) => wps.map((w) => (w.id === id ? { ...w, ...patch } : w)));
 
   // Only the place moves; leg profile and day flags stay with the list
@@ -665,9 +633,10 @@ export default function App() {
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   // Only positions and riding styles matter for routing. Names, day ends and
   // day labels change without a single new request.
-  const routeKey = waypoints
-    .map((w) => `${w.lng.toFixed(6)},${w.lat.toFixed(6)},${w.legProfile}`)
-    .join("|");
+  const routeKey = routeKeyOf(waypoints);
+  // Waypoints the shown route was computed for (the route lags edits while
+  // the router works; the weather must not plan against the old track).
+  const [routedKey, setRoutedKey] = useState("");
   const waypointsRef = useRef(waypoints);
   waypointsRef.current = waypoints;
   useEffect(() => {
@@ -687,6 +656,7 @@ export default function App() {
       try {
         const result = await fetchRoute(waypoints, controller.signal);
         setRoute(result);
+        setRoutedKey(routeKeyOf(waypoints));
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
           setRoute(null);
@@ -702,6 +672,9 @@ export default function App() {
       clearTimeout(debounceRef.current);
     };
   }, [routeKey, routeAttempt]);
+
+  // Weather at the estimated passing time along the route (lib/schedule.ts).
+  const routeWx = useRouteWeather(waypoints, route, !!route && routedKey !== routeKey);
 
   return (
     // pass-mode: on wide screens the sidebar is gone, so the map takes the
@@ -744,6 +717,7 @@ export default function App() {
         // include a restored draft from an earlier session.
         waypoints={passSession ? [] : sidePlanner ? planPoints : waypoints}
         route={passSession ? null : route}
+        routeWx={passSession || sidePlanner ? null : routeWx}
         focus={focus}
         fitSignal={fitSignal}
         onAddWaypoint={addWaypoint}
@@ -783,7 +757,7 @@ export default function App() {
         onSetLegProfile={setLegProfile}
         onToggleDayEnd={toggleDayEnd}
         onSetDayMeta={setDayMeta}
-        weather={weather}
+        routeWx={routeWx}
         onAddDay={addDay}
         onRemoveWaypoint={removeWaypoint}
         onRenameWaypoint={renameWaypoint}
@@ -816,7 +790,7 @@ export default function App() {
         <RouteModal
           waypoints={waypoints}
           route={route}
-          weather={weather}
+          routeWx={routeWx}
           onClose={() => setShowDetails(false)}
         />
       )}

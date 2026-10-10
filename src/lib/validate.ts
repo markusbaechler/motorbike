@@ -17,6 +17,9 @@ const inRange = (v: unknown, lo: number, hi: number): v is number =>
 const isIsoDate = (v: unknown): v is string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v));
 
+export const isHhMm = (v: unknown): v is string =>
+  typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
+
 const text = (v: unknown, max: number): string | undefined => {
   if (typeof v !== "string") return undefined;
   const t = v.trim();
@@ -40,6 +43,7 @@ export function sanitizeWaypoint(raw: unknown, idPrefix = "v"): Waypoint | null 
     dayEnd: o.dayEnd === true || undefined,
     dayName: text(o.dayName, 80),
     dayDate: isIsoDate(o.dayDate) ? o.dayDate : undefined,
+    dayStart: isHhMm(o.dayStart) ? o.dayStart : undefined,
   };
 }
 

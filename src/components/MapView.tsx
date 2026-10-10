@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import type { RouteWeather } from "../lib/useRouteWeather";
+import { fmtHhMm } from "../lib/schedule";
+import { codeLabel } from "../lib/weather";
+import { pct } from "./WeatherStrip";
 import Icon from "./Icon";
 import { DEFAULT_CENTER, DEFAULT_ZOOM, MAP_STYLE_URL } from "../config";
 import { computeDays, dayNumbers } from "../lib/days";
@@ -40,6 +44,8 @@ interface Props {
   // Pässeplaner: when non-null the map shows clickable pass dots and the normal
   // tap-to-add-waypoint behaviour is suppressed.
   passPoints?: PassPoint[] | null;
+  // Weather along the route (null = hide, e.g. in the Pässeplaner).
+  routeWx?: RouteWeather | null;
   passEndpoints?: { start: PassEndpoint; end: PassEndpoint | null } | null;
   onSetPassMark?: (key: string, mark: "need" | "nice" | null) => void;
   // While "Tour planen" sits in the sidebar (desktop) the map stays free to
@@ -79,6 +85,7 @@ export default function MapView({
   onInsertWaypoint,
   passPoints = null,
   passEndpoints = null,
+  routeWx = null,
   onSetPassMark,
   editLocked = false,
   onPlanPick,
@@ -96,6 +103,24 @@ export default function MapView({
   const passModeRef = useRef(false);
   const fitPassCountRef = useRef(0);
   const endpointMarkersRef = useRef<maplibregl.Marker[]>([]);
+  // Weather chips along the route; the toggle is remembered per device.
+  const wxMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const [wxOn, setWxOn] = useState(() => {
+    try {
+      return localStorage.getItem("mb.wxLayer") !== "0";
+    } catch {
+      return true;
+    }
+  });
+  const toggleWx = () =>
+    setWxOn((on) => {
+      try {
+        localStorage.setItem("mb.wxLayer", on ? "0" : "1");
+      } catch {
+        /* private mode */
+      }
+      return !on;
+    });
   const passMarkersRef = useRef<maplibregl.Marker[]>([]);
   const passPopupRef = useRef<maplibregl.Popup | null>(null);
 
@@ -486,6 +511,39 @@ export default function MapView({
     if (passEndpoints.end) make(passEndpoints.end, "#fb7185", "Z");
   }, [passEndpoints]);
 
+  // --- Weather along the route (DOM markers like the pass dots) ---
+  useEffect(() => {
+    const map = mapRef.current;
+    wxMarkersRef.current.forEach((m) => m.remove());
+    wxMarkersRef.current = [];
+    if (!map || !routeWx || !wxOn) return;
+    const emoji = (c: number) =>
+      c === 0 ? "☀️" : c <= 2 ? "🌤️" : c === 3 ? "☁️" : c === 45 || c === 48 ? "🌫️" :
+      (c >= 71 && c <= 77) || c === 85 || c === 86 ? "❄️" : c >= 95 ? "⛈️" : "🌧️";
+    routeWx.plans.forEach((plan, i) => {
+      const state = routeWx.wx[i];
+      if (state?.status !== "ok") return;
+      plan.stations.forEach((st, k) => {
+        const v = state.values[k];
+        if (!v) return;
+        const el = document.createElement("div");
+        el.className = `wx-marker ${st.kind}`;
+        el.textContent = `${emoji(v.code)} ${Math.round(v.temp)}°`;
+        const where = st.name ?? (st.kind === "sample" ? `km ${Math.round(st.km)}` : "");
+        const text =
+          `Tag ${plan.day} · ${fmtHhMm(st.arriveMin)}${where ? " · " + where : ""}
+` +
+          `${codeLabel(v.code)} · ${Math.round(v.temp)}° · Regen ${pct(v.precipProb)}` +
+          `${v.precip > 0 ? ` · ${v.precip.toFixed(1)} mm` : ""} · Wind ${Math.round(v.wind)} km/h`;
+        const marker = new maplibregl.Marker({ element: el, anchor: "bottom", offset: [0, -10] })
+          .setLngLat([st.lng, st.lat])
+          .setPopup(new maplibregl.Popup({ offset: 14, closeButton: false, className: "wx-popup" }).setText(text))
+          .addTo(map);
+        wxMarkersRef.current.push(marker);
+      });
+    });
+  }, [routeWx, wxOn]);
+
   // --- Fly to a searched location ---
   useEffect(() => {
     const map = mapRef.current;
@@ -527,6 +585,16 @@ export default function MapView({
   return (
     <div className="map-wrap">
       <div className="map" ref={containerRef} />
+      {routeWx && routeWx.plans.length > 0 && (
+        <button
+          className={`map-wx-toggle ${wxOn ? "on" : ""}`}
+          onClick={toggleWx}
+          aria-pressed={wxOn}
+          title={wxOn ? "Wetter auf der Karte ausblenden" : "Wetter auf der Karte einblenden"}
+        >
+          Wetter
+        </button>
+      )}
       {ctx && (
         <div className="map-ctx" role="menu" style={{ left: menuLeft, top: menuTop }}>
           <button role="menuitem" onClick={choose(planning ? plan("start") : (lng, lat) => prependRef.current(lng, lat))}>

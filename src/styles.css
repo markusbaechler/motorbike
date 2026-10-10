@@ -3262,3 +3262,26 @@ button {
   vertical-align: -2px;
   color: var(--accent);
 }
+
+/* --- Wetter entlang der Route --- */
+.day-start { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; }
+.day-start input { font: inherit; color: inherit; background: transparent; border: 1px solid rgba(148, 163, 184, 0.35); border-radius: 6px; padding: 2px 4px; }
+.day-start-reset { font-size: 0.74rem; background: none; border: 0; text-decoration: underline; cursor: pointer; color: inherit; opacity: 0.8; }
+.day-date-auto { font-size: 0.74rem; opacity: 0.7; align-self: center; }
+.wx-day { margin: 6px 0 8px; min-width: 0; }
+.wx-summary { margin: 0 0 6px; font-size: 0.8rem; }
+.wx-summary .icon { vertical-align: -3px; margin-right: 2px; }
+.wx-summary.fair .icon { color: #fbbf24; }
+.wx-summary.wet .icon { color: #60a5fa; }
+.wx-trend { opacity: 0.7; }
+.wx-strip { list-style: none; margin: 0; padding: 0 0 4px; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: thin; }
+.wx-stop { flex: 0 0 auto; display: grid; justify-items: center; gap: 1px; min-width: 52px; padding: 4px 6px; border-radius: 8px; background: rgba(148, 163, 184, 0.12); font-size: 0.74rem; font-variant-numeric: tabular-nums; }
+.wx-stop.pass { background: rgba(251, 146, 60, 0.18); }
+.wx-time { opacity: 0.8; }
+.wx-temp { font-weight: 600; }
+.wx-mm, .wx-name { font-size: 0.68rem; opacity: 0.8; max-width: 80px; text-align: center; }
+.wx-marker { padding: 2px 6px; border-radius: 10px; background: rgba(255, 255, 255, 0.92); color: #0f172a; font-size: 12px; font-weight: 600; box-shadow: 0 1px 4px rgba(15, 23, 42, 0.35); white-space: nowrap; cursor: pointer; }
+.wx-marker.pass { background: #ffedd5; }
+.wx-popup .maplibregl-popup-content { white-space: pre-line; }
+.map-wx-toggle { position: absolute; top: 10px; right: 10px; z-index: 2; padding: 6px 10px; border-radius: 8px; border: 0; background: rgba(15, 23, 42, 0.75); color: #f8fafc; font-size: 13px; cursor: pointer; }
+.map-wx-toggle.on { background: #0ea5e9; }

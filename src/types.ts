@@ -25,6 +25,9 @@ export interface Waypoint {
   // each day's destination waypoint).
   dayName?: string;
   dayDate?: string; // ISO yyyy-mm-dd
+  // Start time of the day that ENDS at this waypoint ("HH:MM"). Unset = default
+  // (today: now, else 09:00 – see lib/schedule.ts).
+  dayStart?: string;
 }
 
 export interface LegSummary {
