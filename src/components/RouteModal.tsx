@@ -353,9 +353,9 @@ export default function RouteModal({ waypoints, route, weather, onClose }: Props
         >
           <div className="modal-body">
             <ul className="info-list">
-              <li><strong>Gesamt</strong> = Kurven 35 % + Bergigkeit 40 % + Strassen 25 %.</li>
-              <li><strong>Kurvenreichtum</strong>: echte Richtungswechsel ({">"}25°) pro km. 0,5 Kurven/km = 0, ab 4,5 Kurven/km = 10 (Autobahn ≈ 0,1 · Mittelland ≈ 2,5 · Jura ≈ 3 · Tessin ≈ 5).</li>
-              <li><strong>Bergigkeit & Pässe</strong>: höchster Punkt (50 %, 2400 m = 10), Anzahl befahrener Pässe aus der Pass-Liste des Pässeplaners (30 %, 4 Pässe = 10) und Höhenmeter pro km (20 %).</li>
+              <li><strong>Gesamt</strong> = Kurven 40 % + Bergigkeit 40 % + Strassen 20 %.</li>
+              <li><strong>Kurvenreichtum</strong>: echte Richtungswechsel ({">"}25°) pro km, mit abnehmendem Zuwachs: 1 Kurve/km ≈ 3,7 · 2,5 ≈ 7,7 · 3 ≈ 8,3 · 5 ≈ 9,6.</li>
+              <li><strong>Bergigkeit & Pässe</strong>: relativ zum Gelände statt absolute Höhe – Höhenunterschied der Tour (40 %, 1400 m = 10), Höhenmeter pro km (30 %, 16 m/km = 10) und befahrene Pässe aus der Pass-Liste des Pässeplaners (30 %, 8 Pässe = 10).</li>
               <li><strong>Strassen</strong>: Autobahn zählt voll gegen die Tour, Schnellstrassen zu 60 %, Hauptstrassen zu 25 % (Alpenpässe sind Hauptstrassen und sollen nicht wie Autobahn zählen).</li>
               <li><strong>Einstufung</strong>: ab 8 Traumstrecke · ab 6,5 sehr reizvoll · ab 5 reizvoll · ab 3,5 solide.</li>
             </ul>

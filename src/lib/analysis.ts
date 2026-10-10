@@ -222,15 +222,21 @@ export function analyse(features: GeoJSON.Feature[], knownPasses?: KnownPass[]):
   const passes = passNames ? passNames.length : hasElevation ? countPasses(profile.map((p) => p.ele)) : 0;
 
   // --- Sub-scores (each 0–1) ---
-  // Calibrated on the club tours and reference routes (see analysis.test.ts):
-  // motorway ~0.1 corners/km, flat back roads ~2.5, Jura ~3, Ticino ~5.
-  // Curves: 0.5 corners/km = 0, 4.5 and more = full marks.
-  const curve01 = clamp((cornersPerKm - 0.5) / 4, 0, 1);
-  // Mountains: how high it goes (pass altitude) + number of passes + climb.
-  const alt01 = hasElevation ? clamp(maxEle / 2400, 0, 1) : 0;
-  const pass01 = clamp(passes / 4, 0, 1);
-  const ascent01 = clamp(ascentM / totalKm / 25, 0, 1);
-  const mountains01 = clamp(0.5 * alt01 + 0.3 * pass01 + 0.2 * ascent01, 0, 1);
+  // Calibrated on the club tours and reference routes so that the club's
+  // favourites (Jura XXL, the Ticino rounds) land around 8, alpine pass
+  // tours higher, a flat Mittelland loop clearly lower and motorway near 0.
+  // Measures are relative to the terrain (relief, climb, passes) rather than
+  // absolute altitude, so a great Jura tour isn't held down by not being
+  // 2400 m high.
+  // Curves: rising quickly, then levelling off (diminishing returns):
+  // 1 corner/km ≈ 3.7, 2.5 ≈ 7.7, 3 ≈ 8.3, 5 ≈ 9.6.
+  const curve01 = 1 - Math.exp(-Math.max(0, cornersPerKm - 0.3) / 1.5);
+  // Mountains: relief (highest minus lowest point, 1400 m = full), climbing
+  // per km (16 m/km = full) and named passes (8 = full).
+  const relief01 = hasElevation ? clamp((maxEle - minEle) / 1400, 0, 1) : 0;
+  const ascent01 = clamp(ascentM / totalKm / 16, 0, 1);
+  const pass01 = clamp(passes / 8, 0, 1);
+  const mountains01 = clamp(0.4 * relief01 + 0.3 * ascent01 + 0.3 * pass01, 0, 1);
   // Roads: motorway counts fully against the tour, trunk roads mostly, main
   // roads a little (alpine passes are main roads in OSM, so they must not be
   // punished as hard as a motorway).
@@ -238,7 +244,7 @@ export function analyse(features: GeoJSON.Feature[], knownPasses?: KnownPass[]):
     ? clamp(1 - (roadKm.autobahn + 0.6 * roadKm.schnell + 0.25 * roadKm.haupt) / totalKm, 0, 1)
     : 0.5;
 
-  const overall = round1((curve01 * 0.35 + mountains01 * 0.4 + scenic01 * 0.25) * 10);
+  const overall = round1((curve01 * 0.4 + mountains01 * 0.4 + scenic01 * 0.2) * 10);
 
   return {
     distanceKm,
