@@ -24,7 +24,9 @@ folgende Dienste ab. Dabei wird jeweils deine IP-Adresse übermittelt, bei der
 Routenberechnung zusätzlich die Koordinaten deiner Start-, Zwischen- und
 Zielpunkte, bei der Ortssuche der eingegebene Suchtext und beim Wetter die
 Koordinaten von Punkten entlang der geplanten Route (etwa alle 30 km, Pässe
-und Wegpunkte) mit dem Datum der Fahrt:
+und Wegpunkte) mit dem Datum der Fahrt. Bei geöffneter «Prognose» gehen
+zudem die Koordinaten der Kartenmitte an den Wetterdienst und an die
+Ortssuche (für den Ortsnamen):
 
 - **Kartendarstellung:** OpenFreeMap (Betreiber: Hyperknot, Ungarn, Daten von
   OpenStreetMap). <https://openfreemap.org/>

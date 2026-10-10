@@ -27,3 +27,18 @@ describe("declutter", () => {
     expect(vis).toEqual([true, false, true]);
   });
 });
+
+import { visibleHeight } from "./declutter";
+
+describe("visibleHeight", () => {
+  const map = { left: 0, top: 0, right: 375, bottom: 812 };
+  it("phone: the bottom sheet covers the lower part", () => {
+    expect(visibleHeight(map, { left: 0, top: 466, right: 375, bottom: 812 })).toBe(466);
+  });
+  it("desktop: a sidebar next to the map covers nothing", () => {
+    expect(visibleHeight({ left: 456, top: 0, right: 1024, bottom: 768 }, { left: 76, top: 0, right: 456, bottom: 768 })).toBe(768);
+  });
+  it("no panel → whole map", () => {
+    expect(visibleHeight(map, null)).toBe(812);
+  });
+});

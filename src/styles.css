@@ -3290,6 +3290,25 @@ button {
 /* Phone: the header and search box take the top – buttons sit in one row
    in the header, the radar time just below the search box on the left. */
 @media (max-width: 899px) {
-  .map-toggles { top: 14px; flex-direction: row; align-items: center; }
+  .map-toggles { top: 16px; flex-direction: row; align-items: center; gap: 4px; }
+  .map-toggles .map-wx-toggle { padding: 5px 7px; font-size: 12px; }
   .map-radar-time { position: fixed; top: 114px; left: 12px; }
+}
+
+/* --- Prognose 3 Tage (Kartenmitte) --- */
+.outlook-box { width: 300px; max-width: calc(100vw - 24px); padding: 8px 10px 10px; border-radius: 12px; background: rgba(15, 23, 42, 0.9); color: #f8fafc; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.35); }
+.outlook-title { margin: 0 0 6px; font-size: 0.8rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.outlook-msg { margin: 4px 0; font-size: 0.8rem; opacity: 0.8; }
+.outlook-days { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.outlook-day { display: grid; justify-items: center; gap: 2px; padding: 6px 4px; border-radius: 8px; background: rgba(148, 163, 184, 0.14); font-size: 0.74rem; text-align: center; font-variant-numeric: tabular-nums; }
+.outlook-label { font-weight: 600; }
+.outlook-temp { font-size: 0.9rem; font-weight: 700; }
+.outlook-min { font-weight: 400; opacity: 0.75; font-size: 0.78rem; }
+.outlook-rain { opacity: 0.9; }
+.outlook-win { font-size: 0.68rem; line-height: 1.2; }
+.outlook-win.ok { color: #86efac; }
+.outlook-win.no { color: #fca5a5; }
+.outlook-win.over { opacity: 0.7; }
+@media (max-width: 899px) {
+  .outlook-box { position: fixed; top: 150px; left: 12px; right: 12px; width: auto; max-width: none; }
 }
