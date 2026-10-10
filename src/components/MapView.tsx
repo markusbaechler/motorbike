@@ -537,7 +537,7 @@ export default function MapView({
           `${v.precip > 0 ? ` · ${v.precip.toFixed(1)} mm` : ""} · Wind ${Math.round(v.wind)} km/h`;
         const marker = new maplibregl.Marker({ element: el, anchor: "bottom", offset: [0, -10] })
           .setLngLat([st.lng, st.lat])
-          .setPopup(new maplibregl.Popup({ offset: 14, closeButton: false }).setText(text))
+          .setPopup(new maplibregl.Popup({ offset: 14, closeButton: false, className: "wx-popup" }).setText(text))
           .addTo(map);
         wxMarkersRef.current.push(marker);
       });

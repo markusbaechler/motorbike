@@ -191,7 +191,16 @@ export function planDays(
       const w = waypoints[i];
       fixed.push(at(nearestAt(track, kmAcc), kind, { wpId: w.id, name: w.name }));
     }
-    for (const p of passes ?? []) {
+    // Cheap bounding-box prefilter: the pass list has ~1000 entries.
+    let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+    for (const t of track) {
+      minLat = Math.min(minLat, t.c[1]); maxLat = Math.max(maxLat, t.c[1]);
+      minLng = Math.min(minLng, t.c[0]); maxLng = Math.max(maxLng, t.c[0]);
+    }
+    const near = (passes ?? []).filter(
+      (p) => p.lat >= minLat - 0.01 && p.lat <= maxLat + 0.01 && p.lng >= minLng - 0.015 && p.lng <= maxLng + 0.015,
+    );
+    for (const p of near) {
       const pc: Coord = [p.lng, p.lat];
       let hit: TrackPt | null = null;
       for (const t of track) {
@@ -215,14 +224,9 @@ export function planDays(
       samples.push(at(nearestAt(track, km), "sample"));
     }
 
-    const all = [...fixed, ...samples].sort((a, b) => a.km - b.km);
-    if (all.length > MAX_STATIONS) {
-      // Never lose the day's end to the cap.
-      const end = all[all.length - 1];
-      plan.stations = [...all.slice(0, MAX_STATIONS - 1), end];
-    } else {
-      plan.stations = all;
-    }
+    // The cap only ever drops samples: waypoints and passes always keep their time.
+    const keep = samples.slice(0, Math.max(0, MAX_STATIONS - fixed.length));
+    plan.stations = [...fixed, ...keep].sort((a, b) => a.km - b.km);
     return plan;
   });
 }

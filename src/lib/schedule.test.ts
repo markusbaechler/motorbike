@@ -140,3 +140,12 @@ describe("planDays", () => {
     expect(d.stations.every((s) => s.ele === undefined)).toBe(true);
   });
 });
+
+describe("planDays – review fixes", () => {
+  it("never cuts waypoints to stay under the station cap", () => {
+    const w = Array.from({ length: 31 }, (_, i) => wp(`w${i}`));
+    const [d] = planDays(w, line(Array(30).fill(10)), undefined, NOW);
+    for (const p of w) expect(d.stations.some((s) => s.wpId === p.id)).toBe(true);
+    expect(d.stations.every((s) => s.kind !== "sample")).toBe(true);
+  });
+});

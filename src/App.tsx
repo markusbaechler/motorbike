@@ -38,7 +38,7 @@ import {
 } from "./lib/storage";
 import { addDays, buildBookingUrl } from "./lib/booking";
 import { computeDays } from "./lib/days";
-import { useRouteWeather } from "./lib/useRouteWeather";
+import { routeKeyOf, useRouteWeather } from "./lib/useRouteWeather";
 import { fetchRoute, primeLegs } from "./lib/routing";
 import { APP_NAME, CLUB_NAME, DEFAULT_CENTER, MOVED_TO } from "./config";
 import { reverseGeocode, type GeoResult } from "./lib/geocoding";
@@ -204,8 +204,6 @@ export default function App() {
   const isIos =
     /iphone|ipad|ipod/i.test(navigator.userAgent) ||
     (/Mac/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
-  // Weather at the estimated passing time along the route (lib/schedule.ts).
-  const routeWx = useRouteWeather(waypoints, route);
 
   const doInstall = async () => {
     if (!installEvt) return;
@@ -635,9 +633,10 @@ export default function App() {
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   // Only positions and riding styles matter for routing. Names, day ends and
   // day labels change without a single new request.
-  const routeKey = waypoints
-    .map((w) => `${w.lng.toFixed(6)},${w.lat.toFixed(6)},${w.legProfile}`)
-    .join("|");
+  const routeKey = routeKeyOf(waypoints);
+  // Waypoints the shown route was computed for (the route lags edits while
+  // the router works; the weather must not plan against the old track).
+  const [routedKey, setRoutedKey] = useState("");
   const waypointsRef = useRef(waypoints);
   waypointsRef.current = waypoints;
   useEffect(() => {
@@ -657,6 +656,7 @@ export default function App() {
       try {
         const result = await fetchRoute(waypoints, controller.signal);
         setRoute(result);
+        setRoutedKey(routeKeyOf(waypoints));
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
           setRoute(null);
@@ -672,6 +672,9 @@ export default function App() {
       clearTimeout(debounceRef.current);
     };
   }, [routeKey, routeAttempt]);
+
+  // Weather at the estimated passing time along the route (lib/schedule.ts).
+  const routeWx = useRouteWeather(waypoints, route, !!route && routedKey !== routeKey);
 
   return (
     // pass-mode: on wide screens the sidebar is gone, so the map takes the
