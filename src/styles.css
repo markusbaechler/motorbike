@@ -2869,11 +2869,15 @@ button {
    Same components as the bottom sheet, only repositioned. The breakpoint is
    mirrored in lib/useMediaQuery.ts (DESKTOP_QUERY). */
 @media (min-width: 900px) {
+  /* Three columns: nav rail | sidebar (tour or the chosen tool) | map. */
   :root {
-    --sidebar-w: 400px;
+    --rail-w: 76px;
+    --panel-w: 380px;
+    --sidebar-w: calc(var(--rail-w) + var(--panel-w));
   }
   /* Pässeplaner mode has no sidebar: the map gets the whole width. */
   .app.pass-mode {
+    --rail-w: 0px;
     --sidebar-w: 0px;
   }
 
@@ -2881,18 +2885,81 @@ button {
     left: var(--sidebar-w);
   }
 
-  .topbar {
-    right: auto;
-    width: var(--sidebar-w);
-    z-index: 12;
-    padding: 14px 16px 0;
+  .nav-rail {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: var(--rail-w);
+    z-index: 13;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 0 14px;
+    background: var(--bg);
+    border-right: 1px solid var(--border);
+  }
+  .nav-rail-logo {
+    width: 46px;
+    height: 46px;
+    margin-bottom: 12px;
+    border-radius: 50%;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+  }
+  .nav-rail-logo img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+  }
+  .nav-rail-item {
+    width: 62px;
+    padding: 8px 0 7px;
+    border: none;
+    border-radius: 14px;
+    background: transparent;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font: inherit;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+  .nav-rail-item:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .nav-rail-item.active {
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .nav-rail-item.quiet {
+    font-size: 0.66rem;
+    opacity: 0.7;
+  }
+  .nav-rail-item.quiet:hover {
+    opacity: 1;
+  }
+  .nav-rail-spacer {
+    flex: 1 1 auto;
   }
 
   .searchbox {
-    top: 72px;
-    left: 16px;
+    top: 16px;
+    left: calc(var(--rail-w) + 16px);
     right: auto;
-    width: calc(var(--sidebar-w) - 32px);
+    width: calc(var(--panel-w) - 32px);
     max-width: none;
     margin: 0;
   }
@@ -2900,16 +2967,21 @@ button {
   .panel {
     top: 0;
     bottom: 0;
-    left: 0;
+    left: var(--rail-w);
     right: auto;
-    width: var(--sidebar-w);
+    width: var(--panel-w);
     max-height: none;
     border-radius: 0;
     border-top: 0;
     border-right: 1px solid var(--border-strong);
     box-shadow: 12px 0 40px rgba(0, 0, 0, 0.35);
-    padding: 134px 16px 20px;
+    padding: 78px 16px 20px;
     gap: 14px;
+  }
+  .panel-row.tour-tools {
+    justify-content: flex-start;
+    gap: 8px;
+    padding-top: 4px;
   }
 
   .panel-handle,
@@ -2935,12 +3007,12 @@ button {
     position: absolute;
     top: 0;
     bottom: 0;
-    left: 0;
-    width: var(--sidebar-w);
+    left: var(--rail-w);
+    width: var(--panel-w);
     z-index: 11;
     display: flex;
     flex-direction: column;
-    padding-top: 62px;
+    overflow-y: auto;
     background: var(--surface);
     border-right: 1px solid var(--border-strong);
     box-shadow: 12px 0 40px rgba(0, 0, 0, 0.35);
@@ -2970,6 +3042,12 @@ button {
   }
   .side-view .qp-profile .toggle-btn {
     flex: 1 1 0;
+  }
+  /* Club tours in the narrow column: compact one-line buttons. */
+  .side-view .club-actions .export-btn {
+    padding: 7px 12px;
+    font-size: 0.82rem;
+    white-space: nowrap;
   }
 }
 
@@ -3017,4 +3095,99 @@ button {
   .wp-append {
     margin-left: 0;
   }
+}
+
+/* --- Desktop start (sidebar, empty map): main action + club suggestions --- */
+.welcome {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.welcome-lead {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.welcome-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.welcome-actions .quickplan-btn {
+  width: 100%;
+  flex-wrap: wrap;
+  padding: 12px 18px;
+}
+.welcome-sub {
+  flex: 1 1 100%;
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0.85;
+}
+.welcome-club h3 {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.welcome-club ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.welcome-club li button {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.welcome-club li button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent);
+}
+.welcome-club-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.welcome-club-meta {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.welcome-more {
+  margin-top: 8px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.welcome-footer {
+  display: flex;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.welcome-footer a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.welcome-footer a:hover {
+  color: var(--text);
 }

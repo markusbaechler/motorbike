@@ -10,6 +10,8 @@ interface Props {
   currentWaypoints: Waypoint[];
   onLoad: (waypoints: Waypoint[]) => void;
   onClose: () => void;
+  // Desktop: shown in the left sidebar instead of as a dialog.
+  variant?: "modal" | "sidebar";
 }
 
 function fmtDuration(min: number): string {
@@ -30,7 +32,7 @@ function meta(t: ClubTour): string {
 }
 
 // Tours the club publishes on the website, loaded like a shared link.
-export default function ClubToursModal({ currentWaypoints, onLoad, onClose }: Props) {
+export default function ClubToursModal({ currentWaypoints, onLoad, onClose, variant }: Props) {
   const [tours, setTours] = useState<ClubTour[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -56,7 +58,7 @@ export default function ClubToursModal({ currentWaypoints, onLoad, onClose }: Pr
 
   return (
     <>
-      <Modal title="Club-Touren" onClose={onClose}>
+      <Modal title="Club-Touren" onClose={onClose} variant={variant}>
         <div className="modal-body">
           <p className="modal-note" style={{ marginTop: 0 }}>
             Vorschläge der Pudgilly Riders. «Laden» holt die Tour auf die Karte – dort kannst du

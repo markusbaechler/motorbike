@@ -37,7 +37,9 @@ export type IconName =
   | "scenery"
   | "arrowLeft"
   | "arrowRight"
-  | "menu";
+  | "menu"
+  | "route"
+  | "globe";
 
 const PATHS: Record<IconName, ReactNode> = {
   search: (
@@ -250,6 +252,20 @@ const PATHS: Record<IconName, ReactNode> = {
     <>
       <path d="m3 20 6-11 4 6 2-3 6 8z" />
       <path d="m7.5 13 1.5-2.5" />
+    </>
+  ),
+  route: (
+    <>
+      <circle cx="6" cy="19" r="2" />
+      <circle cx="18" cy="5" r="2" />
+      <path d="M8 19h8.5a3.5 3.5 0 0 0 0-7h-9a3.5 3.5 0 0 1 0-7H16" />
+    </>
+  ),
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z" />
     </>
   ),
 };

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import Icon from "./Icon";
 import Modal from "./Modal";
 import PlaceInput from "./PlaceInput";
@@ -59,54 +59,6 @@ interface Props {
   // Sidebar only: points picked on the map, and the form's points to show there.
   mapPick?: MapPick | null;
   onPointsChange?: (points: Waypoint[]) => void;
-}
-
-/**
- * Sidebar shell for the desktop layout: same head as a dialog (title + close),
- * Escape closes, focus moves in on open and back to the opener on close. It
- * is not modal: the map beside it stays usable for looking around.
- */
-function SidebarView({
-  title,
-  onClose,
-  children,
-}: {
-  title: ReactNode;
-  onClose: () => void;
-  children: ReactNode;
-}) {
-  const boxRef = useRef<HTMLElement>(null);
-  const titleId = useId();
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
-
-  useEffect(() => {
-    const opener = document.activeElement as HTMLElement | null;
-    boxRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      // A dialog opened on top handles its own Escape.
-      if (e.key !== "Escape" || document.querySelector(".modal-backdrop")) return;
-      e.preventDefault();
-      onCloseRef.current();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      if (opener && document.contains(opener)) opener.focus();
-    };
-  }, []);
-
-  return (
-    <section ref={boxRef} className="side-view" aria-labelledby={titleId} tabIndex={-1}>
-      <div className="modal-head side-view-head">
-        <h2 id={titleId}>{title}</h2>
-        <button className="modal-close" onClick={onClose} aria-label="Schliessen">
-          <Icon name="x" size={18} />
-        </button>
-      </div>
-      {children}
-    </section>
-  );
 }
 
 let uid = 1;
@@ -527,12 +479,8 @@ export default function QuickPlanModal({
         </div>
   );
 
-  return variant === "sidebar" ? (
-    <SidebarView title={title} onClose={close}>
-      {body}
-    </SidebarView>
-  ) : (
-    <Modal title={title} onClose={close}>
+  return (
+    <Modal title={title} onClose={close} variant={variant}>
       {body}
     </Modal>
   );

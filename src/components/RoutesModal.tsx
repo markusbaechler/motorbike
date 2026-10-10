@@ -20,6 +20,8 @@ interface Props {
   // Switch to the club tours dialog (absent on the old hosting).
   onClubTours?: () => void;
   onClose: () => void;
+  // Desktop: shown in the left sidebar instead of as a dialog.
+  variant?: "modal" | "sidebar";
 }
 
 // A question waiting for the rider's answer before work is thrown away, or a
@@ -36,7 +38,7 @@ function meta(r: SavedRoute): string {
   return `${days} Tag${days === 1 ? "" : "e"} · ${r.waypoints.length} Punkte · ${date}`;
 }
 
-export default function RoutesModal({ currentWaypoints, onLoad, onClubTours, onClose }: Props) {
+export default function RoutesModal({ currentWaypoints, onLoad, onClubTours, onClose, variant }: Props) {
   const [routes, setRoutes] = useState<SavedRoute[]>(() => listRoutes());
   const [name, setName] = useState("");
   const [info, setInfo] = useState<string | null>(null);
@@ -103,7 +105,7 @@ export default function RoutesModal({ currentWaypoints, onLoad, onClubTours, onC
 
   return (
     <>
-      <Modal title="Meine Touren" onClose={onClose}>
+      <Modal title="Meine Touren" onClose={onClose} variant={variant}>
         <div className="modal-body">
           {/* Save current */}
           <section className="modal-section">

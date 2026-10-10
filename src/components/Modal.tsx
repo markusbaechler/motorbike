@@ -12,6 +12,9 @@ interface Props {
   closeLabel?: string;
   // Element to focus on open instead of the dialog box (e.g. a single input).
   initialFocus?: React.RefObject<HTMLElement>;
+  // "sidebar": on wide screens the tool fills the left sidebar next to the
+  // map instead of opening as a dialog over it (see SidebarView).
+  variant?: "modal" | "sidebar";
 }
 
 // Open dialogs, innermost last. Only the top-most one reacts to Escape so a
@@ -26,7 +29,18 @@ const FOCUSABLE =
  * to close, focus kept inside while open, focus returned to the opener on
  * close, backdrop click closes.
  */
-export default function Modal({
+export default function Modal(props: Props) {
+  if (props.variant === "sidebar") {
+    return (
+      <SidebarView title={props.title} onClose={props.onClose} className={props.className}>
+        {props.children}
+      </SidebarView>
+    );
+  }
+  return <Dialog {...props} />;
+}
+
+function Dialog({
   title,
   onClose,
   children,
@@ -105,5 +119,55 @@ export default function Modal({
         {children}
       </div>
     </div>
+  );
+}
+
+/**
+ * Sidebar shell for the desktop layout: same head as a dialog (title + close),
+ * Escape closes, focus moves in on open and back to the opener on close. It
+ * is not modal: the map beside it stays usable for looking around.
+ */
+function SidebarView({
+  title,
+  onClose,
+  children,
+  className = "",
+}: {
+  title: ReactNode;
+  onClose: () => void;
+  children: ReactNode;
+  className?: string;
+}) {
+  const boxRef = useRef<HTMLElement>(null);
+  const titleId = useId();
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    boxRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      // A dialog opened on top handles its own Escape.
+      if (e.key !== "Escape" || document.querySelector(".modal-backdrop")) return;
+      e.preventDefault();
+      onCloseRef.current();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      if (opener && document.contains(opener)) opener.focus();
+    };
+  }, []);
+
+  return (
+    <section ref={boxRef} className={`side-view ${className}`} aria-labelledby={titleId} tabIndex={-1}>
+      <div className="modal-head side-view-head">
+        <h2 id={titleId}>{title}</h2>
+        <button className="modal-close" onClick={onClose} aria-label="Schliessen">
+          <Icon name="x" size={18} />
+        </button>
+      </div>
+      {children}
+    </section>
   );
 }

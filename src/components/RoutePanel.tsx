@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Icon, { type IconName } from "./Icon";
 import Modal from "./Modal";
 import PlaceInput from "./PlaceInput";
@@ -43,6 +43,8 @@ interface Props {
   onInsertWaypoint: (legIndex: number, lng: number, lat: number, name?: string) => void;
   onAppendWaypoint: (lng: number, lat: number, name?: string) => void;
   onClear: () => void;
+  // Desktop, empty map: start options shown instead of the planning controls.
+  welcome?: ReactNode;
 }
 
 // Small inline place search shown where a point is about to be inserted.
@@ -223,6 +225,7 @@ export default function RoutePanel({
   onInsertWaypoint,
   onAppendWaypoint,
   onClear,
+  welcome,
 }: Props) {
   const days = computeDays(waypoints);
   // Seconds the router queue waits for the public server's limit (0 = none).
@@ -488,25 +491,18 @@ export default function RoutePanel({
         </button>
       ) : (
        <>
+      {desktop && welcome && waypoints.length === 0 ? (
+        welcome
+      ) : (
+       <>
       <div className="panel-row top">
         {/* One primary action; the other tools share the quiet secondary style
             (desktop) or sit behind "Mehr" (phones). */}
         <button className="quickplan-btn" onClick={onOpenQuickPlan}>
           <Icon name="zap" size={16} /> Tour planen
         </button>
-        {desktop ? (
-          <>
-            <button className="quickplan-btn secondary" onClick={onOpenTourGenius}>
-              <Icon name="compass" size={16} /> Tour-Genius
-            </button>
-            <button className="quickplan-btn secondary" onClick={onOpenPassPlanner}>
-              <Icon name="mountain" size={16} /> Pässeplaner
-            </button>
-            <button className="quickplan-btn secondary" onClick={onOpenRoutes}>
-              <Icon name="folder" size={16} /> Touren
-            </button>
-          </>
-        ) : (
+        {/* Desktop: Tour-Genius, Pässe, Touren live in the nav rail. */}
+        {!desktop && (
           <button
             className="quickplan-btn secondary tools-btn"
             onClick={() => setShowTools(true)}
@@ -520,26 +516,6 @@ export default function RoutePanel({
       <div className="panel-row profile">
         <span className="default-label">Neuer Abschnitt:</span>
         <ProfileToggle value={defaultProfile} onChange={onDefaultProfileChange} />
-        {desktop && waypoints.length >= 2 && (
-          <>
-            <button className="clear-btn" onClick={onReverse} title="Richtung umkehren">
-              <Icon name="swap" size={14} /> Umkehren
-            </button>
-            <button
-              className="clear-btn"
-              onClick={onRoundTrip}
-              disabled={isRoundTrip}
-              title={isRoundTrip ? "Die Tour ist bereits eine Rundtour" : "Zurück zum Start (Rundtour)"}
-            >
-              <Icon name="loop" size={14} /> Rundtour
-            </button>
-          </>
-        )}
-        {desktop && waypoints.length > 0 && (
-          <button className="clear-btn" onClick={onClear}>
-            Zurücksetzen
-          </button>
-        )}
       </div>
 
       <div className="panel-row summary">
@@ -710,6 +686,32 @@ export default function RoutePanel({
             : "„Tag hinzufügen“ beendet den Tag am letzten Punkt."}{" "}
           Streckenlinie ziehen fügt ein Zwischenziel ein.
         </p>
+      )}
+
+      {/* Desktop: the rarer whole-tour actions, quiet at the end of the list. */}
+      {desktop && waypoints.length > 0 && (
+        <div className="panel-row tour-tools">
+          {waypoints.length >= 2 && (
+            <>
+              <button className="clear-btn" onClick={onReverse} title="Richtung umkehren">
+                <Icon name="swap" size={14} /> Umkehren
+              </button>
+              <button
+                className="clear-btn"
+                onClick={onRoundTrip}
+                disabled={isRoundTrip}
+                title={isRoundTrip ? "Die Tour ist bereits eine Rundtour" : "Zurück zum Start (Rundtour)"}
+              >
+                <Icon name="loop" size={14} /> Rundtour
+              </button>
+            </>
+          )}
+          <button className="clear-btn" onClick={onClear}>
+            Zurücksetzen
+          </button>
+        </div>
+      )}
+       </>
       )}
        </>
       )}
