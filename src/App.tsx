@@ -323,7 +323,7 @@ export default function App() {
       wps.map((w) => (w.id === id ? { ...w, dayEnd: !w.dayEnd } : w)),
     );
 
-  const setDayMeta = (id: string, patch: { dayName?: string; dayDate?: string }) =>
+  const setDayMeta = (id: string, patch: { dayName?: string; dayDate?: string; dayStart?: string }) =>
     setWaypoints((wps) => wps.map((w) => (w.id === id ? { ...w, ...patch } : w)));
 
   // Only the place moves; leg profile and day flags stay with the list

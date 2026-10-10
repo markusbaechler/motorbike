@@ -27,7 +27,7 @@ function b64urlDecode(s: string): string {
 }
 
 // Optional 8th field: 1 = name typed by the rider (older links have 7).
-type Row = [number, number, string, number, string, string, string, number?];
+type Row = [number, number, string, number, string, string, string, number?, string?];
 
 // Routed distance/time, embedded so the website can show them for club tours
 // without routing at build time. The planner itself ignores them on import.
@@ -47,7 +47,9 @@ export function encodeRoute(waypoints: Waypoint[], stats?: ShareStats): string {
       p.dayName ?? "",
       p.dayDate ?? "",
     ];
-    if (p.nameEdited && p.name) row.push(1);
+    const edited = p.nameEdited && p.name ? 1 : 0;
+    if (edited || p.dayStart) row.push(edited);
+    if (p.dayStart) row.push(p.dayStart);
     return row;
   });
   const payload: { v: 1; w: Row[]; s?: [number, number] } = { v: 1, w };
@@ -74,6 +76,7 @@ export function decodeRoute(code: string): Waypoint[] | null {
             dayName: r[5] || undefined,
             dayDate: r[6] || undefined,
             nameEdited: r[7] === 1,
+            dayStart: typeof r[8] === "string" ? r[8] : undefined,
           }
         : null,
     );

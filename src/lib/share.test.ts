@@ -54,3 +54,20 @@ describe("share encode/decode", () => {
     expect(out[1].legProfile).toBe("kurvig_plus");
   });
 });
+
+describe("share dayStart", () => {
+  it("roundtrips dayStart without nameEdited", () => {
+    const w: Waypoint[] = [
+      { id: "a", lng: 8.5, lat: 46.5, legProfile: "kurvig" },
+      { id: "b", lng: 9.1, lat: 46.9, legProfile: "kurvig", dayStart: "08:15" },
+    ];
+    const out = decodeRoute(encodeRoute(w))!;
+    expect(out[1].dayStart).toBe("08:15");
+    expect(out[1].nameEdited).toBeFalsy();
+    expect(out[0].dayStart).toBeUndefined();
+  });
+  it("old links without the column decode with dayStart undefined", () => {
+    const out = decodeRoute(encodeRoute(wps))!;
+    expect(out.every((p) => p.dayStart === undefined)).toBe(true);
+  });
+});
