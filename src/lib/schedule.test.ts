@@ -133,7 +133,7 @@ describe("planDays", () => {
     const w = [wp("a"), wp("b")];
     const [d] = planDays(w, line([1200]), undefined, NOW);
     expect(d.stations.length).toBeLessThanOrEqual(MAX_STATIONS);
-    expect(d.stations.at(-1)?.kind).toBe("end");
+    expect(d.stations[d.stations.length - 1].kind).toBe("end");
   });
   it("works without elevation in the coordinates", () => {
     const [d] = planDays([wp("a"), wp("b")], line([40], false), undefined, NOW);

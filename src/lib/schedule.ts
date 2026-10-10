@@ -42,7 +42,7 @@ export function dayDates(
   let prev: string | null = null;
   for (const span of days) {
     const own = waypoints[span.endIdx]?.dayDate;
-    const date = own ?? (prev ? addDays(prev, 1) : today);
+    const date: string = own ?? (prev ? addDays(prev, 1) : today);
     out.push({ date, isDefault: !own });
     prev = date;
   }
