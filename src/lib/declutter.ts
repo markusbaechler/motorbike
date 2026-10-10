@@ -29,3 +29,22 @@ export function declutter(items: { box: Box; priority: number }[], obstacles: Bo
   }
   return visible;
 }
+
+interface Rect {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+/**
+ * Height of the map that is not covered by the route panel: on phones the
+ * bottom sheet lies over the map, on desktop the sidebar sits next to it.
+ */
+export function visibleHeight(map: Rect, panel: Rect | null): number {
+  const full = map.bottom - map.top;
+  if (!panel) return full;
+  const overlapsX = panel.left < map.right - 1 && panel.right > map.left + 1;
+  const coversBottom = panel.top > map.top && panel.top < map.bottom;
+  return overlapsX && coversBottom ? panel.top - map.top : full;
+}

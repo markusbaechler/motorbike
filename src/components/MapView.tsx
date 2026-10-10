@@ -4,7 +4,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import type { RouteWeather } from "../lib/useRouteWeather";
 import { fmtHhMm } from "../lib/schedule";
 import { codeLabel } from "../lib/weather";
-import { declutter, type Box } from "../lib/declutter";
+import { declutter, visibleHeight, type Box } from "../lib/declutter";
+import OutlookBox from "./OutlookBox";
 import { fetchRadarFrames, nextFrame, RADAR_ATTRIBUTION, RADAR_MAX_ZOOM, type RadarFrame } from "../lib/radar";
 import { pct } from "./WeatherStrip";
 import Icon from "./Icon";
@@ -130,6 +131,10 @@ export default function MapView({
   const [radarPlaying, setRadarPlaying] = useState(true);
   const [radarError, setRadarError] = useState(false);
   const radarLayersRef = useRef<string[]>([]);
+
+  // 3-day outlook box for the map centre (follows the map after it settles).
+  const [outlookOn, setOutlookOn] = useState(false);
+  const [center, setCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [wxOn, setWxOn] = useState(() => {
     try {
       return localStorage.getItem("mb.wxLayer") !== "0";
@@ -688,6 +693,32 @@ export default function MapView({
     ? new Date(radarFrames[radarIdx].time * 1000).toLocaleTimeString("de-CH", { hour: "2-digit", minute: "2-digit" })
     : "";
 
+  // --- Outlook: track the map centre while the box is open ---
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !outlookOn) return;
+    let t: ReturnType<typeof setTimeout> | undefined;
+    // Middle of the part of the map you can see (on phones the bottom sheet
+    // covers the lower part of the map).
+    const take = () => {
+      const el = map.getContainer();
+      const panel = document.querySelector(".panel");
+      const h = visibleHeight(el.getBoundingClientRect(), panel ? panel.getBoundingClientRect() : null);
+      const c = map.unproject([el.clientWidth / 2, Math.max(1, h) / 2]);
+      setCenter({ lat: c.lat, lng: c.lng });
+    };
+    const onMove = () => {
+      clearTimeout(t);
+      t = setTimeout(take, 800);
+    };
+    take();
+    map.on("moveend", onMove);
+    return () => {
+      clearTimeout(t);
+      map.off("moveend", onMove);
+    };
+  }, [outlookOn]);
+
   // --- Fly to a searched location ---
   useEffect(() => {
     const map = mapRef.current;
@@ -741,6 +772,14 @@ export default function MapView({
           </button>
         )}
         <button
+          className={`map-wx-toggle ${outlookOn ? "on" : ""}`}
+          onClick={() => setOutlookOn((o) => !o)}
+          aria-pressed={outlookOn}
+          title="Wetter der nächsten 3 Tage für die Kartenmitte"
+        >
+          Prognose
+        </button>
+        <button
           className={`map-wx-toggle ${radarOn ? "on" : ""}`}
           onClick={toggleRadar}
           aria-pressed={radarOn}
@@ -758,6 +797,7 @@ export default function MapView({
             {radarPlaying ? "⏸" : "▶"} Live {radarTime}
           </button>
         )}
+        {outlookOn && center && <OutlookBox lat={center.lat} lng={center.lng} />}
       </div>
       {ctx && (
         <div className="map-ctx" role="menu" style={{ left: menuLeft, top: menuTop }}>
